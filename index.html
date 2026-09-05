@@ -1,0 +1,2981 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bubidos Bierliga</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Karla:wght@400;600;800&family=DM+Mono:wght@400;500&display=swap');
+
+:root{
+  --zinn:#343A42; --zinn-tief:#272C33; --linie:#525B66;
+  --deckel:#E9E1CD; --deckel-tief:#D8CDB2; --rand:#B9AC8C;
+  --tinte:#22262B; --tinte-weich:#6C6659;
+  --blau:#1C5FA8; --malz:#B87513; --rot:#9E3226; --gruen:#3D6B45;
+  --display:'Anton',Impact,sans-serif;
+  --body:'Karla',system-ui,sans-serif;
+  --mono:'DM Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{background:var(--zinn-tief);color:var(--deckel);font-family:var(--body);
+  font-size:16px;line-height:1.45;padding-bottom:env(safe-area-inset-bottom)}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select{font:inherit}
+:focus-visible{outline:2px solid var(--malz);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.wrap{max-width:640px;margin:0 auto;padding:0 14px 90px}
+
+.kopf{background:var(--zinn);padding:16px 14px 0;border-bottom:1px solid var(--linie)}
+.kopf-inner{max-width:640px;margin:0 auto}
+.marke{margin:0;line-height:0}
+.marke svg{display:block}
+.unterzeile{font-family:var(--mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;
+  color:#9AA2AC;margin:6px 0 12px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.unterzeile button{font:inherit;color:#9AA2AC;text-decoration:underline;text-underline-offset:3px}
+.raute{height:10px;background-color:#EDF2F7;background-size:14px 14px;background-position:0 0,7px 7px;
+  background-image:
+    linear-gradient(45deg,var(--blau) 25%,transparent 25%,transparent 75%,var(--blau) 75%),
+    linear-gradient(45deg,var(--blau) 25%,transparent 25%,transparent 75%,var(--blau) 75%)}
+.kopf-inner{max-width:640px;margin:0 auto}
+.kopf-archiv{display:flex;align-items:center;gap:12px;padding-bottom:12px}
+.kopf-tasten{display:flex;gap:6px;flex:0 0 auto;padding-top:2px}
+.kopf-tasten button{width:40px;height:40px;border-radius:5px;color:#9AA2AC;
+  display:grid;place-items:center}
+.kopf-tasten button:active{background:rgba(255,255,255,.06)}
+.kopf-mitte{flex:1;min-width:0}
+.kopf-wort{font-family:Georgia,'Times New Roman',serif;font-weight:700;font-size:13.5px;
+  letter-spacing:.05em;text-transform:uppercase;color:var(--deckel);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kopf-zahlen{font-family:var(--mono);font-size:10px;color:#8A929C;margin-top:3px;letter-spacing:.03em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kopf-zaehlen{display:flex;align-items:center;gap:10px;padding-bottom:12px}
+.kopf-ort{flex:1;min-width:0;text-align:left}
+.kz-titel{display:block;font-family:var(--display);font-size:19px;text-transform:uppercase;
+  letter-spacing:.02em;color:var(--deckel);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kz-wo{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;
+  text-transform:uppercase;color:#98A0AA;margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kopf-unter{display:flex;align-items:center;gap:12px;padding-bottom:13px;min-height:44px}
+.kopf-zurueck{font-size:15px;color:#9AA2AC;flex:0 0 auto}
+.kopf-utitel{font-family:var(--display);font-size:20px;text-transform:uppercase;letter-spacing:.02em}
+.deckel{position:relative;background:var(--deckel);color:var(--tinte);border-radius:5px;
+  padding:14px 16px;margin:10px 0;box-shadow:0 2px 0 var(--deckel-tief),0 6px 14px rgba(0,0,0,.28)}
+.deckel::after{content:'';position:absolute;inset:5px;border:1px solid var(--rand);
+  border-radius:3px;pointer-events:none}
+.deckel > *{position:relative;z-index:1}
+
+.zeile{display:flex;align-items:center;gap:10px}
+.platz{font-family:var(--display);font-size:26px;line-height:1;color:var(--tinte-weich);
+  min-width:32px;text-align:center}
+.platz.eins{color:var(--malz)}
+.name{font-weight:800;font-size:18px;letter-spacing:-.01em;flex:1;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+.name.tipp{text-decoration:underline;text-decoration-color:var(--rand);text-underline-offset:4px}
+.elo{font-family:var(--mono);font-size:22px;font-weight:500;letter-spacing:-.02em}
+.meta{font-family:var(--mono);font-size:11px;color:var(--tinte-weich);letter-spacing:.05em;
+  margin-top:6px;display:flex;gap:14px;flex-wrap:wrap}
+.delta{font-family:var(--mono);font-size:12px;padding:2px 6px;border-radius:3px;white-space:nowrap}
+.delta.dplus{background:rgba(61,107,69,.16);color:var(--gruen)}
+.delta.dminus{background:rgba(158,50,38,.14);color:var(--rot)}
+.delta.dnull{background:rgba(0,0,0,.06);color:var(--tinte-weich)}
+.ruht{opacity:.55}
+
+.striche{display:flex;flex-wrap:wrap;gap:9px;align-items:flex-end;min-height:26px;margin:10px 0 2px}
+.striche svg{display:block}
+.striche .leer{font-family:var(--mono);font-size:12px;color:var(--tinte-weich);letter-spacing:.08em}
+
+.wahl{position:sticky;top:0;z-index:20;background:var(--zinn-tief);margin:0 -14px;
+  padding:10px 14px 10px;border-bottom:1px solid var(--linie)}
+.wahl-titel{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:#98A0AA;margin-bottom:8px}
+.chips{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;padding:8px 13px;border-radius:999px;border:1px solid var(--linie);
+  font-size:14px;font-weight:600;color:#C9D0D8;white-space:nowrap}
+.chip[data-an="1"]{background:var(--malz);border-color:var(--malz);color:#1B1B1B}
+.chip small{font-family:var(--mono);font-size:10px;opacity:.7;margin-left:5px}
+.wahl-zeile{display:flex;align-items:center;gap:10px;margin-top:7px}
+.wahl-erg{flex:0 0 auto;font-family:var(--mono);font-size:11px;color:var(--malz);white-space:nowrap}
+.kamknopf{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;margin-top:9px;
+  padding:11px;border-radius:5px;border:1px dashed var(--malz);color:var(--malz);
+  font-weight:700;font-size:14px}
+.leiste{display:flex;gap:7px;overflow-x:auto;margin:12px 0 0;scrollbar-width:none}
+.leiste::-webkit-scrollbar{display:none}
+.leiste button{flex:0 0 auto;padding:8px 14px;border-radius:5px;border:1px solid var(--linie);
+  font-size:14px;font-weight:700;color:#98A0AA;white-space:nowrap}
+.leiste button[data-an="1"]{background:var(--deckel);border-color:var(--deckel);color:var(--tinte)}
+.leiste button.neu{border-style:dashed;color:var(--malz)}
+.leiste.orte button{font-size:13.5px;font-weight:600;padding:7px 12px;border-radius:999px}
+.ortname{display:flex;align-items:center;gap:9px;margin:12px 0 0}
+.ortname input{flex:1;min-width:0;padding:9px 12px;border-radius:5px;border:1px solid var(--linie);
+  background:var(--zinn);color:var(--deckel);font-weight:700}
+.ortname svg{flex:0 0 auto;color:var(--malz)}
+
+.knopf{display:block;width:100%;padding:15px;border-radius:5px;text-align:center;
+  font-weight:800;font-size:15px;letter-spacing:.04em;text-transform:uppercase;margin-top:12px}
+.knopf.voll{background:var(--malz);color:#1B1B1B}
+.knopf.leer{border:1px solid var(--linie);color:#C9D0D8}
+.knopf.gefahr{border:1px solid rgba(158,50,38,.6);color:#D98A7E}
+.knopf[disabled]{opacity:.45}
+.kleinreihe{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.kleinreihe button{flex:1;min-width:130px;padding:11px 8px;border-radius:5px;font-size:12.5px;
+  font-weight:700;letter-spacing:.03em;text-transform:uppercase;border:1px solid rgba(158,50,38,.5);
+  color:#D98A7E}
+.pzeile .plus,.plus{width:52px;height:52px;flex:0 0 auto;border-radius:5px;background:var(--tinte);color:var(--deckel);
+  font-family:var(--display);font-size:26px;line-height:1;display:grid;place-items:center}
+.plus:active{transform:translateY(1px)}
+.zurueck{width:38px;height:38px;flex:0 0 auto;border-radius:5px;border:1px solid var(--rand);
+  color:var(--tinte-weich);font-size:17px;display:grid;place-items:center}
+.zurueck[disabled]{opacity:.3}
+
+.hinweis{font-family:var(--mono);font-size:12px;color:#98A0AA;line-height:1.65;margin:16px 2px}
+.leerzustand{text-align:center;padding:38px 10px}
+.leerzustand h2{font-family:var(--display);font-size:26px;text-transform:uppercase;margin:0 0 8px}
+.leerzustand p{color:#98A0AA;font-size:14px;margin:0 auto;max-width:34ch}
+.feld{display:flex;gap:8px;margin-top:12px}
+.feld input{flex:1;padding:13px 14px;border-radius:5px;border:1px solid var(--linie);
+  background:var(--zinn);color:var(--deckel);min-width:0}
+.feld input::placeholder{color:#7C848E}
+.feld button{padding:0 20px;border-radius:5px;background:var(--deckel);color:var(--tinte);font-weight:800}
+.abschnitt{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:#98A0AA;margin:26px 2px 6px;padding-top:16px;border-top:1px solid var(--linie)}
+.abschnitt.oben{border-top:none;padding-top:0;margin-top:18px}
+.teiln{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.teiln button{padding:9px 14px;border-radius:999px;border:1px solid var(--linie);
+  font-size:14px;font-weight:600;color:#98A0AA}
+.teiln button[data-an="1"]{background:var(--deckel);border-color:var(--deckel);color:var(--tinte)}
+.mini{font-family:var(--mono);font-size:11px;color:var(--tinte-weich)}
+.zahlfeld{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:12px 0;border-bottom:1px solid var(--linie)}
+.zahlfeld input[type=number]{width:82px;padding:9px;text-align:center;border-radius:5px;
+  border:1px solid var(--linie);background:var(--zinn);color:var(--deckel);font-family:var(--mono)}
+.zahlfeld p{margin:2px 0 0;font-size:12px;color:#98A0AA;max-width:38ch}
+.zahlfeld strong{font-size:15px}
+.entfernen{color:#D98A7E;font-size:13px;font-weight:600;padding:6px 8px}
+.schalter{display:flex;gap:8px;margin-top:6px}
+.schalter button{flex:1;padding:11px;border-radius:5px;border:1px solid var(--linie);
+  font-size:14px;font-weight:700;color:#98A0AA}
+.schalter button[data-an="1"]{background:var(--deckel);border-color:var(--deckel);color:var(--tinte)}
+
+.fazit{background:var(--deckel);color:var(--tinte);border-radius:5px;padding:20px 18px;margin:14px 0;
+  position:relative;box-shadow:0 2px 0 var(--deckel-tief),0 6px 14px rgba(0,0,0,.28)}
+.fazit::after{content:'';position:absolute;inset:6px;border:1px solid var(--rand);border-radius:3px;pointer-events:none}
+.fazit > *{position:relative;z-index:1}
+.fazit h3{font-family:var(--display);font-size:24px;text-transform:uppercase;margin:0;letter-spacing:.02em}
+.fazit .datum{font-family:var(--mono);font-size:11px;color:var(--tinte-weich);letter-spacing:.1em;margin:2px 0 16px}
+.bilanz{display:flex;gap:14px;flex-wrap:wrap;padding:12px 0;border-top:1px solid var(--rand);
+  border-bottom:1px solid var(--rand);margin-bottom:12px}
+.bilanz div{flex:1;min-width:66px}
+.bilanz b{display:block;font-family:var(--mono);font-size:20px;font-weight:500;color:var(--malz)}
+.bilanz span{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--tinte-weich)}
+.frow{padding:10px 0;border-bottom:1px solid rgba(185,172,140,.5)}
+.fhaupt{display:flex;align-items:center;gap:10px}
+.fmeta{display:flex;gap:12px;flex-wrap:wrap;margin-top:5px;font-family:var(--mono);
+  font-size:10.5px;letter-spacing:.04em;color:var(--tinte-weich)}
+.fmeta .teilzeit{color:var(--malz);font-weight:500}
+.frow .fname{flex:1;font-weight:800;font-size:16px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.frow .fbe{font-family:var(--mono);font-size:13px;color:var(--malz);min-width:60px;text-align:right}
+.frow .fneu{font-family:var(--mono);font-size:15px;min-width:52px;text-align:right}
+.orden{margin-top:14px;display:grid;gap:9px}
+.orden div{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.orden .titel{font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--tinte-weich);min-width:100px}
+.orden .wer{font-weight:800}
+.orden .wert{font-family:var(--mono);font-size:12px;color:var(--tinte-weich)}
+
+.typenschild{font-family:var(--mono);font-size:11px;color:#8F97A1;margin:18px 0 0;
+  display:grid;grid-template-columns:auto 1fr;gap:3px 14px;line-height:1.6}
+.typenschild b{color:#C4CAD2;font-weight:500}
+.para{margin:24px 0 0}
+.para h2{display:flex;gap:10px;align-items:baseline;margin:0 0 9px;font-weight:400;
+  font-family:var(--display);font-size:18px;text-transform:uppercase;letter-spacing:.03em}
+.para h2 i{font-style:normal;font-family:var(--mono);font-size:13px;color:var(--malz);flex:0 0 auto}
+.para p{margin:0 0 10px;font-size:14.5px;line-height:1.6;color:#C8CED6}
+.para ul{margin:0 0 10px;padding-left:19px;font-size:14.5px;line-height:1.6;color:#C8CED6}
+.para li{margin-bottom:7px}
+.para li::marker{color:var(--malz)}
+.para strong{color:var(--deckel)}
+.warnung{border-left:3px solid var(--malz);background:rgba(184,117,19,.09);
+  padding:13px 15px;margin:0 0 10px;border-radius:0 5px 5px 0}
+.warnung p:last-child{margin-bottom:0}
+.info{width:100%;border-collapse:collapse;margin:4px 0 10px;font-size:14px}
+.info td{padding:9px 10px 9px 0;border-bottom:1px solid rgba(82,91,102,.45);
+  vertical-align:top;color:#C8CED6;line-height:1.5}
+.info td:last-child{padding-right:0}
+.info td.wert{font-family:var(--mono);color:var(--malz);white-space:nowrap;width:1%}
+.info td.frage{font-weight:800;color:var(--deckel);width:42%}
+.deckelbeispiele{display:grid;gap:10px;margin:2px 0 4px}
+.dbsp{background:var(--deckel);color:var(--tinte);border-radius:5px;padding:12px 14px;
+  position:relative;box-shadow:0 2px 0 var(--deckel-tief)}
+.dbsp::after{content:'';position:absolute;inset:4px;border:1px solid var(--rand);
+  border-radius:3px;pointer-events:none}
+.dbsp > *{position:relative;z-index:1}
+.dbsp-titel{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--tinte-weich);margin-bottom:8px}
+.dbsp-bild{display:flex;align-items:center;flex-wrap:wrap;gap:2px 4px;font-family:var(--display);
+  font-size:19px;text-transform:uppercase;letter-spacing:.02em;min-height:26px}
+.dbsp-strich{display:inline-flex;align-items:flex-end;margin-right:4px}
+.dbsp-strich svg{display:block}
+.dbsp-txt{font-family:var(--body);font-size:13px;line-height:1.5;color:var(--tinte-weich);margin-top:9px}
+.formel{display:grid;gap:12px;margin:6px 0 4px;padding:14px 15px;border-radius:5px;
+  background:rgba(184,117,19,.07);border-left:3px solid var(--malz)}
+.fz{display:grid;gap:3px}
+.fl{font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--malz)}
+.fm{font-family:var(--mono);font-size:14px;color:var(--deckel);line-height:1.5;
+  overflow-x:auto;white-space:nowrap;padding-bottom:2px;scrollbar-width:none}
+.fm::-webkit-scrollbar{display:none}
+.fm sub{font-size:.72em}
+.fm sup{font-size:.72em}
+.fk{font-size:13px;line-height:1.5;color:#A9B1BB}
+.siegel{width:132px;height:132px;border-radius:50%;border:2px solid var(--malz);color:var(--malz);
+  display:grid;place-content:center;text-align:center;transform:rotate(-8deg);
+  margin:34px auto 8px;padding:10px;opacity:.85}
+.siegel .gross{font-family:var(--display);font-size:23px;line-height:.95;text-transform:uppercase}
+.siegel .klein{font-family:var(--mono);font-size:8px;letter-spacing:.13em;text-transform:uppercase;
+  margin-top:6px;line-height:1.7}
+
+.pille{display:flex;align-items:center;gap:10px;width:100%;padding:11px 16px;border-radius:999px;
+  background:var(--malz);color:#1B1B1B}
+.pille-name{flex:1;text-align:left;font-weight:800;font-size:15px}
+.pille-be{font-family:var(--mono);font-size:11.5px;opacity:.75}
+.pille-pfeil{font-size:13px;opacity:.7;width:12px}
+.wahl-auf{margin-top:10px}
+.pzeile{display:flex;align-items:center;gap:10px;padding:11px 2px;
+  border-bottom:1px solid rgba(82,91,102,.55)}
+.pinfo{flex:1;min-width:0}
+.pname{display:block;width:100%;text-align:left;font-weight:800;font-size:17px;color:var(--deckel);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  text-decoration:underline;text-decoration-color:rgba(185,172,140,.4);text-underline-offset:4px}
+.pmeta{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:3px;
+  font-family:var(--mono);font-size:10.5px;color:#8A929C;letter-spacing:.04em}
+.pmeta .pbe{color:var(--malz)}
+.pzeile .plus{width:48px;height:48px;font-size:24px}
+.pzeile .zurueck{width:34px;height:34px;font-size:15px;border-color:rgba(185,172,140,.55);color:#8A929C}
+.weiter{display:flex;gap:8px;margin-top:14px}
+.weiter button{flex:1;padding:12px 6px;border-radius:5px;border:1px dashed var(--malz);
+  color:var(--malz);font-size:13px;font-weight:700}
+.weiter button i{font-style:normal;margin-right:5px;font-size:15px}
+.klapp{margin-top:16px;border-top:1px solid var(--linie);padding-top:12px}
+.klapp summary{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:#98A0AA;cursor:pointer;list-style:none}
+.klapp summary::-webkit-details-marker{display:none}
+.klapp summary::before{content:'+ ';color:var(--malz)}
+.klapp[open] summary::before{content:'– '}
+.rang{display:flex;align-items:center;gap:7px;padding:10px 2px;
+  border-bottom:1px solid rgba(82,91,102,.55)}
+.rang.ruht{opacity:.5}
+.rnr{font-family:var(--display);font-size:19px;color:#6C7580;min-width:20px;text-align:center}
+.rnr.eins{color:var(--malz)}
+.rmitte{flex:1;min-width:0}
+.rname{font-weight:800;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rmeta{font-family:var(--mono);font-size:10px;color:#8A929C;letter-spacing:.04em;margin-top:2px}
+.relo{font-family:var(--mono);font-size:19px;min-width:44px;text-align:right}
+.weZeile{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:13px 2px;
+  border-bottom:1px solid rgba(82,91,102,.55)}
+.wztext{flex:1;min-width:0}
+.wzname{font-weight:800;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wzmeta{font-family:var(--mono);font-size:10px;color:#8A929C;letter-spacing:.04em;margin-top:3px}
+.wzsieger{font-family:var(--mono);font-size:10px;color:var(--malz);letter-spacing:.04em;margin-top:2px}
+.wzpfeil{color:#6C7580;font-size:20px;flex:0 0 auto}
+
+.delta.klickbar{cursor:pointer;text-decoration:underline;text-decoration-style:dotted;
+  text-underline-offset:3px}
+.rmitte{flex:1;min-width:0;text-align:left}
+.relo{font-family:var(--mono);font-size:19px;min-width:44px;text-align:right;color:var(--deckel);
+  text-decoration:underline;text-decoration-style:dotted;text-underline-offset:4px;
+  text-decoration-color:rgba(233,225,205,.35)}
+.erkl{font-size:14.5px;line-height:1.6;color:#C8CED6;margin:0 0 11px}
+.erkl b{color:var(--deckel)}
+.erkl i{font-style:italic}
+table.rechnung{width:100%;border-collapse:collapse;margin:6px 0 12px;font-size:13px}
+table.rechnung th{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;
+  color:#8A929C;font-weight:400;padding:0 0 6px;text-align:left}
+table.rechnung td{padding:8px 0;border-top:1px solid rgba(82,91,102,.55);color:#C8CED6}
+table.rechnung .z{text-align:right;font-family:var(--mono);padding-left:8px;white-space:nowrap}
+table.rechnung td.gut{color:#8DC29A}
+table.rechnung td.schlecht{color:#E09084}
+.summe{display:flex;justify-content:space-between;align-items:baseline;padding:11px 0;
+  border-top:1px solid var(--linie);font-size:14px;color:#C8CED6}
+.summe b{font-family:var(--mono);font-size:18px;color:var(--deckel)}
+.summe b.gut{color:#8DC29A}
+.summe b.schlecht{color:#E09084}
+.tagzeile{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:11px 0;
+  border-bottom:1px solid rgba(82,91,102,.55)}
+.tzn{flex:1;font-weight:700;font-size:15px}
+.tzbe{font-family:var(--mono);font-size:12px;color:var(--malz)}
+.tzp{color:#6C7580;font-size:18px}
+.pkopf{display:flex;align-items:baseline;gap:12px;padding:14px 2px 4px;
+  border-bottom:1px solid var(--linie)}
+.pkname{flex:1;font-family:var(--display);font-size:28px;text-transform:uppercase;letter-spacing:.02em}
+.pkelo{font-family:var(--mono);font-size:28px;color:var(--malz)}
+.kacheln{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin-top:14px;
+  background:rgba(82,91,102,.5);border:1px solid rgba(82,91,102,.5);border-radius:5px;overflow:hidden}
+.kacheln div{background:var(--zinn-tief);padding:11px 6px;text-align:center}
+.kacheln b{display:block;font-family:var(--mono);font-size:17px;color:var(--deckel)}
+.kacheln span{font-family:var(--mono);font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:#8A929C;display:block;margin-top:3px;line-height:1.3}
+.ozeile{display:flex;justify-content:space-between;align-items:baseline;padding:10px 2px;
+  border-bottom:1px solid rgba(82,91,102,.55);font-size:15px}
+.ozeile b{font-family:var(--mono);color:var(--malz)}
+
+.zwkopf{padding:14px 2px 4px;border-bottom:1px solid var(--linie)}
+.zwtitel{font-family:var(--display);font-size:26px;text-transform:uppercase;letter-spacing:.02em}
+.zwdatum{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--malz);margin-top:3px}
+.tagblock{margin-bottom:16px;padding:12px 13px;border-radius:5px;border:1px solid var(--linie)}
+.tagblock.laeuft{border-color:var(--malz);background:rgba(184,117,19,.06)}
+.tagkopf{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  padding-bottom:9px;margin-bottom:4px;border-bottom:1px solid rgba(82,91,102,.6)}
+.tagkopf span:first-child{font-family:var(--mono);font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--deckel);flex:0 0 auto}
+.tagorte{font-family:var(--mono);font-size:9.5px;color:#8A929C;text-align:right;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.tagrang{display:flex;align-items:center;gap:9px;padding:7px 0}
+.tagrang .trn{width:13px;color:var(--malz);font-size:12px}
+.tagrang .trname{flex:1;min-width:0;font-size:15px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.tagrang.sieger .trname{font-weight:800;color:var(--malz)}
+.tagrang .trbe{font-family:var(--mono);font-size:12px;color:#C8CED6;min-width:56px;text-align:right}
+
+.rundeknopf{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;margin-top:9px;
+  padding:13px;border-radius:5px;background:var(--deckel);color:var(--tinte);
+  font-weight:800;font-size:15px;letter-spacing:.01em}
+.rundeknopf span{font-family:var(--mono);font-size:12px;opacity:.6;font-weight:400}
+.rundeknopf:active{transform:translateY(1px)}
+.rundeknopf[disabled]{opacity:.4}
+.rundezurueck{display:block;width:100%;margin-top:7px;padding:9px;border-radius:5px;
+  border:1px solid var(--linie);color:var(--malz);font-family:var(--mono);font-size:11.5px;
+  letter-spacing:.04em}
+
+.rundeknopf.warnung2{background:rgba(184,117,19,.16);border:1px solid var(--malz);
+  color:var(--malz);font-size:13.5px;font-weight:700}
+.zuletzt{margin-top:7px;font-family:var(--mono);font-size:10.5px;color:#8A929C;
+  letter-spacing:.03em;text-align:center}
+.werbin{margin:14px 0 2px;padding:11px 13px;border-radius:5px;border:1px dashed var(--malz)}
+.werbin > span{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--malz);margin-bottom:2px}
+.vzeile{display:flex;align-items:baseline;gap:9px;padding:7px 0;
+  border-bottom:1px solid rgba(82,91,102,.4);font-size:13px}
+.vzeile.durch .vtxt{text-decoration:line-through;opacity:.55}
+.vzeit{font-family:var(--mono);font-size:11px;color:var(--malz);flex:0 0 auto}
+.vtxt{flex:1;min-width:0;color:#C8CED6}
+.vwer{font-family:var(--mono);font-size:10px;color:#8A929C;flex:0 0 auto}
+
+.kettennavi{display:flex;align-items:center;gap:12px;margin:12px 0 2px;padding:6px 4px}
+.kettennavi button{width:38px;height:38px;flex:0 0 auto;border-radius:5px;border:1px solid var(--linie);
+  color:#C9D0D8;font-size:20px;line-height:1;display:grid;place-items:center}
+.kettennavi button[disabled]{opacity:.28}
+.kpunkte{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap}
+.kpunkt{width:7px;height:7px;border-radius:50%;background:#525B66;flex:0 0 auto}
+.kpunkt.an{background:var(--malz);transform:scale(1.45)}
+.kpunkt.neuertag{margin-left:10px;position:relative}
+.kpunkt.neuertag::before{content:'';position:absolute;left:-6px;top:-3px;width:1px;height:13px;
+  background:#525B66}
+.rueckband{display:flex;align-items:center;gap:10px;margin-top:9px;padding:10px 12px;border-radius:5px;
+  background:rgba(184,117,19,.13);border:1px solid var(--malz);flex-wrap:wrap}
+.rueckband > span{flex:1;min-width:0;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--malz)}
+.rueckband button{flex:0 0 auto;padding:7px 12px;border-radius:5px;background:var(--malz);
+  color:#1B1B1B;font-size:12.5px;font-weight:700}
+.pname.nurlesen{text-decoration:none;color:#B6BDC6}
+
+.sicherfeld{width:100%;padding:11px;border-radius:5px;border:1px solid var(--linie);
+  background:var(--zinn-tief);color:#C8CED6;font-family:var(--mono);font-size:11px;
+  resize:vertical;margin-top:4px}
+.sicherhinweis{margin-top:16px;padding:11px 13px;border-radius:5px;background:rgba(184,117,19,.14);
+  border:1px solid var(--malz);color:var(--tinte);font-size:13.5px;font-weight:600;line-height:1.5}
+
+.erklaerlink{display:block;width:100%;margin-top:11px;padding:8px;border-radius:5px;
+  border:1px solid var(--linie);color:#98A0AA;font-family:var(--mono);font-size:11px;
+  letter-spacing:.05em}
+.ordenzeile{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;width:100%;text-align:left;
+  padding:3px 0}
+.ordenzeile .titel{font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--tinte-weich);min-width:100px;text-decoration:underline;
+  text-decoration-style:dotted;text-underline-offset:3px}
+.ordenzeile .wer{font-weight:800}
+.ordenzeile .wert{font-family:var(--mono);font-size:12px;color:var(--tinte-weich)}
+.bekachel{flex:1;min-width:66px;text-align:left}
+.bekachel b{display:block;font-family:var(--mono);font-size:20px;font-weight:500;color:var(--malz)}
+.bekachel span{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--tinte-weich);text-decoration:underline;text-decoration-style:dotted;
+  text-underline-offset:2px}
+.reglerfrage{font-size:15px;font-weight:800;color:var(--deckel);padding:0}
+.reglerfrage i{font-style:normal;color:var(--malz);font-family:var(--mono);font-size:12px;
+  border:1px solid var(--malz);border-radius:50%;padding:0 5px;margin-left:5px}
+
+.sortreihe{margin:14px 0 10px}
+.sortreihe > span{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:#8A929C;margin-bottom:7px}
+.rangkopf{display:flex;align-items:baseline;gap:8px;padding:0 2px 7px;
+  border-bottom:1px solid var(--linie)}
+.rangkopf span,.rangkopf button{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:#8A929C}
+.rangkopf .rknr{width:20px;flex:0 0 auto}
+.rangkopf .rkname{flex:1;text-align:left}
+.rangkopf .rkwert{width:54px;text-align:right;flex:0 0 auto}
+.rangkopf .rkelo{min-width:96px;text-align:right;flex:0 0 auto}
+.rangkopf i{font-style:normal;color:var(--malz)}
+.rang .rwert{width:54px;flex:0 0 auto;text-align:right;font-family:var(--mono);font-size:15px;
+  color:var(--malz)}
+.relospalte{flex:0 0 auto;display:flex;align-items:center;justify-content:flex-end;gap:5px;
+  min-width:96px}
+.relo2{font-family:var(--mono);font-size:16px;color:var(--deckel)}
+
+.blattzurueck{display:inline-block;margin:0 0 8px;padding:5px 10px 5px 0;color:#9AA2AC;
+  font-size:13.5px}
+
+.blende{position:fixed;inset:0;background:rgba(20,23,27,.85);z-index:50;display:grid;place-items:end center}
+.blatt{width:100%;max-width:640px;max-height:92vh;overflow-y:auto;
+  padding:8px 14px calc(20px + env(safe-area-inset-bottom))}
+.karte{background:var(--zinn);border-top:3px solid var(--malz);border-radius:8px;padding:20px 16px 18px}
+.karte h3{font-family:var(--display);font-size:23px;text-transform:uppercase;margin:0 0 2px;letter-spacing:.02em}
+.vorschau{width:100%;max-height:180px;object-fit:cover;border-radius:5px;margin:12px 0;
+  border:1px solid var(--linie);display:block}
+.rundknopf{width:44px;height:44px;flex:0 0 auto;border-radius:5px;border:1px solid var(--linie);
+  font-size:22px;line-height:1;display:grid;place-items:center;color:var(--deckel)}
+.sortzeile{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--linie)}
+.sortzeile .sname{flex:1;min-width:0;font-weight:600;font-size:15px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sortzeile .sname em{font-style:normal;font-family:var(--mono);font-size:11px;color:#8F97A1;
+  display:block;letter-spacing:.05em}
+.sortzeile .szahl{font-family:var(--mono);font-size:21px;color:var(--malz);min-width:38px;text-align:center}
+.sortzeile.aus .szahl{color:#6F7883}
+.zufuegen{margin-top:14px;padding:12px 13px;border-radius:5px;border:1px dashed var(--linie)}
+.mini-chip{padding:6px 11px;font-size:13px}
+.neuzugang{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--malz);margin-left:4px;vertical-align:1px}
+.trefferzeile{display:flex;align-items:center;gap:10px;padding:12px 0 6px;
+  border-top:1px solid var(--linie);margin-top:8px}
+.trefferzeile select{flex:1;min-width:0;padding:10px;border-radius:5px;border:1px solid var(--linie);
+  background:var(--zinn-tief);color:var(--deckel)}
+.sicher{display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:.12em;
+  text-transform:uppercase;padding:3px 8px;border-radius:3px;margin-top:10px}
+.sicher.hoch{background:rgba(61,107,69,.22);color:#8DC29A}
+.sicher.mittel{background:rgba(184,117,19,.22);color:#E0A254}
+.sicher.niedrig{background:rgba(158,50,38,.22);color:#E09084}
+.laedt{text-align:center;padding:26px 0}
+.laedt b{font-family:var(--display);font-size:20px;text-transform:uppercase;display:block;margin-bottom:6px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:26px;z-index:60;
+  background:var(--deckel);color:var(--tinte);padding:11px 18px;border-radius:5px;
+  font-weight:700;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.4);max-width:88vw;text-align:center}
+</style>
+</head>
+<body>
+
+<header class="kopf" id="kopf"></header>
+<div class="raute"></div>
+
+<main class="wrap" id="app"><p class="hinweis">Stand wird geladen …</p></main>
+<input type="file" accept="image/*" id="kamera" hidden>
+
+<script>
+const FASSUNG = '2026-09-04 · G1 (GitHub)';
+
+/* ====== EINSTELLUNGEN – hier anpassen, falls sich Namen ändern ====== */
+const GH_BESITZER = 'PyFox1';
+const GH_REPO     = 'bubidos-daten';
+const GH_DATEI    = 'stand.json';
+const GH_ZWEIG    = 'main';
+/* =================================================================== */
+
+const TOKEN_KEY = 'bubidos-token';
+const SPIEGEL_KEY = 'bubidos-spiegel';
+const ICH_KEY = 'bubidos-ich';
+
+const GETRAENKE_PLATZ = null;
+
+/* ---------- lokaler Kleinkram (Token, Gerätekennung, Spiegel) ---------- */
+const lokal = {
+  lesen(k){ try{ return window.localStorage.getItem(k); }catch(e){ return this._n && this._n[k] || null; } },
+  schreiben(k,v){ try{ window.localStorage.setItem(k,v); }
+    catch(e){ this._n = this._n || {}; this._n[k] = v; } },
+  loeschen(k){ try{ window.localStorage.removeItem(k); }
+    catch(e){ if(this._n) delete this._n[k]; } }
+};
+
+let token = null;
+let gid = null;
+let ghSha = null;
+let ghFehler = null;
+
+function b64enc(str){
+  const bytes = new TextEncoder().encode(str);
+  let bin = '', teil = 0x8000;
+  for(let i = 0; i < bytes.length; i += teil)
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + teil));
+  return btoa(bin);
+}
+function b64dec(b64){
+  const bin = atob(String(b64).replace(/\s/g, ''));
+  const bytes = new Uint8Array(bin.length);
+  for(let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+
+const GH_URL = () => 'https://api.github.com/repos/' + GH_BESITZER + '/' + GH_REPO
+  + '/contents/' + GH_DATEI + '?ref=' + GH_ZWEIG;
+const GH_SCHREIB = () => 'https://api.github.com/repos/' + GH_BESITZER + '/' + GH_REPO
+  + '/contents/' + GH_DATEI;
+const GH_VERLAUF = () => 'https://github.com/' + GH_BESITZER + '/' + GH_REPO
+  + '/commits/' + GH_ZWEIG + '/' + GH_DATEI;
+
+function ghKopf(){
+  return {'Authorization':'Bearer ' + token, 'Accept':'application/vnd.github+json',
+          'X-GitHub-Api-Version':'2022-11-28'};
+}
+
+const STAERKE = [
+  {k:'leicht', n:'Leicht',      kurz:'L',  v:3.0},
+  {k:'normal', n:'Normal',      kurz:'',   v:5.0},
+  {k:'stark',  n:'Stark',       kurz:'S',  v:7.0},
+  {k:'af',     n:'Alkoholfrei', kurz:'AF', v:0}
+];
+const GROESSE = [
+  {k:'033', n:'0,33', l:0.33},
+  {k:'05',  n:'0,5',  l:0.5},
+  {k:'10',  n:'1,0',  l:1.0}
+];
+const S = k => STAERKE.find(x => x.k === k);
+const Gr = k => GROESSE.find(x => x.k === k);
+const teile = key => { const t = String(key||'').split(':'); return {s:S(t[0]), g:Gr(t[1])}; };
+const beVon = key => { const {s,g} = teile(key); return s && g ? g.l*s.v/2.5 : 0; };
+const literVon = key => { const {g} = teile(key); return g ? g.l : 0; };
+const KOMBIS = (function(){ const a = [];
+  STAERKE.forEach(s => GROESSE.forEach(g => a.push(s.k + ':' + g.k))); return a; })();
+function nameVon(key){
+  const {s,g} = teile(key);
+  if(!s || !g) return '—';
+  if(s.k === 'af') return 'Alkoholfrei ' + g.n;
+  if(s.k === 'normal' && g.k === '05') return 'Halbe';
+  if(s.k === 'normal' && g.k === '10') return 'Maß';
+  return s.n + ' ' + g.n;
+}
+function kurzVon(key){
+  const {s,g} = teile(key);
+  if(!s || !g) return '—';
+  if(s.k === 'af') return 'AF';
+  if(s.k === 'normal' && g.k === '05') return 'Halbe';
+  if(s.k === 'normal' && g.k === '10') return 'Maß';
+  return (s.kurz || 'N') + ' ' + g.n;
+}
+const ALT_NEU = {halbe:'normal:05', pils:'normal:033', weizen:'normal:05',
+                 ipa:'stark:033', mass:'normal:10', af:'af:05'};
+const zaehlung = gs => { const z = {}; KOMBIS.forEach(k => z[k] = 0);
+  (gs || []).forEach(k => { if(z[k] !== undefined) z[k]++; }); return z; };
+const ausZaehlung = z => { const a = []; KOMBIS.forEach(k => {
+  for(let i = 0; i < (z[k] || 0); i++) a.push(k); }); return a; };
+const mischung = gs => { const z = zaehlung(gs);
+  return KOMBIS.filter(k => z[k] > 0).map(k => z[k] + '\u00d7 ' + kurzVon(k)).join(' \u00b7 '); };
+
+/* ---------- Zustand ---------- */
+let ansicht = null;
+let fazitOffen = null, frage = null, foto = null, blatt = null;
+let wechsler = false, detailId = null, personId = null;
+let rechnung = null, punkteOffen = false, letzteRunde = null;
+let rundeFrage = false, benennen = false, entsperrt = null;
+let exportiert = false, sicherBlatt = null, infoZiel = null, erklaer = null;
+let stapel = [];
+let vorwahl = null;
+
+let state = {
+  spieler: [], we: [], einst: {k:40, deckel:0}, geraete: {}, sortier:'elo',
+  aktivWe:null, aktivTag:null, aktivOrt:null, wahlS:'normal', wahlG:'05',
+  wahlOffen:false, stand:0
+};
+const wahlKey = () => state.wahlS + ':' + state.wahlG;
+let neuKombi = {s:'normal', g:'05'};
+
+function standDaten(){
+  return {spieler:state.spieler, we:state.we, einst:state.einst, geraete:state.geraete || {},
+          sortier:state.sortier || 'elo',
+          aktivWe:state.aktivWe, aktivTag:state.aktivTag, aktivOrt:state.aktivOrt,
+          stand:state.stand};
+}
+
+function migrieren(we){
+  (we || []).forEach(w => (w.tage || []).forEach(t => (t.orte || []).forEach(o => {
+    Object.keys(o.getraenke || {}).forEach(id => {
+      o.getraenke[id] = (o.getraenke[id] || []).map(k => ALT_NEU[k] || k);
+    });
+  })));
+  return we;
+}
+function uebernehmen(d){
+  state.spieler = d.spieler || [];
+  state.we = migrieren(d.we || []);
+  state.einst = Object.assign({k:40, deckel:0}, d.einst || {});
+  state.geraete = d.geraete || {};
+  state.sortier = d.sortier || 'elo';
+  state.aktivWe = d.aktivWe === undefined ? null : d.aktivWe;
+  state.aktivTag = d.aktivTag === undefined ? null : d.aktivTag;
+  state.aktivOrt = d.aktivOrt === undefined ? null : d.aktivOrt;
+  state.stand = d.stand || 0;
+}
+
+/* ---------- Gerätekennung ---------- */
+function ichLaden(){
+  gid = lokal.lesen(ICH_KEY);
+  if(!gid){
+    gid = 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+    lokal.schreiben(ICH_KEY, gid);
+  }
+}
+function geraetSichern(){
+  if(!gid) return false;
+  if(!state.geraete) state.geraete = {};
+  if(state.geraete[gid]) return false;
+  const genutzt = Object.keys(state.geraete).map(x => state.geraete[x].nr || 0);
+  let nr = 1; while(genutzt.indexOf(nr) >= 0) nr++;
+  state.geraete[gid] = {nr, name:null};
+  return true;
+}
+function geraetName(id){
+  const g = state.geraete && state.geraete[id];
+  if(!g) return null;
+  return g.name || ('Gerät ' + g.nr);
+}
+const ichName = () => geraetName(gid);
+async function ichSetzen(name){
+  if(!gid) return;
+  if(!state.geraete) state.geraete = {};
+  if(!state.geraete[gid]) geraetSichern();
+  state.geraete[gid].name = name || null;
+  await sichern({sofort:true});
+}
+
+const zeitKurz = t => { const d = new Date(t);
+  return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); };
+function vorWie(t){
+  const m = Math.floor((Date.now()-t)/60000);
+  if(m < 1) return 'gerade eben';
+  if(m < 60) return 'vor ' + m + ' Min';
+  const h = Math.floor(m/60);
+  return 'vor ' + h + ' Std ' + (m%60 ? (m%60) + ' Min' : '');
+}
+function tagebuch(ort, eintrag){
+  if(!ort.log) ort.log = [];
+  ort.log.push(Object.assign({t:Date.now(), gid:gid || null}, eintrag));
+  if(ort.log.length > 40) ort.log = ort.log.slice(-40);
+}
+const letzteRundeIm = ort => {
+  const l = (ort.log || []).filter(x => x.art === 'runde');
+  return l.length ? l[l.length-1] : null;
+};
+
+/* ---------- Speicher: GitHub ---------- */
+function spiegelAblegen(){
+  try{ lokal.schreiben(SPIEGEL_KEY, JSON.stringify({t:Date.now(), daten:standDaten()})); }catch(e){}
+}
+function spiegelLesen(){
+  try{ return JSON.parse(lokal.lesen(SPIEGEL_KEY)).daten; }catch(e){ return null; }
+}
+
+async function laden(){
+  if(!token) return false;
+  try{
+    const r = await fetch(GH_URL(), {headers:ghKopf(), cache:'no-store'});
+    if(r.status === 404){ ghSha = null; ghFehler = null; return 'leer'; }
+    if(r.status === 401 || r.status === 403){ ghFehler = 'token'; return false; }
+    if(!r.ok){ ghFehler = 'netz'; return false; }
+    const j = await r.json();
+    ghSha = j.sha;
+    ghFehler = null;
+    uebernehmen(JSON.parse(b64dec(j.content)));
+    spiegelAblegen();
+    return true;
+  }catch(e){ ghFehler = 'netz'; return false; }
+}
+
+let schreibTimer = null, schreibtGerade = false, nochmalSchreiben = false;
+
+async function schreiben(){
+  if(schreibtGerade){ nochmalSchreiben = true; return; }
+  schreibtGerade = true;
+  try{
+    const koerper = {
+      message: 'Stand ' + new Date().toISOString().slice(0,16).replace('T',' ')
+        + (ichName() ? ' · ' + ichName() : ''),
+      content: b64enc(JSON.stringify(standDaten(), null, 1)),
+      branch: GH_ZWEIG
+    };
+    if(ghSha) koerper.sha = ghSha;
+    let r = await fetch(GH_SCHREIB(), {method:'PUT', headers:ghKopf(), body:JSON.stringify(koerper)});
+    if(r.status === 409 || r.status === 422){
+      // Jemand anderes war schneller – dessen Fassung steht bereits als Commit in der Historie
+      const vorher = standDaten();
+      await laden();
+      uebernehmen(vorher);
+      state.stand = Date.now();
+      koerper.content = b64enc(JSON.stringify(standDaten(), null, 1));
+      koerper.sha = ghSha;
+      r = await fetch(GH_SCHREIB(), {method:'PUT', headers:ghKopf(), body:JSON.stringify(koerper)});
+      toast('Jemand hat gleichzeitig geändert – beides steht in der Historie');
+    }
+    if(r.status === 401 || r.status === 403){ ghFehler = 'token'; zeichnen(); return; }
+    if(!r.ok){ ghFehler = 'netz'; toast('Nicht gespeichert – Verbindung prüfen'); zeichnen(); return; }
+    const j = await r.json();
+    ghSha = j.content && j.content.sha ? j.content.sha : ghSha;
+    ghFehler = null;
+    spiegelAblegen();
+  }catch(e){
+    ghFehler = 'netz'; toast('Nicht gespeichert – Verbindung prüfen');
+  }finally{
+    schreibtGerade = false;
+    if(nochmalSchreiben){ nochmalSchreiben = false; schreiben(); }
+  }
+}
+
+async function sichern(opt){
+  state.stand = Date.now();
+  spiegelAblegen();
+  if(!token) return;
+  if(opt && opt.sofort){
+    clearTimeout(schreibTimer); schreibTimer = null;
+    await schreiben();
+    return;
+  }
+  clearTimeout(schreibTimer);
+  schreibTimer = setTimeout(schreiben, 2500);
+}
+
+setInterval(async () => {
+  if(document.hidden || !token || foto || blatt || schreibTimer || schreibtGerade) return;
+  if(document.activeElement && /INPUT|SELECT/.test(document.activeElement.tagName)) return;
+  try{
+    const r = await fetch(GH_URL(), {headers:ghKopf(), cache:'no-store'});
+    if(!r.ok) return;
+    const j = await r.json();
+    if(j.sha === ghSha) return;
+    ghSha = j.sha;
+    const d = JSON.parse(b64dec(j.content));
+    if((d.stand || 0) > (state.stand || 0)){ uebernehmen(d); spiegelAblegen(); zeichnen(); }
+  }catch(e){}
+}, 25000);
+
+/* ---------- Elo: gewertet wird der Tag ---------- */
+function berechnen(){
+  const R = {}; state.spieler.forEach(p => R[p.id] = 1500);
+  const weTeil = {}, tagTeil = {}, ortTeil = {}, siege = {}, beSumme = {}, hoch = {};
+  state.spieler.forEach(p => { weTeil[p.id] = 0; tagTeil[p.id] = 0; ortTeil[p.id] = 0;
+    siege[p.id] = 0; beSumme[p.id] = 0; hoch[p.id] = 1500; });
+  const log = [];
+  const wes = [...state.we].sort((a,b) => (a.datum||'').localeCompare(b.datum||'') || a.id - b.id);
+
+  wes.forEach(we => {
+    const vorher = Object.assign({}, R);
+    const tagLog = [];
+    const dabeiWe = new Set();
+
+    we.tage.forEach(tg => {
+      const ids = [...new Set(tg.orte.flatMap(o => Object.keys(o.getraenke)))]
+        .filter(id => R[id] !== undefined);
+      const be = {}, roh = {}, liter = {}, literAf = {}, anzahl = {}, orte = {}, sorten = {};
+      ids.forEach(id => {
+        let b = 0, l = 0, a = 0, o = 0;
+        const z = {}; KOMBIS.forEach(k => z[k] = 0);
+        let lAf = 0;
+        tg.orte.forEach(ort => {
+          if(!(id in ort.getraenke)) return;
+          o++;
+          (ort.getraenke[id] || []).forEach(k => {
+            b += beVon(k); a++; if(z[k] !== undefined) z[k]++;
+            if(beVon(k) > 0) l += literVon(k); else lAf += literVon(k);
+          });
+        });
+        literAf[id] = lAf;
+        roh[id] = b;
+        be[id] = state.einst.deckel > 0 ? Math.min(state.einst.deckel, b) : b;
+        liter[id] = l; anzahl[id] = a; orte[id] = o; sorten[id] = z;
+        tagTeil[id]++; ortTeil[id] += o; dabeiWe.add(id);
+      });
+
+      const n = ids.length, erg = {};
+      ids.forEach(a => {
+        let summe = 0;
+        if(n >= 2) ids.forEach(b => {
+          if(a === b) return;
+          const ges = be[a] + be[b];
+          const S = ges === 0 ? 0.5 : be[a]/ges;
+          const E = 1/(1 + Math.pow(10,(R[b]-R[a])/400));
+          summe += S - E;
+        });
+        erg[a] = {be:be[a], roh:roh[a], liter:liter[a], literAf:literAf[a] || 0,
+                  anzahl:anzahl[a], orte:orte[a],
+                  sorten:sorten[a], vorher:R[a], delta: n >= 2 ? state.einst.k/(n-1)*summe : 0};
+      });
+      ids.forEach(a => { R[a] = erg[a].vorher + erg[a].delta; erg[a].nachher = R[a];
+        beSumme[a] += be[a]; if(R[a] > hoch[a]) hoch[a] = R[a]; });
+      let best = -1;
+      ids.forEach(a => { if(be[a] > best) best = be[a]; });
+      if(best > 0) ids.forEach(a => { if(Math.abs(be[a] - best) < 1e-9) siege[a]++; });
+      tagLog.push({tag:tg, erg});
+    });
+
+    dabeiWe.forEach(id => weTeil[id]++);
+    log.push({we, vorher, nachher:Object.assign({}, R), tagLog});
+  });
+  return {R, weTeil, tagTeil, ortTeil, siege, beSumme, hoch, log};
+}
+
+function fazitVon(e){
+  const {we, vorher, nachher, tagLog} = e;
+  const ids = [...new Set(tagLog.flatMap(t => Object.keys(t.erg)))];
+  const orteGesamt = we.tage.reduce((s,t) => s + t.orte.length, 0);
+
+  const leute = ids.map(id => {
+    const p = state.spieler.find(x => String(x.id) === String(id));
+    const proTag = tagLog.filter(t => t.erg[id]).map(t => t.erg[id].be);
+    const be = proTag.reduce((s,x) => s + x, 0);
+    const liter = tagLog.reduce((s,t) => s + (t.erg[id] ? t.erg[id].liter : 0), 0);
+    const literAf = tagLog.reduce((s,t) => s + (t.erg[id] ? t.erg[id].literAf : 0), 0);
+    const anzahl = tagLog.reduce((s,t) => s + (t.erg[id] ? t.erg[id].anzahl : 0), 0);
+    const orte = tagLog.reduce((s,t) => s + (t.erg[id] ? t.erg[id].orte : 0), 0);
+    const z = {}; KOMBIS.forEach(k => z[k] = 0);
+    tagLog.forEach(t => { if(t.erg[id]) KOMBIS.forEach(k => z[k] += t.erg[id].sorten[k]); });
+    const schnitt = proTag.length ? be/proTag.length : 0;
+    const streuung = proTag.length > 1
+      ? Math.sqrt(proTag.reduce((s,x) => s + Math.pow(x-schnitt,2), 0)/proTag.length) : null;
+    return {id, name:p ? p.name : '—', be, liter, literAf, anzahl, orte, sorten:z, tage:proTag.length,
+            schnitt, streuung, delta:(nachher[id] || 0) - (vorher[id] || 0), nachher:nachher[id] || 1500};
+  }).sort((a,b) => b.be - a.be);
+
+  const gesBe = leute.reduce((s,l) => s + l.be, 0);
+  const gesLiter = leute.reduce((s,l) => s + l.liter, 0);
+  const gesAf = leute.reduce((s,l) => s + (l.literAf||0), 0);
+  const gesAnzahl = leute.reduce((s,l) => s + l.anzahl, 0);
+  const maxTage = tagLog.length;
+
+  const orden = [];
+  if(leute.length && gesBe > 0){
+    orden.push({t:'Deckelkönig', w:leute[0].name, v:zahl(leute[0].be,2)+' BE gesamt'});
+    if(maxTage > 1){
+      const schlag = [...leute].filter(l => l.tage > 0).sort((a,b) => b.schnitt - a.schnitt)[0];
+      if(schlag && schlag.schnitt > 0)
+        orden.push({t:'Schlagzahl', w:schlag.name, v:'Ø '+zahl(schlag.schnitt,2)+' BE je Tag'});
+    }
+    const auf = [...leute].sort((a,b) => b.delta - a.delta)[0];
+    if(auf && auf.delta > 0.05) orden.push({t:'Aufsteiger', w:auf.name, v:'+'+zahl(auf.delta)+' Punkte'});
+    const konst = leute.filter(l => l.streuung !== null && l.tage === maxTage && l.be > 0)
+                       .sort((a,b) => a.streuung - b.streuung)[0];
+    if(konst) orden.push({t:'Gleichmaß', w:konst.name, v:'Ø '+zahl(konst.schnitt,2)+' BE je Tag'});
+    const maxOrte = Math.max.apply(null, leute.map(l => l.orte));
+    const durch = leute.filter(l => l.tage === maxTage && l.orte === maxOrte);
+    if(durch.length && durch.length < leute.length && maxOrte > 1)
+      orden.push({t:'Durchhalter', w:durch.map(l => l.name).join(', '),
+                  v:maxOrte + ' von ' + orteGesamt + ' Locations, jeden Tag'});
+  }
+  return {leute, gesBe, gesLiter, gesAf, gesAnzahl, tage:maxTage, orteGesamt, orden, we};
+}
+
+/* ---------- Bausteine ---------- */
+function strichGruppe(anzahl, durch){
+  const s = [];
+  for(let i = 0; i < anzahl; i++){ const x = 3 + i*6; s.push('<line x1="'+x+'" y1="3" x2="'+x+'" y2="22"/>'); }
+  if(durch) s.push('<line x1="0.5" y1="22" x2="25.5" y2="3"/>');
+  const w = durch ? 27 : Math.max(6, 3 + anzahl*6);
+  return '<svg width="'+w+'" height="25" viewBox="0 0 '+w+' 25" aria-hidden="true" stroke="#22262B" '
+    + 'stroke-width="2.1" stroke-linecap="round">' + s.join('') + '</svg>';
+}
+function strichliste(n){
+  if(!n) return '<span class="leer">noch nichts</span>';
+  let out = '';
+  for(let i = 0; i < Math.floor(n/5); i++) out += strichGruppe(4, true);
+  if(n % 5) out += strichGruppe(n % 5, false);
+  return out;
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const zahl = (n,d) => (n || 0).toFixed(d === undefined ? 1 : d).replace('.',',');
+const deltaChip = (d, attrs) => {
+  if(d === null || d === undefined) return '<span class="delta dnull">–</span>';
+  const kl = d > 0.05 ? 'dplus' : d < -0.05 ? 'dminus' : 'dnull';
+  const txt = (d > 0 ? '+' : '') + zahl(d);
+  return attrs
+    ? '<button class="delta ' + kl + ' klickbar"' + attrs + ' aria-label="Rechenweg zu ' + txt + '">'
+      + txt + '</button>'
+    : '<span class="delta ' + kl + '">' + txt + '</span>';
+};
+const datumHuebsch = s => { if(!s) return ''; const t = s.split('-'); return t[2]+'.'+t[1]+'.'+t[0]; };
+function toast(text){
+  document.querySelectorAll('.toast').forEach(e => e.remove());
+  const d = document.createElement('div');
+  d.className = 'toast'; d.textContent = text; d.setAttribute('role','status');
+  document.body.appendChild(d);
+  setTimeout(() => d.remove(), 3000);
+}
+function gefahr(name, id, label, klasse){
+  const key = name + ':' + (id === null || id === undefined ? '' : id);
+  return '<button class="'+klasse+'" data-tu="'+name+'" data-id="'+(id === null || id === undefined ? '' : id)
+    + '" data-frage="1">' + (frage === key ? 'Sicher? Nochmal' : label) + '</button>';
+}
+
+/* ---------- Zählen ---------- */
+function aktuell(){
+  const we = state.we.find(w => w.id === state.aktivWe);
+  if(!we) return {};
+  const tg = we.tage.find(t => t.id === state.aktivTag) || we.tage[0];
+  if(!tg) return {we};
+  const ort = tg.orte.find(o => o.id === state.aktivOrt) || tg.orte[0];
+  return {we, tg, ort};
+}
+
+function kette(){
+  const we = state.we.find(w => w.id === state.aktivWe);
+  if(!we) return [];
+  const k = [];
+  we.tage.forEach(t => t.orte.forEach((o,i) =>
+    k.push({tagId:t.id, ortId:o.id, tag:t, ort:o, nr:i+1, vonTag:t.orte.length})));
+  return k;
+}
+function kettePos(k){
+  const i = k.findIndex(x => x.tagId === state.aktivTag && x.ortId === state.aktivOrt);
+  return i < 0 ? k.length - 1 : i;
+}
+function istRueckblick(){
+  const k = kette();
+  if(k.length < 2) return false;
+  const {ort} = aktuell();
+  if(!ort || ort.id === entsperrt) return false;
+  return kettePos(k) < k.length - 1;
+}
+
+function ansichtToken(){
+  const grund = ghFehler === 'token'
+    ? '<div class="warnung"><p>Der hinterlegte Schlüssel wird abgelehnt. Entweder ist er '
+      + 'abgelaufen, oder er hat keinen Zugriff auf das Daten-Repository.</p></div>'
+    : '';
+  return '<div style="text-align:center;padding:10px 0 2px">' + markeSvg(110) + '</div>'
+    + grund
+    + '<p class="erkl">Damit alle dieselbe Tabelle sehen, liegen die Daten in einem privaten '
+    + 'GitHub-Repository. Dafür braucht dieses Gerät einmalig einen Zugriffsschlüssel.</p>'
+    + '<p class="erkl">Den Schlüssel bekommst du von <b>' + esc(GH_BESITZER) + '</b> – '
+    + 'einmal eingegeben, bleibt er auf diesem Gerät gespeichert.</p>'
+    + '<div class="feld" style="display:block"><input id="tokenFeld" placeholder="github_pat_…" '
+    + 'autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" '
+    + 'style="width:100%"></div>'
+    + '<button class="knopf voll" data-tu="tokenSpeichern">Verbinden</button>'
+    + '<p class="hinweis">Repository: ' + esc(GH_BESITZER) + '/' + esc(GH_REPO)
+    + ' · Datei: ' + esc(GH_DATEI) + '</p>'
+    + (spiegelLesen()
+        ? '<button class="knopf leer" data-tu="spiegelZeigen">Letzten Stand dieses Geräts ansehen</button>'
+        : '');
+}
+
+function ansichtNeuesWe(){
+  if(!vorwahl) vorwahl = {ids:state.spieler.map(p => p.id), titel:'', ort:'',
+                          datum:new Date().toISOString().slice(0,10)};
+  if(state.spieler.length < 2){
+    return '<div class="leerzustand"><h2>Zu zweit geht’s los</h2>'
+      + '<p>Elo vergleicht paarweise. Leg mindestens zwei Namen an.</p>'
+      + '<div class="feld" style="max-width:360px;margin:18px auto 0">'
+      + '<input id="neuName" placeholder="Name" autocomplete="off">'
+      + '<button data-tu="spielerRein">Rein</button></div></div>';
+  }
+  const an = id => vorwahl.ids.some(x => String(x) === String(id));
+  const dabei = vorwahl.ids.length;
+  return '<div class="deckel"><div class="name" style="font-size:20px">Neues Wochenende</div>'
+    + '<p class="mini" style="margin:8px 0 0">Wer ist am <b>ersten Tag</b> dabei? '
+    + 'Antippen schaltet aus und wieder ein.</p>'
+    + '<div class="teiln" id="vorauswahl">'
+    + state.spieler.map(p => '<button data-tu="vorAn" data-id="'+p.id+'" data-an="'
+        + (an(p.id)?1:0) + '">' + esc(p.name) + '</button>').join('')
+    + '</div>'
+    + '<div class="feld"><input id="weNeuName" placeholder="Neuer Name" autocomplete="off">'
+    + '<button data-tu="weNeuSpieler">Anlegen</button></div>'
+    + '<p class="hinweis" style="margin:10px 2px 0">' + dabei + ' '
+    + (dabei===1?'Person':'Personen') + ' am ersten Tag. Wer erst später anreist, wird an seinem '
+    + 'Tag über „Wer ist noch dazugestoßen?“ ergänzt – vorher darf er nicht mitgeführt werden, '
+    + 'sonst zählt er als anwesend mit null Bier.</p>'
+    + '<div class="feld"><input id="weTitel" placeholder="Name des Wochenendes" autocomplete="off" '
+    + 'value="' + esc(vorwahl.titel) + '"></div>'
+    + '<div class="feld"><input type="date" id="weDatum" value="'+esc(vorwahl.datum)+'"></div>'
+    + '<div class="feld"><input id="weOrt" placeholder="Erste Location – wo geht’s los?" '
+    + 'autocomplete="off" value="' + esc(vorwahl.ort) + '"></div>'
+    + '<button class="knopf voll" data-tu="weStart"' + (dabei < 2 ? ' disabled' : '')
+    + '>Los geht’s</button></div>'
+    + '<button class="knopf leer" data-tu="geheArchiv">Abbrechen</button>';
+}
+
+function ansichtZaehlen(){
+  let {we, tg, ort} = aktuell();
+  if(we && tg && !ort){
+    const g = {}; (we.dabei || []).forEach(id => g[id] = []);
+    ort = {id:neueId(), name:'Location 1', getraenke:g};
+    tg.orte.push(ort);
+    state.aktivOrt = ort.id;
+  }
+  if(!we || !ort) return ansichtNeuesWe();
+
+  const {log} = berechnen();
+  const e = log.find(x => x.we.id === we.id);
+  const tl = e ? e.tagLog.find(t => t.tag.id === tg.id) : null;
+  const erg = tl ? tl.erg : {};
+
+  const auf = state.wahlOffen;
+  const wahlS = STAERKE.map(x => '<button class="chip" data-tu="wahlS" data-k="'+x.k+'" data-an="'
+      + (state.wahlS===x.k?1:0) + '">' + x.n
+      + (x.k==='af' ? '' : '<small>' + zahl(x.v,0) + '%</small>') + '</button>').join('');
+  const wahlG = GROESSE.map(x => '<button class="chip" data-tu="wahlG" data-k="'+x.k+'" data-an="'
+      + (state.wahlG===x.k?1:0) + '">' + x.n + '</button>').join('');
+
+  const k = kette();
+  const pos = kettePos(k);
+  const rueck = istRueckblick();
+  const hier = Object.keys(ort.getraenke);
+  const nameZu = id => { const q = state.spieler.find(x => String(x.id) === String(id));
+    return q ? q.name : '—'; };
+  function eintragText(x){
+    if(x.art === 'runde')   return 'Runde ' + nameVon(x.key) + ' · ' + x.n + '×'
+      + (x.weg ? ' (zurückgenommen)' : '');
+    if(x.art === 'zurueck') return 'Runde zurückgenommen · ' + x.n + '×';
+    if(x.art === 'einzel')  return nameZu(x.pid) + ' +1 ' + nameVon(x.key);
+    if(x.art === 'minus')   return nameZu(x.pid) + ' −1 ' + (x.key ? nameVon(x.key) : '');
+    if(x.art === 'sammel')  return nameZu(x.pid) + ' von Hand gesetzt';
+    if(x.art === 'foto')    return 'Foto · ' + x.n + ' Strichlisten';
+    return '';
+  }
+  const buch = (ort.log || []);
+  const vorigeRunde = letzteRundeIm(ort);
+  const letzterX = buch.length ? buch[buch.length-1] : null;
+  const letzteEintrag = letzterX
+    ? {txt:eintragText(letzterX), t:letzterX.t,
+       wer:letzterX.wer || geraetName(letzterX.gid)} : null;
+  const verlauf = buch.length
+    ? '<details class="klapp"><summary>Verlauf an dieser Location · ' + buch.length + '</summary>'
+      + [...buch].reverse().map(x => '<div class="vzeile' + (x.weg ? ' durch' : '') + '">'
+          + '<span class="vzeit">' + zeitKurz(x.t) + '</span>'
+          + '<span class="vtxt">' + esc(eintragText(x)) + '</span>'
+          + ((x.wer || geraetName(x.gid))
+              ? '<span class="vwer">' + esc(x.wer || geraetName(x.gid)) + '</span>' : '')
+          + '</div>').join('')
+      + '<p class="hinweis" style="margin:10px 2px 0">Protokoll der Eingaben, nicht der Endstand – '
+      + 'wer später über die Sammel-Eingabe korrigiert, taucht hier nur als „von Hand gesetzt“ auf.</p>'
+      + '</details>'
+    : '';
+  const pille = '<div class="wahl"><button class="pille" data-tu="wahlAuf" aria-expanded="'+(auf?'true':'false')+'">'
+    + '<span class="pille-name">' + nameVon(wahlKey()) + '</span>'
+    + '<span class="pille-be">' + zahl(beVon(wahlKey()),2) + ' BE</span>'
+    + '<span class="pille-pfeil">' + (auf ? '⌃' : '⌄') + '</span></button>'
+    + (auf ? '<div class="wahl-auf"><div class="wahl-titel">Stärke</div>'
+        + '<div class="chips">' + wahlS + '</div>'
+        + '<div class="wahl-titel" style="margin-top:10px">Größe</div>'
+        + '<div class="chips">' + wahlG + '</div>'
+        + '<button class="erklaerlink" data-tu="erklaerAuf" data-was="be">'
+        + 'Was bedeutet BE?</button></div>' : '')
+    + (rueck
+        ? '<div class="rueckband"><span>Rückblick · ' + esc(tg.label) + ', '
+          + esc(ort.name || 'Location ' + (pos+1)) + '</span>'
+          + '<button data-tu="entsperren">Hier weiterzählen</button></div>'
+        : rundeFrage && vorigeRunde
+        ? '<button class="rundeknopf warnung2" data-tu="runde">Vor '
+          + Math.max(1,Math.floor((Date.now()-vorigeRunde.t)/60000))
+          + ' Min gab es schon eine – nochmal tippen</button>'
+        : '<button class="rundeknopf" data-tu="runde"' + (hier.length ? '' : ' disabled') + '>'
+          + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+          + 'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+          + '<path d="M6 3h11l-1 15a3 3 0 0 1-3 3H10a3 3 0 0 1-3-3z"/>'
+          + '<path d="M17 7h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2"/></svg>'
+          + 'Runde für alle<span>' + hier.length + '×</span></button>')
+    + (!rueck && letzteRunde && letzteRunde.ortId === ort.id
+        ? '<button class="rundezurueck" data-tu="rundeZurueck">↶ Runde zurücknehmen · '
+          + letzteRunde.ids.length + '× ' + esc(nameVon(letzteRunde.key)) + '</button>' : '')
+    + (letzteEintrag
+        ? '<div class="zuletzt">Zuletzt ' + esc(letzteEintrag.txt) + ' · '
+          + zeitKurz(letzteEintrag.t) + ' · ' + vorWie(letzteEintrag.t)
+          + (letzteEintrag.wer ? ' · ' + esc(letzteEintrag.wer) : '') + '</div>'
+        : '')
+    + '</div>';
+
+  const zeilen = hier.map(id => {
+    const p = state.spieler.find(x => String(x.id) === String(id));
+    if(!p) return '';
+    const gs = ort.getraenke[id] || [];
+    const mix = mischung(gs);
+    return '<div class="pzeile"><div class="pinfo">'
+      + (rueck
+          ? '<div class="pname nurlesen">' + esc(p.name) + '</div>'
+          : '<button class="pname" data-tu="blattAuf" data-id="'+id+'">' + esc(p.name) + '</button>')
+      + '<div class="pmeta"><span class="pbe">'
+      + zahl(gs.reduce((s,k) => s + beVon(k), 0),2) + ' BE</span>'
+      + (mix ? '<span>' + mix + '</span>' : '<span>noch nichts</span>')
+      + deltaChip(erg[id] ? erg[id].delta : null,
+          erg[id] ? ' data-tu="rechnungTag" data-id="'+id+'"' : '') + '</div></div>'
+      + (rueck ? ''
+          : '<button class="zurueck" data-tu="minus" data-id="'+id+'" ' + (gs.length?'':'disabled')
+            + ' aria-label="Zurücknehmen bei '+esc(p.name)+'">↶</button>'
+            + '<button class="plus" data-tu="strich" data-id="'+id+'" aria-label="Getränk für '
+            + esc(p.name)+'">+</button>')
+      + '</div>';
+  }).join('');
+
+  const imWe = id => we.dabei.some(x => String(x) === String(id));
+  const fehlen = state.spieler.filter(p => !hier.some(h => String(h) === String(p.id)))
+    .sort((a,b) => (imWe(b.id) ? 1 : 0) - (imWe(a.id) ? 1 : 0));
+
+  const dazu = '<details class="klapp"><summary>Wer ist noch dazugestoßen?</summary>'
+    + (fehlen.length ? '<div class="teiln">'
+        + fehlen.map(p => '<button data-tu="ortRein" data-id="'+p.id+'">+ ' + esc(p.name)
+            + (imWe(p.id) ? '' : ' <span class="neuzugang">neu</span>') + '</button>').join('')
+        + '</div>' : '')
+    + '<div class="feld"><input id="gastName" placeholder="Neuer Name" autocomplete="off">'
+    + '<button data-tu="gastRein">Anlegen</button></div>'
+    + '<p class="hinweis" style="margin:8px 2px 0">Wird ab dieser Location mitgezählt, '
+    + 'frühere Tage bleiben unberührt.</p></details>';
+
+  const beOrt = hier.reduce((s,id) => s + (ort.getraenke[id]||[]).reduce((x,k) => x + beVon(k), 0), 0);
+  const beTag = Object.keys(erg).reduce((s,id) => s + erg[id].be, 0);
+
+  const punkte = k.map((x,i) => '<span class="kpunkt' + (i === pos ? ' an' : '')
+    + (x.tagId !== (k[i-1] && k[i-1].tagId) && i > 0 ? ' neuertag' : '') + '"></span>').join('');
+  const navi = k.length > 1
+    ? '<div class="kettennavi">'
+      + '<button data-tu="zurueckOrt"' + (pos === 0 ? ' disabled' : '') + ' aria-label="Vorherige Location">‹</button>'
+      + '<div class="kpunkte">' + punkte + '</div>'
+      + '<button data-tu="vorOrt"' + (pos === k.length-1 ? ' disabled' : '') + ' aria-label="Nächste Location">›</button>'
+      + '</div>'
+    : '';
+
+  return pille + navi + zeilen + (rueck ? '' : dazu) + verlauf
+    + '<p class="hinweis" style="margin:14px 2px 0">' + hier.length + ' hier · '
+    + zahl(beOrt,2) + ' BE an dieser Location · ' + zahl(beTag,2) + ' BE am ganzen '
+    + esc(tg.label) + '</p>'
+    + (rueck ? '' : '<div class="weiter">'
+        + '<button data-tu="ortNeu"><i>+</i>Location</button>'
+        + '<button data-tu="tagNeu"><i>+</i>Tag</button></div>'
+        + '<button class="knopf voll" data-tu="weSchliessen">Wochenende abschließen</button>')
+    + '<div class="kleinreihe">'
+    + (tg.orte.length > 1 ? gefahr('ortWeg', ort.id, 'Location löschen', '') : '')
+    + (we.tage.length > 1 ? gefahr('tagWeg', tg.id, 'Tag löschen', '') : '')
+    + gefahr('weWeg', we.id, 'Wochenende verwerfen', '') + '</div>';
+}
+
+function ortWechsler(){
+  const {we, tg, ort} = aktuell();
+  if(!we || !ort) return '';
+  const tage = we.tage.map(t => '<button data-tu="tagWahl" data-id="'+t.id+'" data-an="'
+      + (t.id === tg.id ? 1 : 0) + '">' + esc(t.label) + '</button>').join('');
+  const orte = tg.orte.map((o,i) => '<button data-tu="ortWahl" data-id="'+o.id+'" data-an="'
+      + (o.id === ort.id ? 1 : 0) + '">' + esc(o.name || (i+1)+'. Station') + '</button>').join('');
+  return '<div class="blende" data-tu="wechslerHintergrund"><div class="blatt">'
+    + '<div class="karte" role="dialog" aria-label="Tag und Location wechseln">'
+    + '<h3>Wo seid ihr?</h3>'
+    + '<div class="wahl-titel" style="margin-top:14px">Tag</div>'
+    + '<div class="leiste">' + tage + '</div>'
+    + '<div class="wahl-titel" style="margin-top:14px">Location</div>'
+    + '<div class="leiste orte">' + orte + '</div>'
+    + '<div class="ortname">'
+    + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
+    + 'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    + '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>'
+    + '<input id="ortName" value="' + esc(ort.name) + '" placeholder="Name dieser Location" autocomplete="off"></div>'
+    + '<button class="knopf voll" data-tu="wechslerZu">Passt</button>'
+    + '</div></div></div>';
+}
+
+/* ---------- Sammel-Eingabe ---------- */
+function kombiZeilen(z, tuPlus, tuMinus, extra){
+  const belegt = KOMBIS.filter(k => (z[k] || 0) > 0);
+  if(!belegt.length) return '<p class="mini" style="margin:10px 2px">Noch nichts eingetragen.</p>';
+  return belegt.map(k => '<div class="sortzeile">'
+    + '<div class="sname">' + nameVon(k) + '<em>' + zahl(beVon(k),2) + ' BE</em></div>'
+    + '<button class="rundknopf" data-tu="'+tuMinus+'" data-k="'+k+'"'+(extra||'')
+    + ' aria-label="Weniger">−</button>'
+    + '<div class="szahl">' + z[k] + '</div>'
+    + '<button class="rundknopf" data-tu="'+tuPlus+'" data-k="'+k+'"'+(extra||'')
+    + ' aria-label="Mehr">+</button></div>').join('');
+}
+function kombiWaehler(tuHinzu, extra){
+  const cs = STAERKE.map(x => '<button class="chip mini-chip" data-tu="nkS" data-k="'+x.k+'" data-an="'
+      + (neuKombi.s===x.k?1:0) + '">' + x.n + '</button>').join('');
+  const cg = GROESSE.map(x => '<button class="chip mini-chip" data-tu="nkG" data-k="'+x.k+'" data-an="'
+      + (neuKombi.g===x.k?1:0) + '">' + x.n + '</button>').join('');
+  const key = neuKombi.s + ':' + neuKombi.g;
+  return '<div class="zufuegen"><p class="mini" style="margin:0 0 7px">Weitere Sorte eintragen</p>'
+    + '<div class="chips" style="margin-bottom:6px">' + cs + '</div>'
+    + '<div class="chips" style="margin-bottom:9px">' + cg + '</div>'
+    + '<button class="knopf leer" style="margin:0" data-tu="'+tuHinzu+'"'+(extra||'')+'>+ '
+    + nameVon(key) + ' · ' + zahl(beVon(key),2) + ' BE</button></div>';
+}
+
+function ansichtBlatt(){
+  if(!blatt) return '';
+  const {ort} = aktuell();
+  if(!ort) return '';
+  const p = state.spieler.find(x => String(x.id) === String(blatt.id));
+  const be = KOMBIS.reduce((s,k) => s + beVon(k)*(blatt.z[k]||0), 0);
+  const anzahl = KOMBIS.reduce((s,k) => s + (blatt.z[k]||0), 0);
+
+  return '<div class="blende" data-tu="blattHintergrund"><div class="blatt">'
+    + '<div class="karte" role="dialog" aria-label="Getränke eintragen">'
+    + '<h3>' + esc(p ? p.name : '—') + '</h3>'
+    + '<p class="mini" style="margin:2px 0 12px">' + esc(ort.name || 'diese Location') + '</p>'
+    + kombiZeilen(blatt.z, 'blattPlus', 'blattMinus', '')
+    + kombiWaehler('blattHinzu', '')
+    + '<p class="hinweis" style="margin:14px 2px 0">' + anzahl + ' '
+    + (anzahl===1?'Getränk':'Getränke') + ' · ' + zahl(be,2) + ' BE an dieser Location</p>'
+    + '<button class="knopf voll" data-tu="blattSpeichern">Übernehmen</button>'
+    + '<button class="knopf leer" data-tu="blattZu">Abbrechen</button>'
+    + gefahr('ortRaus', blatt.id, 'War hier nicht dabei', 'knopf gefahr')
+    + '</div></div></div>';
+}
+
+/* ---------- Foto ---------- */
+function bildVerkleinern(datei, max){
+  return new Promise((loesen, ablehnen) => {
+    const fr = new FileReader();
+    fr.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const s = Math.min(1, max/Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width*s); c.height = Math.round(img.height*s);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        loesen(c.toDataURL('image/jpeg', 0.82));
+      };
+      img.onerror = () => ablehnen(new Error('Bild lässt sich nicht öffnen'));
+      img.src = fr.result;
+    };
+    fr.onerror = () => ablehnen(new Error('Datei lässt sich nicht lesen'));
+    fr.readAsDataURL(datei);
+  });
+}
+function jsonAus(text){
+  const sauber = text.replace(/```json|```/g, '').trim();
+  try{ return JSON.parse(sauber); }
+  catch(e){
+    const a = sauber.indexOf('{'), b = sauber.lastIndexOf('}');
+    if(a >= 0 && b > a) return JSON.parse(sauber.slice(a, b+1));
+    throw new Error('Antwort nicht lesbar');
+  }
+}
+async function anKI(bild, anweisung){
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      model:'claude-sonnet-4-6', max_tokens:1000,
+      messages:[{role:'user', content:[
+        {type:'image', source:{type:'base64', media_type:'image/jpeg', data:bild.split(',')[1]}},
+        {type:'text', text:anweisung}
+      ]}]
+    })
+  });
+  if(r.status === 401 || r.status === 403 || r.status === 404)
+    throw new Error('Die Foto-Zählung läuft nur innerhalb von Claude. Auf der eigenen Adresse '
+      + 'ist sie nicht verfügbar – trag die Striche bitte über den Namen ein.');
+  if(!r.ok) throw new Error('Die Zählung ist nicht durchgekommen');
+  const d = await r.json();
+  const text = (d.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
+  return jsonAus(text);
+}
+const SORTEN_REGEL =
+  'Neben oder über einer Strichgruppe können zwei Angaben stehen. '
+  + 'ERSTENS die Stärke: "L" oder "leicht" bedeutet leicht. "S" oder "stark" bedeutet stark. '
+  + '"AF", "alkoholfrei" oder "0,0" bedeutet alkoholfrei. Steht keine Stärke dabei, ist es normal. '
+  + 'ZWEITENS die Größe in Litern: "0,33" oder "0.33" bedeutet 0,33 Liter. '
+  + '"1", "1L", "1 Liter", "M" oder "Maß" bedeutet 1 Liter. Steht keine Größe dabei, sind es 0,5 Liter. '
+  + 'WICHTIG: Eine notierte Ziffer 1 ist eine Größenangabe und niemals ein Zählstrich. '
+  + 'Eine Größenangabe steht abgesetzt neben oder über einer Gruppe; Zählstriche stehen dicht '
+  + 'beieinander in der Gruppe selbst. Zähle eine Größen- oder Stärkeangabe nie als Strich mit. '
+  + 'Erfinde nichts, was nicht dasteht.';
+const ZAEHL_REGEL =
+  'Deutsche Zählweise: vier senkrechte Striche, der fünfte quer darüber, macht fünf. '
+  + 'Zähle alle Striche zusammen, den Querstrich mitgerechnet.';
+const JSON_FORM =
+  '{"eintraege":[{"name":"<Name oder leer>","gruppen":[{"staerke":"leicht"|"normal"|"stark"|"af",'
+  + '"groesse":"033"|"05"|"10","striche":<ganze Zahl>}]}],'
+  + '"sicherheit":"hoch"|"mittel"|"niedrig","hinweis":"<kurzer Satz falls etwas unklar war, sonst \\"\\">"}';
+function anweisungEiner(){
+  return 'Auf dem Bild ist ein Bierdeckel oder Zettel mit einer handschriftlichen Strichliste. '
+    + ZAEHL_REGEL + ' ' + SORTEN_REGEL + ' '
+    + 'Antworte ausschließlich mit JSON, ohne Markdown und ohne Vorwort. Lass "name" leer: ' + JSON_FORM;
+}
+function anweisungZettel(){
+  return 'Auf dem Bild ist ein Zettel mit mehreren Namen und je einer handschriftlichen Strichliste. '
+    + ZAEHL_REGEL + ' ' + SORTEN_REGEL + ' '
+    + 'Diese Namen sind zu erwarten: ' + state.spieler.map(p => p.name).join(', ') + '. '
+    + 'Schreib einen erkannten Namen genau so, wie er in dieser Liste steht, wenn er passt. '
+    + 'Antworte ausschließlich mit JSON, ohne Markdown und ohne Vorwort: ' + JSON_FORM;
+}
+function nameZuId(name){
+  const n = String(name || '').trim().toLowerCase();
+  if(!n) return null;
+  const genau = state.spieler.find(p => p.name.toLowerCase() === n);
+  if(genau) return genau.id;
+  const teil = state.spieler.find(p => p.name.toLowerCase().startsWith(n) || n.startsWith(p.name.toLowerCase()));
+  return teil ? teil.id : null;
+}
+function gruppenLesen(gruppen){
+  const z = {}; KOMBIS.forEach(k => z[k] = 0);
+  (Array.isArray(gruppen) ? gruppen : []).forEach(gr => {
+    const n = Math.max(0, Math.round(Number(gr && gr.striche) || 0));
+    if(!n) return;
+    const sk = gr && S(gr.staerke) ? gr.staerke : 'normal';
+    const gk = gr && Gr(gr.groesse) ? gr.groesse : '05';
+    z[sk + ':' + gk] += n;
+  });
+  return z;
+}
+
+function ansichtFoto(){
+  if(!foto) return '';
+  const {ort} = aktuell();
+  const hier = ort ? Object.keys(ort.getraenke) : [];
+  let inhalt = '';
+
+  if(foto.phase === 'start'){
+    inhalt = '<h3>Deckel abfotografieren</h3>'
+      + '<p class="mini" style="margin:2px 0 14px">Striche und, wenn Kürzel danebenstehen, auch die Sorten. '
+      + 'Alles lässt sich vor dem Eintragen korrigieren.</p>'
+      + '<div class="teiln" style="margin-bottom:6px">'
+      + '<button data-tu="fotoModus" data-m="person" data-an="'+(foto.modus==='person'?1:0)+'">Ein Deckel</button>'
+      + '<button data-tu="fotoModus" data-m="zettel" data-an="'+(foto.modus==='zettel'?1:0)+'">Zettel mit Namen</button>'
+      + '</div>';
+    if(foto.modus === 'person'){
+      inhalt += '<p class="mini" style="margin:12px 0 6px">Wessen Deckel ist das?</p><div class="teiln">'
+        + hier.map(id => { const p = state.spieler.find(x => String(x.id) === String(id));
+            return p ? '<button data-tu="fotoPerson" data-id="'+id+'" data-an="'
+              + (String(foto.person) === String(id) ? 1 : 0) + '">' + esc(p.name) + '</button>' : ''; }).join('')
+        + '</div>';
+    } else {
+      inhalt += '<p class="mini" style="margin:12px 0 0">Ein Blatt mit allen Namen und Strichlisten. '
+        + 'Die Zuordnung kannst du danach noch ändern.</p>';
+    }
+    const bereit = foto.modus === 'zettel' || foto.person;
+    inhalt += '<button class="knopf voll" data-tu="fotoAufnehmen"' + (bereit ? '' : ' disabled') + '>'
+      + 'Foto aufnehmen</button><button class="knopf leer" data-tu="fotoZu">Abbrechen</button>';
+  }
+
+  if(foto.phase === 'laedt'){
+    inhalt = '<h3>Wird gezählt</h3>'
+      + (foto.bild ? '<img class="vorschau" src="'+foto.bild+'" alt="Aufgenommenes Foto">' : '')
+      + '<div class="laedt"><b>Striche werden gezählt</b>'
+      + '<span class="mini">Das dauert ein paar Sekunden.</span></div>';
+  }
+
+  if(foto.phase === 'fehler'){
+    inhalt = '<h3>Hat nicht geklappt</h3>'
+      + '<p class="mini" style="margin:6px 0 0">' + esc(foto.fehlerText) + '</p>'
+      + '<p class="mini" style="margin:10px 0 0">Ein zweiter Versuch bei besserem Licht hilft oft. '
+      + 'Sonst geht das Eintippen ja auch.</p>'
+      + '<button class="knopf voll" data-tu="fotoAufnehmen">Nochmal fotografieren</button>'
+      + '<button class="knopf leer" data-tu="fotoZu">Schließen</button>';
+  }
+
+  if(foto.phase === 'ergebnis'){
+    const sicherText = {hoch:'gut lesbar', mittel:'teils unklar', niedrig:'schlecht lesbar'};
+    const sk = foto.sicherheit || 'mittel';
+
+    const liste = foto.treffer.map((t,i) => {
+      const kopf = foto.modus === 'person'
+        ? ''
+        : '<div class="trefferzeile"><select data-zuord="'+i+'" aria-label="Zuordnung für '+esc(t.name)+'">'
+          + '<option value="">' + esc(t.name) + ' – nicht zuordnen</option>'
+          + hier.map(id => { const p = state.spieler.find(x => String(x.id) === String(id));
+              return p ? '<option value="'+id+'"' + (String(t.ziel) === String(id) ? ' selected' : '') + '>'
+                + esc(p.name) + '</option>' : ''; }).join('') + '</select></div>';
+      return kopf + kombiZeilen(t.z, 'fotoPlus', 'fotoMinus', ' data-i="'+i+'"')
+        + '<div class="i-waehler" data-fuer="'+i+'">' + kombiWaehler('fotoHinzu', ' data-i="'+i+'"') + '</div>';
+    }).join('');
+
+    inhalt = '<h3>Stimmt das so?</h3>'
+      + '<span class="sicher ' + sk + '">' + (sicherText[sk] || 'teils unklar') + '</span>'
+      + (foto.hinweis ? '<p class="mini" style="margin:8px 0 0">' + esc(foto.hinweis) + '</p>' : '')
+      + (foto.bild ? '<img class="vorschau" src="'+foto.bild+'" alt="Aufgenommenes Foto">' : '')
+      + liste
+      + '<div class="teiln" style="margin-top:16px">'
+      + '<button data-tu="fotoArt" data-m="ersetzen" data-an="'+(foto.ersetzen?1:0)+'">Ersetzt den Stand</button>'
+      + '<button data-tu="fotoArt" data-m="dazu" data-an="'+(foto.ersetzen?0:1)+'">Kommt dazu</button></div>'
+      + '<button class="knopf voll" data-tu="fotoUebernehmen">Eintragen</button>'
+      + '<button class="knopf leer" data-tu="fotoAufnehmen">Nochmal fotografieren</button>'
+      + '<button class="knopf leer" data-tu="fotoZu">Abbrechen</button>';
+  }
+
+  return '<div class="blende" data-tu="fotoHintergrund"><div class="blatt">'
+    + '<div class="karte" role="dialog" aria-label="Deckel abfotografieren">' + inhalt + '</div></div></div>';
+}
+
+/* ---------- Fazit / Verlauf ---------- */
+function fazitBlock(f, mitKnopf){
+  const zeilen = f.leute.map(l => {
+    const teil = l.tage < f.tage;
+    return '<div class="frow"><div class="fhaupt"><div class="fname">' + esc(l.name) + '</div>'
+      + '<div class="fbe">' + zahl(l.be,2) + ' BE</div>'
+      + deltaChip(l.delta, ' data-tu="rechnungWe" data-id="'+l.id+'" data-we="'+f.we.id+'"')
+      + '<div class="fneu">' + Math.round(l.nachher) + '</div></div>'
+      + '<div class="fmeta">Ø ' + zahl(l.schnitt,2) + ' je Tag'
+      + '<span class="' + (teil ? 'teilzeit' : '') + '">' + l.tage + ' von ' + f.tage + ' '
+      + (f.tage === 1 ? 'Tag' : 'Tagen') + '</span>'
+      + '<span>' + l.orte + ' ' + (l.orte === 1 ? 'Location' : 'Locations') + '</span></div></div>';
+  }).join('');
+  const orden = f.orden.map(o => '<button class="ordenzeile" data-tu="erklaerAuf" data-was="orden">'
+    + '<span class="titel">' + o.t + '</span><span class="wer">'
+    + esc(o.w) + '</span> <span class="wert">' + o.v + '</span></button>').join('');
+  return '<div class="fazit"><h3>' + esc(f.we.titel) + '</h3>'
+    + '<p class="datum">' + datumHuebsch(f.we.datum) + ' · ' + f.tage + ' '
+    + (f.tage===1?'Tag':'Tage') + ' · ' + f.orteGesamt + ' Locations</p>'
+    + '<div class="bilanz"><div><b>' + zahl(f.gesLiter) + '</b><span>Liter'
+    + (f.gesAf > 0 ? ' + ' + zahl(f.gesAf,1) + ' AF' : '') + '</span></div>'
+    + '<div><b>' + f.gesAnzahl + '</b><span>Getränke</span></div>'
+    + '<button class="bekachel" data-tu="erklaerAuf" data-was="be"><b>' + zahl(f.gesBe)
+    + '</b><span>BE gesamt ?</span></button>'
+    + '<div><b>' + f.orteGesamt + '</b><span>Stationen</span></div></div>'
+    + zeilen + (orden ? '<div class="orden">' + orden + '</div>' : '')
+    + (mitKnopf
+        ? '<div class="sicherhinweis">Wochenende steht in der Tabelle. '
+          + 'Jetzt eine Kopie in die Gruppe schicken?</div>'
+          + '<button class="knopf voll" data-tu="sicherAuf">Stand sichern</button>'
+          + '<button class="knopf leer" data-tu="fazitZu">Später</button>'
+        : '') + '</div>';
+}
+
+const SPALTEN = [
+  {k:'elo',   kurz:'Punkte', kopf:'Punkte', was:'punkte',  nk:0},
+  {k:'be',    kurz:'Ø BE',   kopf:'Ø BE',   was:'schnitt', nk:2},
+  {k:'siege', kurz:'Siege',  kopf:'Siege',  was:'siege',   nk:0},
+  {k:'liter', kurz:'Liter',  kopf:'Liter',  was:'liter',   nk:1},
+  {k:'tage',  kurz:'Tage',   kopf:'Tage',   was:'tage',    nk:0}
+];
+
+function rangDaten(){
+  const {R, weTeil, tagTeil, ortTeil, siege, beSumme, log} = berechnen();
+  const liter = {}, literAf = {};
+  state.spieler.forEach(p => { liter[p.id] = 0; literAf[p.id] = 0; });
+  log.forEach(e => e.tagLog.forEach(t => Object.keys(t.erg).forEach(id => {
+    if(liter[id] !== undefined){ liter[id] += t.erg[id].liter;
+      literAf[id] += t.erg[id].literAf || 0; }
+  })));
+  const letztes = log.filter(e => e.tagLog.length).pop();
+  return state.spieler.map(p => ({
+    p, elo:R[p.id],
+    be: tagTeil[p.id] ? beSumme[p.id]/tagTeil[p.id] : 0,
+    siege: siege[p.id], liter: liter[p.id], literAf: literAf[p.id], tage: tagTeil[p.id],
+    we: weTeil[p.id], orte: ortTeil[p.id],
+    d: (letztes && letztes.tagLog.some(t => t.erg[p.id]))
+        ? letztes.nachher[p.id] - letztes.vorher[p.id] : null,
+    weId: letztes ? letztes.we.id : null
+  }));
+}
+
+function rangZeilen(){
+  const sk = state.sortier || 'elo';
+  const sp = SPALTEN.find(x => x.k === sk) || SPALTEN[0];
+  const zweit = sk === 'elo' ? SPALTEN[1] : sp;
+  const liste = rangDaten().sort((a,b) => b[sk] - a[sk] || b.elo - a.elo);
+
+  const chips = SPALTEN.map(x => '<button class="chip mini-chip" data-tu="sortieren" data-k="'+x.k
+    + '" data-an="' + (sk === x.k ? 1 : 0) + '">' + x.kurz + '</button>').join('');
+
+  const kopf = '<div class="rangkopf">'
+    + '<span class="rknr"></span>'
+    + '<span class="rkname">Name</span>'
+    + '<button class="rkwert" data-tu="erklaerAuf" data-was="' + zweit.was + '">'
+    + zweit.kopf + ' <i>?</i></button>'
+    + '<button class="rkelo" data-tu="punkteInfo">Punkte <i>?</i></button></div>';
+
+  const zeilen = liste.map((x,i) => {
+    const wert = zweit.k === 'be' ? zahl(x.be,2)
+               : zweit.k === 'liter' ? zahl(x.liter,1)
+               : String(x[zweit.k]);
+    const neben = [];
+    SPALTEN.forEach(c => {
+      if(c.k === 'elo' || c.k === zweit.k) return;
+      neben.push((c.k === 'be' ? 'Ø ' + zahl(x.be,2) + ' BE'
+                : c.k === 'liter' ? zahl(x.liter,1) + ' L'
+                : c.k === 'siege' ? x.siege + ' ' + (x.siege===1?'Sieg':'Siege')
+                : x.tage + ' ' + (x.tage===1?'Tag':'Tage')));
+    });
+    if(x.literAf > 0) neben.push(zahl(x.literAf,1) + ' L alkfrei');
+    const attrs = (x.d !== null && x.weId)
+      ? ' data-tu="rechnungWe" data-id="'+x.p.id+'" data-we="'+x.weId+'"' : '';
+    return '<div class="rang ' + (x.tage === 0 ? 'ruht' : '') + '">'
+      + '<span class="rnr ' + (i===0?'eins':'') + '">' + (i+1) + '</span>'
+      + '<button class="rmitte" data-tu="personAuf" data-id="'+x.p.id+'">'
+      + '<div class="rname">' + esc(x.p.name) + '</div>'
+      + '<div class="rmeta">' + neben.join(' · ') + '</div></button>'
+      + '<span class="rwert">' + wert + '</span>'
+      + '<span class="relospalte">' + deltaChip(x.d, attrs)
+      + '<span class="relo2">' + Math.round(x.elo) + '</span></span></div>';
+  }).join('');
+
+  return '<div class="sortreihe"><span>Sortieren nach</span><div class="chips">' + chips
+    + '</div></div>' + kopf + zeilen;
+}
+
+function ansichtArchiv(){
+  const {log} = berechnen();
+  const offen = state.we.find(w => w.id === state.aktivWe);
+
+  const start = offen
+    ? '<button class="knopf voll" data-tu="geheZaehlen">Zurück zu „' + esc(offen.titel) + '“</button>'
+    : '<button class="knopf voll" data-tu="weNeu">Wochenende eröffnen</button>';
+
+  if(!state.spieler.length){
+    return start + '<div class="leerzustand"><h2>Wer trinkt mit?</h2>'
+      + '<p>Trag die Bubidos ein. Alle starten bei 1500 Punkten.</p>'
+      + '<div class="feld" style="max-width:360px;margin:18px auto 0">'
+      + '<input id="neuName" placeholder="Name" autocomplete="off">'
+      + '<button data-tu="spielerRein">Rein</button></div></div>';
+  }
+
+  const echte = [...log.filter(e => e.tagLog.length && e.we.id !== state.aktivWe)].reverse();
+  const wochenenden = echte.length
+    ? echte.map(e => {
+        const f = fazitVon(e);
+        const sieger = f.orden.length ? f.orden[0].w : '—';
+        return '<button class="weZeile" data-tu="weDetail" data-id="'+e.we.id+'">'
+          + '<div class="wztext"><div class="wzname">' + esc(e.we.titel) + '</div>'
+          + '<div class="wzmeta">' + datumHuebsch(e.we.datum) + ' · ' + f.tage + ' '
+          + (f.tage===1?'Tag':'Tage') + ' · ' + f.orteGesamt + ' Locations · '
+          + zahl(f.gesLiter) + ' L</div>'
+          + '<div class="wzsieger">Deckelkönig ' + esc(sieger) + '</div></div>'
+          + '<span class="wzpfeil">›</span></button>';
+      }).join('')
+    : '<p class="hinweis" style="margin:8px 2px">Noch nichts abgeschlossen. Das erste Wochenende '
+      + 'landet hier, sobald ihr es beendet.</p>';
+
+  return start
+    + '<div class="abschnitt oben">Tabelle</div>' + rangZeilen()
+    + '<p class="hinweis">Gewertet wird je Tag über alle Locations · K ' + state.einst.k
+    + (state.einst.deckel > 0 ? ' · Deckel ' + zahl(state.einst.deckel,1) + ' BE' : '') + '</p>'
+    + '<div class="abschnitt">Wochenenden</div>' + wochenenden;
+}
+
+function ansichtWeDetail(id){
+  const {log} = berechnen();
+  const e = log.find(x => x.we.id === id);
+  if(!e) return '<p class="hinweis">Dieses Wochenende gibt es nicht mehr.</p>';
+  const f = fazitVon(e);
+  const details = e.tagLog.map(t => {
+    const ids = Object.keys(t.erg).sort((x,y) => t.erg[y].be - t.erg[x].be);
+    const stationen = t.tag.orte.map((o,i) => esc(o.name || (i+1)+'. Station')).join(' → ');
+    return '<p class="hinweis" style="margin:10px 2px 0"><b>' + esc(t.tag.label) + '</b> · '
+      + stationen + '<br>' + ids.map(id2 => {
+          const p = state.spieler.find(x => String(x.id) === String(id2));
+          return esc(p ? p.name : '—') + ' ' + zahl(t.erg[id2].be,2);
+        }).join(' · ') + ' BE</p>';
+  }).join('');
+  return fazitBlock(f, false) + details
+    + '<button class="knopf leer" data-tu="weOeffnen" data-id="'+e.we.id+'">Wieder öffnen</button>'
+    + gefahr('weLoeschen', e.we.id, 'Wochenende löschen', 'knopf gefahr');
+}
+
+function ansichtEinst(){
+  const {weTeil} = berechnen();
+  const spieler = state.spieler.map(p => '<div class="zahlfeld"><div><strong>' + esc(p.name) + '</strong>'
+    + '<p>' + (weTeil[p.id]||0) + ' ' + ((weTeil[p.id]||0)===1?'Wochenende':'Wochenenden') + ' dabei</p></div>'
+    + gefahr('spielerRaus', p.id, 'entfernen', 'entfernen') + '</div>').join('')
+    || '<p class="hinweis" style="margin:6px 2px">Noch niemand am Tisch.</p>';
+  const anDeckel = state.einst.deckel > 0;
+
+  return '<div class="abschnitt oben">Die Bubidos</div>' + spieler
+    + '<div class="feld"><input id="neuName" placeholder="Name" autocomplete="off">'
+    + '<button data-tu="spielerRein">Rein</button></div>'
+    + '<p class="hinweis">Alle sehen dieselbe Tabelle. Wer den Link hat, kann auch ändern – '
+    + 'also nur innerhalb der Bubidos weitergeben.</p>'
+    + '<button class="knopf leer" data-tu="frisch">Stand jetzt holen'
+    + (state.stand ? ' · zuletzt '
+        + String(new Date(state.stand).getHours()).padStart(2,'0') + ':'
+        + String(new Date(state.stand).getMinutes()).padStart(2,'0') : '') + '</button>'
+
+    + '<div class="abschnitt">Regler</div>'
+    + '<div class="zahlfeld"><div><strong>K-Faktor</strong><p>Wie stark ein Tag die Tabelle bewegt. '
+    + '40 passt bei zwei bis drei Wochenenden im Jahr.</p></div>'
+    + '<input type="number" id="kFaktor" value="' + state.einst.k + '" min="4" max="200" step="1" inputmode="numeric"></div>'
+    + '<div style="padding:12px 0;border-bottom:1px solid var(--linie)">'
+    + '<button class="reglerfrage" data-tu="erklaerAuf" data-was="deckel">Deckel <i>?</i></button>'
+    + '<p style="margin:2px 0 0;font-size:12px;color:#98A0AA;max-width:40ch">Obergrenze je Tag. '
+    + 'Steht er aus, zählt jedes weitere Bier voll mit – dann führt die Tabelle, wer am meisten trinkt.</p>'
+    + '<div class="schalter"><button data-tu="deckelAn" data-m="aus" data-an="'+(anDeckel?0:1)+'">Aus</button>'
+    + '<button data-tu="deckelAn" data-m="an" data-an="'+(anDeckel?1:0)+'">An</button></div>'
+    + (anDeckel ? '<div class="feld"><input type="number" id="deckelWert" value="' + state.einst.deckel
+        + '" min="1" max="40" step="0.5" inputmode="decimal"></div>' : '') + '</div>'
+    + '<button class="knopf leer" data-tu="einstSichern">Regler übernehmen</button>'
+    + '<p class="hinweis">Änderungen rechnen die gesamte Historie sofort neu.</p>'
+
+    + '<div class="abschnitt">Dieses Gerät</div>'
+    + '<p class="hinweis" style="margin:6px 2px 0">Erkennt sich selbst, ohne dass du etwas '
+    + 'eintragen musst – es heißt gerade <b style="color:var(--malz)">' + esc(ichName() || '—')
+    + '</b>. Der Name steht im Verlauf an jeder Eingabe. Wenn du magst, hinterleg deinen '
+    + 'richtigen, sonst bleibt es bei der Nummer.</p>'
+    + '<div class="teiln">'
+    + state.spieler.map(p => '<button data-tu="ichBin" data-name="'+esc(p.name)+'" data-an="'
+        + (ichName() === p.name ? 1 : 0) + '">' + esc(p.name) + '</button>').join('')
+    + '<button data-tu="ichBin" data-an="' + (ichName() && ichName().indexOf('Gerät') === 0 ? 1 : 0)
+    + '">nur die Nummer</button></div>'
+    + '<div class="abschnitt">Sichern</div>'
+    + '<p class="hinweis" style="margin:6px 2px 0">Jede Änderung ist ein Commit in Git – die '
+    + 'vollständige Historie bleibt dauerhaft erhalten, jeder frühere Stand ist wiederherstellbar. '
+    + 'Zusätzlich liegt auf jedem Gerät eine stille Kopie des letzten Stands.</p>'
+    + '<button class="knopf voll" data-tu="sicherAuf">Stand exportieren</button>'
+    + '<button class="knopf leer" data-tu="verlaufOeffnen">Historie auf GitHub öffnen</button>'
+    + '<button class="knopf leer" data-tu="importAuf">Stand wiederherstellen</button>'
+    + '<div class="abschnitt">Verbindung</div>'
+    + '<p class="hinweis" style="margin:6px 2px 0">Daten in <b>' + esc(GH_BESITZER) + '/'
+    + esc(GH_REPO) + '</b>' + (ghFehler === 'netz' ? ' · <b style="color:#E09084">gerade offline</b>' : '')
+    + '. Jede Änderung wird ein Commit – gelöscht werden kann nichts.</p>'
+    + '<button class="knopf leer" data-tu="tokenLoesen">Schlüssel von diesem Gerät entfernen</button>'
+
+    + '<div class="abschnitt">Nachschlagen</div>'
+    + '<button class="knopf leer" data-tu="geheInfo">Betriebsanleitung öffnen</button>'
+    + '<p class="hinweis" style="text-align:center;margin-top:14px">Fassung <b '
+    + 'style="color:var(--malz)">' + FASSUNG + '</b></p>'
+    + (exportiert
+        ? gefahr('allesWeg', null, 'Alle Daten löschen', 'knopf gefahr')
+        : '<button class="knopf gefahr" data-tu="sicherAuf">Alle Daten löschen – erst exportieren</button>');
+}
+
+/* ---------- Anleitung ---------- */
+function ansichtInfo(){
+  return '<div style="text-align:center;padding:6px 0 4px">' + markeSvg(132) + '</div>'
+    + '<div class="typenschild">'
+    + '<span>Gerät</span><b>Rangliste für Bierrunden</b>'
+    + '<span>Besetzung</span><b>fünf Bubidos</b>'
+    + '<span>Betriebsart</span><b>2–3 Wochenenden im Jahr</b>'
+    + '<span>Gliederung</span><b>Wochenende → Tag → Location</b>'
+    + '<span>Getränke</span><b>4 Stärken × 3 Größen</b>'
+    + '<span>Startwert</span><b>1500 Punkte, für alle gleich</b></div>'
+
+    + '<div class="para" id="p1"><h2><i>§ 1</i> Bestimmungsgemäßer Gebrauch</h2>'
+    + '<p>Das Gerät erfasst, wer an einem Tag im Verhältnis zu den anderen mehr getrunken hat, und '
+    + 'verrechnet das zu einer dauerhaften Rangliste. Zugelassen für waagerechte Tische. Der Betrieb an '
+    + 'bereits schrägen Tischen erfolgt auf eigene Gefahr.</p>'
+    + '<p>Untersagt ist die Verwendung als Beweismittel sowie als Argument gegenüber Ehepartnern.</p></div>'
+
+    + '<div class="para" id="p2"><h2><i>§ 2</i> Sicherheitshinweise</h2><div class="warnung">'
+    + '<p>Das Gerät zählt. Es fordert nicht auf. Der <strong>Deckel</strong> — eine Obergrenze, ab der '
+    + 'Weitertrinken null Punkte bringt — ist ab Werk ausgeschaltet. Damit führt die Tabelle, wer am '
+    + 'meisten trinkt. Wem das zu weit geht, schaltet ihn unter <strong>Runde</strong> wieder an.</p>'
+    + '<p>Alkoholfrei ist als Sorte hinterlegt und mit 0,00 bewertet — mitzählen geht also auch ohne '
+    + 'mittrinken. Und niemand fährt. Kein Tabellenplatz ist einen Führerschein wert.</p></div></div>'
+
+    + '<div class="para" id="p3"><h2><i>§ 3</i> Aufbau</h2>'
+    + '<p>Ein <strong>Wochenende</strong> besteht aus <strong>Tagen</strong>, ein Tag aus '
+    + '<strong>Locations</strong>. Gewertet wird immer der ganze Tag über alle Stationen zusammen — ob ihr '
+    + 'in einer Kneipe sitzenbleibt oder durch fünf zieht, ändert an den Punkten nichts.</p>'
+    + '<p>Die Locations werden trotzdem einzeln geführt: nur so lässt sich hinterher sagen, wer bis zum '
+    + 'Schluss dabei war und wer nach der zweiten Station den Heimweg angetreten hat.</p></div>'
+
+    + '<div class="para" id="p4"><h2><i>§ 4</i> Bedienung</h2><ul>'
+    + '<li>Die App hat zwei Zustände. Läuft kein Wochenende, seht ihr das <strong>Archiv</strong>: '
+    + 'Tabelle oben, vergangene Wochenenden darunter. Läuft eins, öffnet sie direkt im '
+    + '<strong>Zählen</strong>.</li>'
+    + '<li>Namen anlegen im Archiv oder hinterm <strong>Zahnrad</strong>. Link in die Gruppe, '
+    + 'alle sehen dieselbe Tabelle.</li>'
+    + '<li><strong>Runde für alle</strong> trägt das gewählte Getränk in einem Tipp bei jedem ein, '
+    + 'der gerade an dieser Location steht. Direkt darunter erscheint dann „Runde zurücknehmen“, '
+    + 'falls es doch nicht für alle war — wer nichts wollte, kann auch einzeln mit ↶ abgezogen '
+    + 'werden.</li>'
+    + '<li><strong>Schon eingetragen?</strong> Unter dem Runde-Knopf steht immer die letzte Eingabe '
+    + 'mit Uhrzeit und Namen. Kam die letzte Runde vor weniger als drei Minuten, fragt das Gerät '
+    + 'einmal nach, bevor es eine zweite einträgt — das fängt den Fall ab, dass zwei gleichzeitig '
+    + 'zum Handy greifen. Der ganze Abend steht unter <strong>Verlauf an dieser Location</strong>.</li>'
+    + '<li>Jedes Gerät gibt sich beim ersten Öffnen selbst eine Kennung und heißt dann '
+    + '<strong>Gerät 1, 2, 3</strong> — ohne dass jemand etwas eintragen muss. Damit steht im '
+    + 'Verlauf, von welchem Handy eine Eingabe kam. Wer will, hinterlegt hinterm Zahnrad seinen '
+    + 'Namen, dann steht der dort statt der Nummer. Die Zuordnung ist selbst angegeben und nicht '
+    + 'geprüft.</li>'
+    + '<li>Beim Zählen zeigt die <strong>Pille</strong> oben das aktuelle Getränk. Ein Tipp klappt '
+    + 'Stärke und Größe auf, ein Tipp schließt sie wieder — die Auswahl bleibt stehen, bis ihr sie '
+    + 'ändert. Dann beim Namen auf <strong>+</strong>. <strong>↶</strong> nimmt zurück.</li>'
+    + '<li>Nach dem Namen der Station wird überall gefragt: beim Eröffnen des Wochenendes im '
+    + 'Formular, bei <strong>+ Tag</strong> und bei <strong>+ Location</strong> jeweils gleich '
+    + 'danach. Eingeben oder einfach bestätigen — ohne Eingabe bleibt es bei „Location 1, 2, 3“, '
+    + 'je Tag neu gezählt. Die Leute von vorher kommen automatisch mit.</li>'
+    + '<li>In der Kopfzeile stehen Tag und Location samt Zählung. Ein Tipp darauf öffnet den '
+    + 'Wechsler, um weit zu springen oder eine Station umzubenennen.</li>'
+    + '<li><strong>Blättern:</strong> Wischen nach rechts geht einen Schritt zurück in der Kette '
+    + '1. Tag/Location 1, 2, 3 → 2. Tag/Location 1 … , wischen nach links wieder nach vorn. Wer '
+    + 'lieber tippt, nimmt die Pfeile über den Namen; die Punkte dazwischen zeigen, wo man steckt, '
+    + 'mit einem Strich an jedem Tageswechsel.</li>'
+    + '<li><strong>Zurückliegende Stationen sind gesperrt.</strong> Man sieht den Stand, kann aber '
+    + 'nichts ändern — sonst landet nach einem versehentlichen Wisch das nächste Bier am falschen '
+    + 'Abend. Oben erscheint „Rückblick“ mit dem Knopf <strong>Hier weiterzählen</strong>, falls '
+    + 'doch etwas nachzutragen ist. Beim nächsten Blättern sperrt es wieder von selbst.</li>'
+    + '<li><strong>Später dazugestoßen?</strong> Unter den Namenskarten steht „Wer ist hier noch '
+    + 'dazugestoßen?". Bekannte Namen kommen per Tipp dazu, ein neuer wird gleich dort angelegt — '
+    + 'der Umweg über <strong>Runde</strong> entfällt. Gezählt wird ab dieser Location; frühere Tage '
+    + 'bleiben unberührt und kosten keine Punkte.</li>'
+    + '<li>Neuer Tag heißt <strong>+ Tag</strong>.</li>'
+    + '<li><strong>Tipp auf den Namen</strong> öffnet die Sammel-Eingabe: jede bereits eingetragene '
+    + 'Kombination mit Plus und Minus, darunter „Weitere Sorte eintragen". Zwei Halbe, drei Stark 0,33 '
+    + 'und eine Maß sind damit in Sekunden nachgetragen — und falsch Getipptes gezielt korrigiert.</li>'
+    + '<li>Pro Abend einen <strong>Deckelführer</strong> bestimmen: tippen zwei gleichzeitig, gewinnt der '
+    + 'letzte Tipp. Die Rolle ist mit keiner Vergünstigung verbunden, ausdrücklich auch nicht mit Freibier.</li>'
+    + '</ul></div>'
+
+    + '<div class="para" id="p5"><h2><i>§ 5</i> Optische Erfassung</h2>'
+    + '<p>Knopf <strong>Deckel abfotografieren</strong>: entweder ein einzelner Deckel für eine Person '
+    + 'oder ein Zettel mit allen Namen. Die Zählung liest Striche und, wenn sie danebenstehen, auch '
+    + 'Stärke und Größe.</p>'
+    + '<div class="warnung"><p><strong>Die Grundregel: nichts dabei heißt Halbe.</strong> Wer normal '
+    + 'trinkt und ein 0,5er-Glas vor sich hat, schreibt einfach Striche. Alles andere wird '
+    + 'dazugeschrieben.</p></div>'
+    + '<table class="info">'
+    + '<tr><td class="wert">nichts</td><td>Normal, 0,5 l — also die Halbe</td></tr>'
+    + '<tr><td class="wert">L</td><td>oder ausgeschrieben <em>leicht</em>, rund 3 %</td></tr>'
+    + '<tr><td class="wert">S</td><td>oder ausgeschrieben <em>stark</em>, ab 6 %</td></tr>'
+    + '<tr><td class="wert">AF</td><td>alkoholfrei, zählt 0,00</td></tr>'
+    + '<tr><td class="wert">0,33</td><td>kleines Glas statt 0,5</td></tr>'
+    + '<tr><td class="wert">1 · M</td><td>ein Liter, also die Maß</td></tr></table>'
+    + '<p class="mini" style="margin:14px 2px 6px">Vier Deckel, wie sie aussehen dürfen:</p>'
+    + '<div class="deckelbeispiele">'
+      + '<div class="dbsp"><div class="dbsp-titel">Der Normalfall</div>'
+        + '<div class="dbsp-bild">' + strichliste(7) + '</div>'
+        + '<div class="dbsp-txt">Nichts dabei, also 7 × Halbe. 7,00 BE.</div></div>'
+      + '<div class="dbsp"><div class="dbsp-titel">Mit Stärke</div>'
+        + '<div class="dbsp-bild">L<span class="dbsp-strich">' + strichliste(4) + '</span></div>'
+        + '<div class="dbsp-txt">4 × Leicht 0,5. Statt L geht auch „leicht" ausgeschrieben.</div></div>'
+      + '<div class="dbsp"><div class="dbsp-titel">Stärke und Größe</div>'
+        + '<div class="dbsp-bild">S 0,33<span class="dbsp-strich" style="margin-left:8px">'
+        + strichliste(3) + '</span></div>'
+        + '<div class="dbsp-txt">3 × Stark 0,33 — das klassische IPA. 2,76 BE.</div></div>'
+      + '<div class="dbsp"><div class="dbsp-titel">Zwei Blöcke gemischt</div>'
+        + '<div class="dbsp-bild">' + strichliste(3)
+        + '<span style="margin:0 6px">·</span>M<span class="dbsp-strich">' + strichliste(2)
+        + '</span></div>'
+        + '<div class="dbsp-txt">3 Halbe und 2 Maß. Getrennte Blöcke, damit klar bleibt, '
+        + 'was wozu gehört.</div></div>'
+    + '</div>'
+    + '<div class="warnung" style="margin-top:12px"><p><strong>Die Eins ist die Falle.</strong> '
+    + 'Eine notierte 1 für den Liter sieht aus wie ein Zählstrich. Schreibt sie deutlich abgesetzt '
+    + 'neben den Block, nicht davor — oder nehmt gleich das M für Maß, dann kann nichts passieren. '
+    + 'Dasselbe gilt für das L: es heißt hier <em>leicht</em> und nie Liter.</p></div>'
+    + '<p>Die gezählten Zahlen kommen mit Plus und Minus zurück. Das ist keine Höflichkeit, sondern der '
+    + 'eigentliche Arbeitsschritt: Bierflecken gelten gelegentlich als Strich. Was fehlt, lässt sich über '
+    + '„Weitere Sorte eintragen" ergänzen. Fotos werden nicht gespeichert.</p></div>'
+
+    + '<div class="para" id="p6"><h2><i>§ 6</i> Ordensverleihung</h2>'
+    + '<table class="info">'
+    + '<tr><td class="wert">Deckelkönig</td><td>Die meisten Biereinheiten über das ganze Wochenende. '
+    + 'Belohnt die Menge — und damit zwangsläufig auch, wer am längsten da war.</td></tr>'
+    + '<tr><td class="wert">Schlagzahl</td><td>Der höchste Schnitt je Tag. Der Gegenpol zum '
+    + 'Deckelkönig: wer erst am Samstag anreist und dann abliefert, ist hier voll dabei.</td></tr>'
+    + '<tr><td class="wert">Aufsteiger</td><td>Größter Punktgewinn. Geht auffällig oft an Leute, die '
+    + 'vorher hinten lagen. Das ist kein Fehler, das ist Elo.</td></tr>'
+    + '<tr><td class="wert">Gleichmaß</td><td>Geringste Schwankung zwischen den Tagen. Die stille '
+    + 'Auszeichnung für alle, die auch am Sonntag noch reden können.</td></tr>'
+    + '<tr><td class="wert">Durchhalter</td><td>An jedem Tag dabei und bei den meisten Locations. '
+    + 'Der einzige Orden, den man nicht ertrinken kann — nur ersitzen.</td></tr></table>'
+    + '<p><strong>Zur unterschiedlichen Anreise:</strong> Wer einen Tag verpasst, verliert dadurch '
+    + 'keine Punkte — er kommt in der Wertung dieses Tages schlicht nicht vor. Im Fazit steht bei '
+    + 'jedem, an wie vielen Tagen er dabei war, und neben der Gesamtmenge der Schnitt je Tag. '
+    + 'Damit lassen sich Freitagsanreisende und Samstagsanreisende nebeneinander lesen, ohne dass '
+    + 'die eine Zahl die andere erschlägt.</p></div>'
+
+    + '<div class="para" id="p7"><h2><i>§ 7</i> Technische Daten</h2>'
+    + '<p>Eine Biereinheit ist Liter mal Volumenprozent geteilt durch 2,5. Eine Halbe Helles ergibt damit '
+    + 'exakt 1,00 — der Rest folgt daraus.</p>'
+    + '<p>Sorte und Menge sind getrennt: die <strong>Stärkeklasse</strong> liefert die Prozente, '
+    + 'die <strong>Größe</strong> die Liter. Vier mal drei ergibt zwölf Kombinationen aus sieben Knöpfen.</p>'
+    + '<table class="info">'
+    + '<tr><td class="frage"></td><td class="wert">0,33</td><td class="wert">0,5</td><td class="wert">1,0</td></tr>'
+    + '<tr><td class="frage">Leicht, 3 %</td><td class="wert">0,40</td><td class="wert">0,60</td><td class="wert">1,20</td></tr>'
+    + '<tr><td class="frage">Normal, 5 %</td><td class="wert">0,66</td><td class="wert">1,00</td><td class="wert">2,00</td></tr>'
+    + '<tr><td class="frage">Stark, 7 %</td><td class="wert">0,92</td><td class="wert">1,40</td><td class="wert">2,80</td></tr>'
+    + '<tr><td class="frage">Alkoholfrei</td><td class="wert">0,00</td><td class="wert">0,00</td><td class="wert">0,00</td></tr></table>'
+    + '<p class="mini" style="margin:0 2px 10px">Normal 0,5 heißt in der App <em>Halbe</em>, '
+    + 'Normal 1,0 heißt <em>Maß</em>. Über 8 % wird untertrieben — ein Doppelbock zählt wie ein '
+    + 'gewöhnliches Starkbier.</p>'
+
+    + '<p>Jeder <strong>Tag</strong> ist ein Turnier, jeder gegen jeden. Für jedes Paar wird gerechnet:</p>'
+    + '<div class="formel">'
+      + '<div class="fz"><span class="fl">Anteil</span>'
+      + '<span class="fm">S = BE<sub>A</sub> ÷ (BE<sub>A</sub> + BE<sub>B</sub>)</span>'
+      + '<span class="fk">Wie viel vom gemeinsamen Konsum ging auf A? Haben beide null, gilt 0,5.</span></div>'
+      + '<div class="fz"><span class="fl">Erwartung</span>'
+      + '<span class="fm">E = 1 ÷ (1 + 10<sup>(R<sub>B</sub> − R<sub>A</sub>) ÷ 400</sup>)</span>'
+      + '<span class="fk">Was war laut Tabellenstand zu erwarten? Gleiche Punkte heißt E = 0,5.</span></div>'
+      + '<div class="fz"><span class="fl">Änderung</span>'
+      + '<span class="fm">Δ = K ÷ (n − 1) × Σ (S − E)</span>'
+      + '<span class="fk">Summiert über alle Gegner des Tages. n ist die Zahl der Leute an dem Tag.</span></div>'
+    + '</div>'
+
+    + '<p class="mini" style="margin:14px 2px 6px">Durchgerechnet, zwei Personen, beide bei 1500:</p>'
+    + '<table class="info">'
+    + '<tr><td>Fiffi trinkt 3 Halbe + 1 Pils</td><td class="wert">3,63 BE</td></tr>'
+    + '<tr><td>David trinkt 2 Halbe</td><td class="wert">2,00 BE</td></tr>'
+    + '<tr><td>Anteil Fiffi: 3,63 ÷ 5,63</td><td class="wert">S = 0,645</td></tr>'
+    + '<tr><td>Anteil David: 2,00 ÷ 5,63</td><td class="wert">S = 0,355</td></tr>'
+    + '<tr><td>Erwartung bei Gleichstand</td><td class="wert">E = 0,500</td></tr>'
+    + '<tr><td>Fiffi: 40 × (0,645 − 0,500)</td><td class="wert">+5,8</td></tr>'
+    + '<tr><td>David: 40 × (0,355 − 0,500)</td><td class="wert">−5,8</td></tr></table>'
+    + '<p>Fiffi hat nicht doppelt so viel getrunken, sondern rund zwei Drittel des gemeinsamen '
+    + 'Konsums — deshalb wechseln knapp 6 Punkte den Besitzer und nicht 20. Was einer verliert, '
+    + 'gewinnt der andere; die Summe bleibt immer null.</p>'
+    + '<p>Weicht eure Zahl davon ab, lag der Tabellenstand vorher nicht gleichauf, es war noch jemand '
+    + 'dabei, oder es kamen mehrere Locations zusammen. Nachrechnen lohnt sich: alles oben steht fest '
+    + 'in der App, nichts davon ist Zufall.</p>'
+
+    + '<p><strong>Der K-Faktor</strong> ist der Ausschlag. Weil (S − E) nie größer als 0,5 wird, ist '
+    + '<strong>K ÷ 2 die höchstmögliche Verschiebung je Duell</strong> — bei K = 40 also 20 Punkte. '
+    + 'Klein gewählt (10) bewegt sich die Tabelle über Jahre kaum; groß gewählt (100) wird sie nach '
+    + 'jedem Wochenende neu gemischt und alte Ergebnisse zählen nichts mehr. Bei sechs bis neun '
+    + 'Wertungen im Jahr braucht es ein hohes K, sonst stünden nach drei Jahren noch alle bei 1500. '
+    + 'Deshalb ab Werk 40. Der Regler steht unter <strong>Runde</strong> und rechnet die gesamte '
+    + 'Historie sofort neu — Ausprobieren kostet nichts.</p>'
+
+    + '<p>Wer unten steht, gewinnt viel: seine Erwartung ist niedrig, jeder Erfolg überrascht. Wer oben '
+    + 'steht, muss liefern, um zu halten. Und wer an einem Tag fehlt, verliert nichts — er kommt in der '
+    + 'Wertung dieses Tages schlicht nicht vor.</p></div>'
+
+    + '<div class="para" id="p8"><h2><i>§ 8</i> Datenschutz</h2>'
+    + '<p>Diese App liegt als veröffentlichtes Artefakt bei Anthropic. Das heißt: <strong>jeder mit dem '
+    + 'Link</strong> kann sie öffnen, die Tabelle lesen und sie auch ändern — ohne Konto, ohne Anmeldung. '
+    + 'Ein Passwort gibt es nicht und kann es nicht geben, der Code ist offen einsehbar.</p>'
+    + '<p>Gespeichert werden Namen, Getränke und Locations, auf Anthropics Servern, nicht auf euren '
+    + 'Handys. Fotos gehen zum Zählen einmal durch die Schnittstelle und werden nicht abgelegt. Wird die '
+    + 'Veröffentlichung zurückgenommen, sind alle Daten endgültig weg.</p>'
+    + '<p><strong>Praktisch heißt das:</strong> Link nur in der Gruppe weitergeben, keine Klarnamen wo '
+    + 'Vornamen reichen, und nichts eintragen, was niemanden etwas angeht.</p></div>'
+
+    + '<div class="para" id="p9"><h2><i>§ 9</i> Sicherung</h2>'
+    + '<p>Die Tabelle liegt in <strong>einer</strong> Kopie am geteilten Link. Verschwindet der Link, '
+    + 'verschwinden die Daten. Deshalb sichert das Gerät auf drei Ebenen:</p><ul>'
+    + '<li><strong>Automatisch bei jedem Wochenendabschluss</strong> wird eine Kopie in den '
+    + 'gemeinsamen Speicher gelegt. Die letzten sechs bleiben erhalten.</li>'
+    + '<li><strong>Automatisch bei gleichzeitigem Tippen:</strong> Schreiben zwei Handys im selben '
+    + 'Moment, wird die Fassung, die sonst still überschrieben würde, vorher gesichert.</li>'
+    + '<li><strong>Automatisch auf jedem Gerät</strong> läuft eine stille Nebenkopie mit.</li></ul>'
+    + '<div class="warnung"><p>Keine davon hilft, wenn der Link selbst wegfällt. Dagegen hilft nur '
+    + 'der <strong>Export</strong> hinterm Zahnrad: einmal je Wochenende in die Gruppe schicken, '
+    + 'dann liegen fünf Kopien auf fünf Handys. Nach jedem Abschluss erinnert die App daran.</p></div>'
+    + '<p>Zurückholen geht über <strong>Stand wiederherstellen</strong>: Text einfügen, prüfen, '
+    + 'übernehmen. Vorher wird der jetzige Stand automatisch gesichert. Der Löschknopf bleibt '
+    + 'gesperrt, solange in dieser Sitzung nicht exportiert wurde.</p></div>'
+
+    + '<div class="para" id="p10"><h2><i>§ 10</i> Störungsbehebung</h2>'
+    + '<table class="info">'
+    + '<tr><td class="frage">Das Foto meldet 47 Striche</td><td>Entweder galt ein Bierfleck als Strich, '
+    + 'oder ihr wart fleißig. Mit Minus korrigieren. Bei 47 bitte auch § 2 nochmals lesen.</td></tr>'
+    + '<tr><td class="frage">Jemand hat am meisten getrunken und kaum Punkte gewonnen</td>'
+    + '<td>Keine Störung. Von oben wird das erwartet — E ist hoch, also bleibt (S − E) klein. '
+    + 'Rechenweg steht in § 7, das lässt sich am Tisch nachprüfen.</td></tr>'
+    + '<tr><td class="frage">Wir waren in fünf Kneipen, es gibt aber nur eine Wertung</td>'
+    + '<td>Bestimmungsgemäß, siehe § 3. Die Locations stecken im Tag, nicht daneben.</td></tr>'
+    + '<tr><td class="frage">Die Tabelle steht auf dem anderen Handy anders</td><td>Im Archiv oben '
+    + 'rechts auf den Kreispfeil tippen holt den Stand sofort.</td></tr>'
+    + '<tr><td class="frage">Wo ist die Tabelle während des Abends?</td><td>Oben rechts das '
+    + 'Balkensymbol. Von dort führt ein Knopf zurück zum laufenden Wochenende.</td></tr></table></div>'
+
+    + '<div class="para" id="p11"><h2><i>§ 11</i> Gewährleistung</h2>'
+    + '<p>Garantiert wird die korrekte Anwendung der Elo-Formel. Nicht garantiert werden der Hausfrieden, '
+    + 'die Richtigkeit handschriftlicher Strichlisten nach dem vierten Bier und das Zustandekommen des '
+    + 'nächsten Wochenendes.</p>'
+    + '<p>Ansprüche aus § 6 sind nicht in Bargeld ablösbar. Der Rechtsweg ist ausgeschlossen, die '
+    + 'Diskussion am Tisch ausdrücklich nicht.</p></div>'
+
+    + '<div class="siegel"><div class="gross">Geprüft<br>am Tisch</div>'
+    + '<div class="klein">Fünf Bubidos<br>Eine Tabelle</div></div>'
+    + '<p class="hinweis" style="text-align:center">Betriebsanleitung, Ausgabe 7 · Änderungen im Sinne '
+    + 'des technischen Fortschritts vorbehalten<br><b style="color:var(--malz)">Fassung '
+    + FASSUNG + '</b></p>';
+}
+
+/* ---------- Erklären ---------- */
+const ERKLAERUNGEN = {
+  be: {titel:'Was ist eine BE?', para:'p7', paraName:'§ 7 Technische Daten',
+    text:['Die <b>Biereinheit</b> macht verschiedene Gläser vergleichbar: '
+        + 'Liter × Volumenprozent ÷ 2,5.',
+      'Eine Halbe Helles ergibt damit genau <b>1,00</b> — das ist der Maßstab. Ein kleines Pils '
+      + 'zählt 0,66, ein starkes 0,33er 0,92, eine Maß 2,00. Alkoholfrei zählt 0,00.',
+      'Gewertet wird also nicht, wie viele Gläser jemand hatte, sondern wie viel tatsächlich drin war. '
+      + 'Drei kleine Biere schlagen nicht automatisch zwei große.']},
+  orden: {titel:'Die vier Orden', para:'p6', paraName:'§ 6 Ordensverleihung',
+    text:['<b>Deckelkönig</b> — die meisten Biereinheiten über das ganze Wochenende. Belohnt die '
+        + 'Menge, und damit auch, wer am längsten dabei war.',
+      '<b>Schlagzahl</b> — der höchste Schnitt je Tag. Der Gegenpol: wer erst Samstag anreist und '
+      + 'dann abliefert, ist hier voll dabei.',
+      '<b>Gleichmaß</b> — die geringste Schwankung zwischen den Tagen. Für alle, die auch am '
+      + 'Sonntag noch reden können.',
+      '<b>Durchhalter</b> — an jedem Tag dabei und bei den meisten Locations. Der einzige Orden, '
+      + 'den man nicht ertrinken kann, nur ersitzen.']},
+  punkte: {titel:'Was die Punktzahl bedeutet', para:'p7', paraName:'§ 7 Technische Daten',
+    text:['<b>Alle starten bei 1500.</b> Die Zahl misst nicht, wie viel jemand getrunken hat, '
+        + 'sondern wie oft er mehr getrunken hat, <i>als von ihm erwartet war</i>.',
+      'Nach jedem Tag wechseln Punkte zwischen denen, die zusammen am Tisch saßen. Was der eine '
+      + 'gewinnt, verliert der andere — die Summe bleibt null.',
+      'Je höher jemand steht, desto mehr wird von ihm erwartet. Wer unten steht, gewinnt schon mit '
+      + 'einem ordentlichen Abend viel. Deshalb ist die Tabelle nie entschieden.',
+      'Wer an einem Tag fehlt, verliert nichts.']},
+  schnitt: {titel:'Ø BE je Tag', para:'p7', paraName:'§ 7 Technische Daten',
+    text:['Die durchschnittlichen Biereinheiten an den Tagen, an denen jemand <b>dabei war</b>.',
+      'Anders als die Gesamtmenge ist die Zahl <b>unabhängig von der Anwesenheit</b>: Wer nur an '
+      + 'einem von drei Tagen da war, wird nicht dafür bestraft. Sie beantwortet „wie stark trinkt '
+      + 'der, wenn er da ist“ statt „wie viel hat er insgesamt geschafft“.',
+      'Die ehrlichste Mengenangabe in der Tabelle — und die einzige, die ohne Erklärung auskommt.']},
+  siege: {titel:'Tagessiege', para:'p6', paraName:'§ 6 Ordensverleihung',
+    text:['An wie vielen <b>Tagen</b> jemand die meisten Biereinheiten hatte. Bei Gleichstand '
+        + 'zählt der Tag für alle Beteiligten.',
+      'Gewertet wird der ganze Tag über alle Locations zusammen, nicht jede Station einzeln.']},
+  liter: {titel:'Liter', para:'p7', paraName:'§ 7 Technische Daten',
+    text:['Die Menge <b>alkoholhaltiger</b> Getränke. Alkoholfreies zählt hier nicht mit — sonst '
+        + 'stünde jemand oben, der den Abend über Malzbier getrunken hat.',
+      'Steht in der Nebenzeile etwas wie <b>3,5 L + 2,0 AF</b>, dann waren zwei Liter davon '
+      + 'alkoholfrei. Sie werden getrennt geführt, damit man sieht, dass jemand mitgehalten hat, '
+      + 'ohne dass es die Wertung verfälscht.',
+      'Anders als die Biereinheit unterscheidet der Liter nicht nach Stärke: Ein Liter Leichtbier '
+      + 'und ein Liter Starkbier sind hier dasselbe. Für die Rangfolge zählt deshalb die BE.']},
+  tage: {titel:'Tage', para:'p3', paraName:'§ 3 Aufbau',
+    text:['An wie vielen <b>Tagen</b> jemand überhaupt dabei war — quer über alle Wochenenden.',
+      'Ein Tag zählt, sobald jemand an mindestens einer Location eingetragen war. Wie viele '
+      + 'Stationen es an dem Tag wurden, steht auf der Personenseite.']},
+  deckel: {titel:'Der Deckel', para:'p2', paraName:'§ 2 Sicherheitshinweise',
+    text:['Eine Obergrenze je Tag: Ab dieser Grenze bringt Weitertrinken <b>null</b> zusätzliche '
+        + 'Punkte.',
+      'Ab Werk ist er <b>aus</b>. Damit führt die Tabelle schlicht, wer am meisten trinkt. Wem das '
+      + 'zu weit geht, schaltet ihn hinterm Zahnrad an — 8 BE je Tag ist der vorgeschlagene Wert.']}
+};
+
+function ansichtErklaer(){
+  const e = ERKLAERUNGEN[erklaer];
+  if(!e) return '';
+  return '<div class="blende" data-tu="erklaerZu"><div class="blatt">'
+    + '<div class="karte" role="dialog" aria-label="' + esc(e.titel) + '">'
+    + '<h3>' + esc(e.titel) + '</h3>'
+    + e.text.map(t => '<p class="erkl">' + t + '</p>').join('')
+    + (e.para ? '<button class="knopf leer" data-tu="geheInfoAusBlatt" data-para="' + e.para
+        + '">Mehr dazu in ' + esc(e.paraName) + '</button>' : '')
+    + '<button class="knopf voll" data-tu="erklaerZu">Passt</button>'
+    + '</div></div></div>';
+}
+
+function ansichtPunkte(){
+  return '<div class="blende" data-tu="punkteZu"><div class="blatt">'
+    + '<div class="karte" role="dialog" aria-label="Was die Punktzahl bedeutet">'
+    + '<h3>Was die Zahl bedeutet</h3>'
+    + '<p class="erkl"><b>Alle starten bei 1500.</b> Die Zahl misst nicht, wie viel jemand '
+    + 'getrunken hat, sondern wie oft er mehr getrunken hat <i>als von ihm erwartet war</i>.</p>'
+    + '<p class="erkl">Nach jedem Tag wechseln Punkte zwischen denen, die zusammen am Tisch saßen. '
+    + 'Wer mehr als seinen Anteil trinkt, gewinnt — wer weniger trinkt, verliert. Was der eine '
+    + 'gewinnt, verliert der andere, die Summe bleibt immer null.</p>'
+    + '<p class="erkl">Je höher jemand steht, desto mehr wird von ihm erwartet. Ein Tabellenführer '
+    + 'muss liefern, nur um zu halten; wer unten steht, gewinnt schon mit einem ordentlichen Abend '
+    + 'viel. Deshalb ist die Tabelle nie entschieden.</p>'
+    + '<p class="erkl">Wer an einem Tag fehlt, verliert nichts — er kommt in der Wertung dieses '
+    + 'Tages einfach nicht vor.</p>'
+    + '<button class="knopf leer" data-tu="geheInfoAusBlatt" data-para="p7">'
+    + 'Ganze Erklärung in § 7</button>'
+    + '<button class="knopf voll" data-tu="punkteZu">Verstanden</button>'
+    + '</div></div></div>';
+}
+
+function ansichtRechnung(){
+  if(!rechnung) return '';
+  const {log} = berechnen();
+  const e = log.find(x => x.we.id === rechnung.weId);
+  const p = state.spieler.find(x => String(x.id) === String(rechnung.id));
+  if(!e || !p) return '';
+  const nam = id => { const q = state.spieler.find(x => String(x.id) === String(id));
+    return esc(q ? q.name : '—'); };
+  let inhalt;
+
+  if(rechnung.tagId){
+    const tl = e.tagLog.find(t => t.tag.id === rechnung.tagId);
+    if(!tl) return '';
+    const erg = tl.erg, ids = Object.keys(erg);
+    const meiner = erg[rechnung.id];
+    if(!meiner) return '';
+    const n = ids.length, faktor = n >= 2 ? state.einst.k/(n-1) : 0;
+
+    const duelle = ids.filter(b => String(b) !== String(rechnung.id)).map(b => {
+      const ges = meiner.be + erg[b].be;
+      const S = ges === 0 ? 0.5 : meiner.be/ges;
+      const E = 1/(1 + Math.pow(10,(erg[b].vorher - meiner.vorher)/400));
+      return '<tr><td>gegen ' + nam(b) + '</td>'
+        + '<td class="z">' + zahl(erg[b].be,2) + '</td>'
+        + '<td class="z">' + zahl(S,2) + '</td>'
+        + '<td class="z">' + zahl(E,2) + '</td>'
+        + '<td class="z ' + (S-E > 0 ? 'gut' : 'schlecht') + '">'
+        + (S-E > 0 ? '+' : '') + zahl(faktor*(S-E)) + '</td></tr>';
+    }).join('');
+
+    const mehrTage = e.tagLog.filter(t => t.erg[rechnung.id]).length > 1;
+    inhalt = (mehrTage
+        ? '<button class="blattzurueck" data-tu="rechnungAlle">‹ Alle Tage</button>' : '')
+      + '<h3>' + esc(p.name) + ', ' + esc(tl.tag.label) + '</h3>'
+      + '<p class="mini" style="margin:2px 0 14px">' + esc(e.we.titel) + ' · '
+      + n + ' am Tisch · K ' + state.einst.k + '</p>'
+      + '<p class="erkl">' + esc(p.name) + ' hatte an diesem Tag <b>' + zahl(meiner.be,2)
+      + ' BE</b> und stand vorher bei <b>' + Math.round(meiner.vorher) + '</b>.</p>'
+      + '<table class="rechnung"><tr><th></th><th class="z">BE</th><th class="z">Anteil</th>'
+      + '<th class="z">erwartet</th><th class="z">Punkte</th></tr>' + duelle + '</table>'
+      + '<p class="erkl"><b>Anteil</b> ist der Anteil am gemeinsamen Konsum des Duells. '
+      + '<b>Erwartet</b> ist der Anteil, den die Punktzahlen vorher nahegelegt haben. '
+      + 'Die Differenz mal ' + zahl(faktor,1) + ' ergibt die Punkte.</p>'
+      + '<div class="summe"><span>Summe</span><b class="' + (meiner.delta > 0 ? 'gut' : 'schlecht')
+      + '">' + (meiner.delta > 0 ? '+' : '') + zahl(meiner.delta) + '</b></div>'
+      + '<div class="summe"><span>neuer Stand</span><b>' + Math.round(meiner.nachher) + '</b></div>';
+
+  } else {
+    const zeilen = e.tagLog.filter(t => t.erg[rechnung.id]).map(t => {
+      const g = t.erg[rechnung.id];
+      return '<button class="tagzeile" data-tu="rechnungTagAus" data-id="'+rechnung.id
+        + '" data-we="'+e.we.id+'" data-tag="'+t.tag.id+'">'
+        + '<span class="tzn">' + esc(t.tag.label) + '</span>'
+        + '<span class="tzbe">' + zahl(g.be,2) + ' BE</span>'
+        + deltaChip(g.delta) + '<span class="tzp">›</span></button>';
+    }).join('');
+    const gesamt = e.tagLog.reduce((x,t) => x + (t.erg[rechnung.id] ? t.erg[rechnung.id].delta : 0), 0);
+    inhalt = '<h3>' + esc(p.name) + ', ' + esc(e.we.titel) + '</h3>'
+      + '<p class="mini" style="margin:2px 0 14px">Jeder Tag wird einzeln gewertet</p>'
+      + zeilen
+      + '<div class="summe"><span>ganzes Wochenende</span><b class="' + (gesamt > 0 ? 'gut' : 'schlecht')
+      + '">' + (gesamt > 0 ? '+' : '') + zahl(gesamt) + '</b></div>'
+      + '<p class="erkl">Tippe einen Tag an, um die Rechnung dahinter zu sehen.</p>';
+  }
+
+  return '<div class="blende" data-tu="rechnungHintergrund"><div class="blatt">'
+    + '<div class="karte" role="dialog" aria-label="Rechenweg">' + inhalt
+    + (rechnung.tagId && e.tagLog.filter(t => t.erg[rechnung.id]).length > 1
+        ? '<button class="knopf voll" data-tu="rechnungAlle">Zurück zu allen Tagen</button>'
+          + '<button class="knopf leer" data-tu="geheInfoAusBlatt" data-para="p7">Formel in § 7</button>'
+          + '<button class="knopf leer" data-tu="rechnungZu">Schließen</button>'
+        : '<button class="knopf leer" data-tu="geheInfoAusBlatt" data-para="p7">Formel in § 7</button>'
+          + '<button class="knopf voll" data-tu="rechnungZu">Schließen</button>')
+    + '</div></div></div>';
+}
+
+function ansichtBenennen(){
+  const {tg, ort} = aktuell();
+  if(!ort) return '';
+  const nr = tg ? tg.orte.findIndex(o => o.id === ort.id) + 1 : 1;
+  return '<div class="blende" data-tu="benennenHintergrund"><div class="blatt">'
+    + '<div class="karte" role="dialog" aria-label="Location benennen">'
+    + '<h3>Wo seid ihr jetzt?</h3>'
+    + '<p class="mini" style="margin:2px 0 14px">'
+    + (nr === 1 ? esc(tg ? tg.label : 'Neuer Tag') + ', erste Station. '
+                : 'Station ' + nr + ' an diesem Tag. ')
+    + 'Ohne Eingabe bleibt es beim Standardnamen.</p>'
+    + '<div class="feld"><input id="ortNameNeu" value="' + esc(ort.name) + '" '
+    + 'placeholder="Name der Location" autocomplete="off" autofocus></div>'
+    + '<button class="knopf voll" data-tu="benennenFertig">Passt</button>'
+    + '</div></div></div>';
+}
+
+function ansichtZwischen(){
+  const we = state.we.find(w => w.id === state.aktivWe);
+  if(!we) return '<p class="hinweis">Gerade läuft kein Wochenende.</p>';
+  const {R, log} = berechnen();
+  const e = log.find(x => x.we.id === we.id);
+  if(!e || !e.tagLog.length) return '<p class="hinweis">Noch nichts eingetragen.</p>'
+    + '<button class="knopf voll" data-tu="geheZaehlen">Zurück zum Zählen</button>';
+
+  const tage = e.tagLog.map(t => {
+    const ids = Object.keys(t.erg).sort((x,y) => t.erg[y].be - t.erg[x].be);
+    const best = ids.length ? t.erg[ids[0]].be : 0;
+    const stationen = t.tag.orte.map((o,i) => esc(o.name || (i+1)+'. Station')).join(' → ');
+    const zeilen = ids.map(id => {
+      const q = state.spieler.find(x => String(x.id) === String(id));
+      const sieger = best > 0 && Math.abs(t.erg[id].be - best) < 1e-9;
+      return '<div class="tagrang' + (sieger ? ' sieger' : '') + '">'
+        + '<span class="trn">' + (sieger ? '★' : '') + '</span>'
+        + '<span class="trname">' + esc(q ? q.name : '—') + '</span>'
+        + '<span class="trbe">' + zahl(t.erg[id].be,2) + ' BE</span>'
+        + deltaChip(t.erg[id].delta, ' data-tu="rechnungTagAus" data-id="'+id
+          + '" data-we="'+we.id+'" data-tag="'+t.tag.id+'"') + '</div>';
+    }).join('');
+    const ist = t.tag.id === state.aktivTag;
+    return '<div class="tagblock' + (ist ? ' laeuft' : '') + '">'
+      + '<div class="tagkopf"><span>' + esc(t.tag.label) + (ist ? ' · läuft' : '') + '</span>'
+      + '<span class="tagorte">' + stationen + '</span></div>' + zeilen + '</div>';
+  }).join('');
+
+  const ids = [...new Set(e.tagLog.flatMap(t => Object.keys(t.erg)))];
+  const gesamt = ids.map(id => {
+    const q = state.spieler.find(x => String(x.id) === String(id));
+    let be = 0, tage2 = 0;
+    e.tagLog.forEach(t => { if(t.erg[id]){ be += t.erg[id].be; tage2++; } });
+    return {id, name:q ? q.name : '—', be, tage:tage2,
+            delta:(e.nachher[id]||0) - (e.vorher[id]||0), jetzt:R[id]};
+  }).sort((a,b) => b.be - a.be);
+
+  const gzeilen = gesamt.map(l => '<div class="frow"><div class="fhaupt">'
+    + '<div class="fname">' + esc(l.name) + '</div>'
+    + '<div class="fbe">' + zahl(l.be,2) + ' BE</div>'
+    + deltaChip(l.delta, ' data-tu="rechnungWe" data-id="'+l.id+'" data-we="'+we.id+'"')
+    + '<div class="fneu">' + Math.round(l.jetzt) + '</div></div>'
+    + '<div class="fmeta">' + l.tage + ' von ' + e.tagLog.length + ' '
+    + (e.tagLog.length===1?'Tag':'Tagen') + '</div></div>').join('');
+
+  return '<div class="zwkopf"><div class="zwtitel">' + esc(we.titel) + '</div>'
+    + '<div class="zwdatum">' + datumHuebsch(we.datum) + ' · läuft</div></div>'
+    + '<div class="abschnitt oben">Tag für Tag</div>' + tage
+    + '<div class="abschnitt">Bisher zusammen</div>' + gzeilen
+    + '<button class="knopf voll" data-tu="geheZaehlen">Zurück zum Zählen</button>'
+    + '<button class="knopf leer" data-tu="geheArchiv">Gesamttabelle ansehen</button>';
+}
+
+function ansichtPerson(){
+  const p = state.spieler.find(x => String(x.id) === String(personId));
+  if(!p) return '<p class="hinweis">Diese Person gibt es nicht mehr.</p>';
+  const {R, weTeil, tagTeil, ortTeil, siege, beSumme, hoch, log} = berechnen();
+  const oBe = tagTeil[p.id] ? beSumme[p.id]/tagTeil[p.id] : 0;
+  let liter = 0, literAf = 0, getr = 0;
+  log.forEach(e => e.tagLog.forEach(t => { if(t.erg[p.id]){
+    liter += t.erg[p.id].liter; literAf += t.erg[p.id].literAf || 0;
+    getr += t.erg[p.id].anzahl; } }));
+
+  const orden = {};
+  log.filter(e => e.tagLog.length).forEach(e => fazitVon(e).orden.forEach(o => {
+    if(o.w.split(', ').some(n => n === p.name)) orden[o.t] = (orden[o.t]||0) + 1;
+  }));
+  const ordenZeilen = Object.keys(orden).length
+    ? Object.keys(orden).map(t => '<div class="ozeile"><span>' + t + '</span><b>'
+        + orden[t] + '×</b></div>').join('')
+    : '<p class="hinweis" style="margin:6px 2px">Noch kein Orden.</p>';
+
+  const wes = log.filter(e => e.tagLog.some(t => t.erg[p.id])).reverse().map(e => {
+    const d = (e.nachher[p.id]||0) - (e.vorher[p.id]||0);
+    let be = 0, tage = 0;
+    e.tagLog.forEach(t => { if(t.erg[p.id]){ be += t.erg[p.id].be; tage++; } });
+    return '<button class="weZeile" data-tu="rechnungWe" data-id="'+p.id+'" data-we="'+e.we.id+'">'
+      + '<div class="wztext"><div class="wzname">' + esc(e.we.titel) + '</div>'
+      + '<div class="wzmeta">' + datumHuebsch(e.we.datum) + ' · ' + tage + ' '
+      + (tage===1?'Tag':'Tage') + ' · ' + zahl(be,2) + ' BE</div></div>'
+      + deltaChip(d) + '</button>';
+  }).join('') || '<p class="hinweis" style="margin:6px 2px">Noch nicht dabei gewesen.</p>';
+
+  return '<div class="pkopf"><div class="pkname">' + esc(p.name) + '</div>'
+    + '<div class="pkelo">' + Math.round(R[p.id]) + '</div></div>'
+    + '<div class="kacheln">'
+    + '<div><b>' + siege[p.id] + '</b><span>Tagessiege</span></div>'
+    + '<div><b>' + zahl(oBe,2) + '</b><span>Ø BE je Tag</span></div>'
+    + '<div><b>' + Math.round(hoch[p.id]) + '</b><span>Höchststand</span></div>'
+    + '<div><b>' + zahl(liter) + '</b><span>Liter</span></div>'
+    + '<div><b>' + zahl(literAf) + '</b><span>Liter alkfrei</span></div>'
+    + '<div><b>' + getr + '</b><span>Getränke</span></div>'
+    + '<div><b>' + tagTeil[p.id] + '</b><span>Tage</span></div>'
+    + '<div><b>' + weTeil[p.id] + '</b><span>Wochenenden</span></div>'
+    + '<div><b>' + ortTeil[p.id] + '</b><span>Locations</span></div></div>'
+    + '<div class="abschnitt">Orden</div>' + ordenZeilen
+    + '<div class="abschnitt">Wochenenden</div>' + wes;
+}
+
+/* ---------- Sichern ---------- */
+function exportText(){
+  return JSON.stringify({app:'bubidos-bierliga', version:1, t:Date.now(), daten:standDaten()});
+}
+function dateiName(){
+  const d = new Date();
+  return 'bubidos-' + d.getFullYear() + '-'
+    + String(d.getMonth()+1).padStart(2,'0') + '-'
+    + String(d.getDate()).padStart(2,'0') + '.json';
+}
+function herunterladen(){
+  try{
+    const b = new Blob([exportText()], {type:'application/json'});
+    const u = URL.createObjectURL(b);
+    const a = document.createElement('a');
+    a.href = u; a.download = dateiName();
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(u); a.remove(); }, 1000);
+    exportiert = true;
+    return true;
+  }catch(e){ return false; }
+}
+async function inZwischenablage(){
+  try{ await navigator.clipboard.writeText(exportText()); exportiert = true; return true; }
+  catch(e){ return false; }
+}
+function einlesen(text){
+  const d = JSON.parse(text);
+  const k = d && d.daten ? d.daten : d;
+  if(!k || !Array.isArray(k.spieler) || !Array.isArray(k.we))
+    throw new Error('Das sieht nicht nach einer Bubidos-Sicherung aus');
+  return k;
+}
+
+function ansichtSicher(){
+  if(!sicherBlatt) return '';
+  let inhalt;
+
+  if(sicherBlatt.art === 'export'){
+    inhalt = '<h3>Stand sichern</h3>'
+      + '<p class="erkl">Die einzige Sicherung, die auch dann noch da ist, wenn dieser Link '
+      + 'verschwindet. Schickt sie nach jedem Wochenende in die Gruppe – dann liegen fünf Kopien '
+      + 'auf fünf Handys.</p>'
+      + '<button class="knopf voll" data-tu="sicherDatei">Als Datei herunterladen</button>'
+      + '<button class="knopf leer" data-tu="sicherKopie">In die Zwischenablage</button>'
+      + '<p class="mini" style="margin:14px 0 6px">Oder von Hand kopieren:</p>'
+      + '<textarea class="sicherfeld" readonly rows="4">' + esc(exportText()) + '</textarea>'
+      + '<button class="knopf leer" data-tu="sicherZu">Schließen</button>';
+  }
+
+  if(sicherBlatt.art === 'import'){
+    inhalt = '<h3>Stand wiederherstellen</h3>'
+      + '<div class="warnung"><p>Ersetzt den <b>gesamten</b> aktuellen Stand – Spieler, '
+      + 'Wochenenden, Einstellungen. Der jetzige Stand wird vorher automatisch gesichert.</p></div>'
+      + '<textarea class="sicherfeld" id="importFeld" rows="5" '
+      + 'placeholder="Gesicherten Text hier einfügen"></textarea>'
+      + (sicherBlatt.fehler ? '<p class="mini" style="color:#E09084;margin:8px 0 0">'
+          + esc(sicherBlatt.fehler) + '</p>' : '')
+      + '<button class="knopf voll" data-tu="importPruefen">Prüfen</button>'
+      + '<button class="knopf leer" data-tu="sicherZu">Abbrechen</button>';
+  }
+
+  if(sicherBlatt.art === 'bestaetigen'){
+    const k = sicherBlatt.kandidat;
+    const tage = (k.we||[]).reduce((n,w) => n + (w.tage||[]).length, 0);
+    inhalt = '<h3>Das steckt drin</h3>'
+      + '<table class="info">'
+      + '<tr><td>Spieler</td><td class="wert">' + (k.spieler||[]).length + '</td></tr>'
+      + '<tr><td>Wochenenden</td><td class="wert">' + (k.we||[]).length + '</td></tr>'
+      + '<tr><td>Tage</td><td class="wert">' + tage + '</td></tr>'
+      + '<tr><td>Stand von</td><td class="wert">'
+      + (k.stand ? datumHuebsch(new Date(k.stand).toISOString().slice(0,10)) : '–') + '</td></tr></table>'
+      + '<p class="erkl">Jetzt: ' + state.spieler.length + ' Spieler, ' + state.we.length
+      + ' Wochenenden. Das wird ersetzt.</p>'
+      + '<button class="knopf voll" data-tu="importAusfuehren">Übernehmen</button>'
+      + '<button class="knopf leer" data-tu="sicherZu">Abbrechen</button>';
+  }
+
+  return '<div class="blende" data-tu="sicherHintergrund"><div class="blatt">'
+    + '<div class="karte" role="dialog" aria-label="Sichern">' + inhalt + '</div></div></div>';
+}
+
+/* ---------- Zeichnen ---------- */
+function markeSvg(breite, mitText){
+  const t = mitText === false ? '' :
+      '<text x="100" y="98" text-anchor="middle" font-size="16" fill="#E9E1CD" '
+    + 'textLength="118" lengthAdjust="spacing" font-family="Georgia,Times New Roman,serif" '
+    + 'font-weight="700">BUBIDOS</text>'
+    + '<line x1="41" y1="106" x2="159" y2="106" stroke="#B87513" stroke-width="1.6"/>'
+    + '<text x="100" y="130" text-anchor="middle" font-size="16" fill="#E9E1CD" '
+    + 'textLength="118" lengthAdjust="spacing" font-family="Georgia,Times New Roman,serif" '
+    + 'font-weight="700">BIERLIGA</text>';
+  const striche = mitText === false
+    ? '<g transform="translate(100,124) scale(1.5)">' : '<g transform="translate(100,166) scale(.85)">';
+  const box = mitText === false ? '15 3 170 202' : '0 0 200 215';
+  const hoehe = mitText === false ? breite*202/170 : breite*215/200;
+  return '<svg viewBox="'+box+'" width="'+breite+'" height="'+Math.round(hoehe)+'" '
+    + 'role="img" aria-label="Bubidos Bierliga">'
+    + '<g transform="translate(100,22)">'
+    + '<path d="M -15 7 H 15 L 12.5 -6 L 7 0 L 0 -10 L -7 0 L -12.5 -6 Z" fill="none" '
+    + 'stroke="#B87513" stroke-width="2.4" stroke-linejoin="round"/>'
+    + '<circle cx="0" cy="-13" r="2.4" fill="#B87513"/>'
+    + '<circle cx="-13.5" cy="-9" r="2" fill="#B87513"/>'
+    + '<circle cx="13.5" cy="-9" r="2" fill="#B87513"/></g>'
+    + '<circle cx="100" cy="118" r="82" fill="none" stroke="#B87513" stroke-width="2.5"/>'
+    + '<circle cx="100" cy="118" r="73" fill="none" stroke="#B87513" stroke-width="1" opacity=".45"/>'
+    + t
+    + striche + '<g stroke="#E9E1CD" stroke-width="4" stroke-linecap="round">'
+    + '<line x1="-14" y1="-13" x2="-14" y2="13"/><line x1="-4.7" y1="-13" x2="-4.7" y2="13"/>'
+    + '<line x1="4.7" y1="-13" x2="4.7" y2="13"/><line x1="14" y1="-13" x2="14" y2="13"/>'
+    + '<line x1="-18.5" y1="14" x2="18.5" y2="-14" stroke="#B87513"/></g></g></svg>';
+}
+
+function modus(){
+  if(!token || ghFehler === 'token') return 'token';
+  if(ansicht) return ansicht;
+  return state.aktivWe ? 'zaehlen' : 'archiv';
+}
+function kopfBauen(m){
+  if(m === 'token'){
+    return '<div class="kopf-inner"><div class="kopf-unter">'
+      + '<span class="kopf-utitel">Verbinden</span></div></div>';
+  }
+  if(m === 'zaehlen'){
+    const {we, tg, ort} = aktuell();
+    if(!we) return '';
+    return '<div class="kopf-inner kopf-zaehlen">'
+      + '<button class="kopf-ort" data-tu="wechslerAuf">'
+      + '<span class="kz-titel">' + esc(we.titel) + '</span>'
+      + '<span class="kz-wo">' + esc(tg ? tg.label : '') + ' · '
+      + esc(ort && ort.name ? ort.name : 'Location benennen')
+      + (tg && ort ? ' · ' + (tg.orte.findIndex(o => o.id === ort.id)+1) + '/' + tg.orte.length : '')
+      + ' ⌄</span></button>'
+      + '<div class="kopf-tasten">'
+      + '<button data-tu="fotoStart" aria-label="Deckel abfotografieren">'
+      + '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" '
+      + 'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+      + '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>'
+      + '<circle cx="12" cy="13" r="4"/></svg></button>'
+      + '<button data-tu="geheZwischen" aria-label="Zwischenstand">'
+      + '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" '
+      + 'stroke-linecap="round" aria-hidden="true">'
+      + '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></button></div></div>';
+  }
+
+  const zurueck = (m === 'einst' || m === 'info' || m === 'wedetail' || m === 'person' || m === 'zwischen')
+    ? '<button class="kopf-zurueck" data-tu="zurueckNavi">‹ zurück</button>' : '';
+  const titel = m === 'einst' ? 'Einstellungen'
+              : m === 'info' ? 'Betriebsanleitung'
+              : m === 'wedetail' ? 'Wochenende'
+              : m === 'person' ? 'Spieler'
+              : m === 'zwischen' ? 'Zwischenstand'
+              : null;
+
+  if(titel){
+    return '<div class="kopf-inner"><div class="kopf-unter">' + zurueck
+      + '<span class="kopf-utitel">' + titel + '</span></div></div>';
+  }
+
+  const {weTeil, tagTeil, log} = berechnen();
+  const gewertet = log.filter(e => e.tagLog.length);
+  const tage = gewertet.reduce((n,e) => n + e.tagLog.length, 0);
+  let liter = 0;
+  gewertet.forEach(e => e.tagLog.forEach(t => Object.keys(t.erg).forEach(id => liter += t.erg[id].liter)));
+  const zahlen = gewertet.length
+    ? gewertet.length + ' ' + (gewertet.length===1?'Wochenende':'Wochenenden') + ' · '
+      + tage + ' ' + (tage===1?'Tag':'Tage') + ' · ' + zahl(liter) + ' L'
+    : 'Noch kein Wochenende gewertet';
+
+  return '<div class="kopf-inner"><div class="kopf-archiv">'
+    + '<div class="marke">' + markeSvg(56, false) + '</div>'
+    + '<div class="kopf-mitte"><div class="kopf-wort">Bubidos Bierliga</div>'
+    + '<div class="kopf-zahlen">' + zahlen + '</div></div>'
+    + '<div class="kopf-tasten">'
+    + '<button data-tu="geheEinst" aria-label="Einstellungen">'
+    + '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" '
+    + 'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    + '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'
+    + '</svg></button></div></div></div>';
+}
+
+function zeichnen(){
+  try{ zeichnenRoh(); }
+  catch(err){
+    console.error('Zeichnen fehlgeschlagen:', err);
+    document.querySelectorAll('.blende').forEach(x => x.remove());
+    foto = null; blatt = null; rechnung = null; wechsler = false;
+    punkteOffen = false; benennen = false; rundeFrage = false; sicherBlatt = null;
+    erklaer = null;
+    const app = document.getElementById('app');
+    if(app) app.innerHTML = '<div class="leerzustand"><h2>Da ist was schiefgelaufen</h2>'
+      + '<p>Die Anzeige konnte nicht aufgebaut werden. Deine Daten sind gespeichert.</p></div>'
+      + '<button class="knopf voll" data-tu="geheArchiv">Zur Übersicht</button>'
+      + '<button class="knopf leer" data-tu="frisch">Stand neu laden</button>'
+      + '<p class="hinweis">' + esc(String(err && err.message || err)) + '</p>';
+  }
+}
+function zeichnenRoh(){
+  const m = modus();
+  document.getElementById('kopf').innerHTML = kopfBauen(m);
+  document.getElementById('app').innerHTML =
+    m === 'zaehlen'  ? ansichtZaehlen() :
+    m === 'einst'    ? ansichtEinst()   :
+    m === 'info'     ? ansichtInfo()    :
+    m === 'wedetail' ? ansichtWeDetail(detailId) :
+    m === 'neu'      ? ansichtNeuesWe() :
+    m === 'person'   ? ansichtPerson() :
+    m === 'zwischen' ? ansichtZwischen() :
+    m === 'token'    ? ansichtToken() : ansichtArchiv();
+
+  if(infoZiel && m === 'info'){
+    const z = document.getElementById(infoZiel);
+    if(z && z.scrollIntoView) z.scrollIntoView({block:'start'});
+    infoZiel = null;
+  }
+  document.querySelectorAll('.blende').forEach(x => x.remove());
+  if(foto)          document.body.insertAdjacentHTML('beforeend', ansichtFoto());
+  else if(rechnung) document.body.insertAdjacentHTML('beforeend', ansichtRechnung());
+  else if(punkteOffen) document.body.insertAdjacentHTML('beforeend', ansichtPunkte());
+  else if(erklaer)  document.body.insertAdjacentHTML('beforeend', ansichtErklaer());
+  else if(blatt)    document.body.insertAdjacentHTML('beforeend', ansichtBlatt());
+  else if(sicherBlatt) document.body.insertAdjacentHTML('beforeend', ansichtSicher());
+  else if(benennen) document.body.insertAdjacentHTML('beforeend', ansichtBenennen());
+  else if(wechsler) document.body.insertAdjacentHTML('beforeend', ortWechsler());
+  else if(fazitOffen){
+    const {log} = berechnen();
+    const e = log.find(x => x.we.id === fazitOffen);
+    if(e) document.body.insertAdjacentHTML('beforeend',
+      '<div class="blende" data-tu="fazitZu"><div class="blatt" role="dialog" aria-label="Fazit">'
+      + fazitBlock(fazitVon(e), true) + '</div></div>');
+  }
+}
+
+/* ---------- Aktionen ---------- */
+const neueId = () => Date.now() + Math.floor(Math.random()*1000);
+
+const tu = {
+  merken(){
+    stapel.push({a:ansicht, p:personId, d:detailId});
+    if(stapel.length > 12) stapel.shift();
+  },
+  zurueckNavi(){
+    const v = stapel.pop();
+    frage = null; erklaer = null; rechnung = null; punkteOffen = false;
+    blatt = null; wechsler = false; sicherBlatt = null; benennen = false;
+    if(v){ ansicht = v.a; personId = v.p; detailId = v.d; }
+    else { ansicht = state.aktivWe ? null : 'archiv'; personId = null; detailId = null; }
+    window.scrollTo(0,0); zeichnen();
+  },
+  geheArchiv(){ stapel = []; ansicht = 'archiv'; detailId = null; personId = null;
+    frage = null; window.scrollTo(0,0); zeichnen(); },
+  geheZaehlen(){ stapel = []; ansicht = null; frage = null; window.scrollTo(0,0); zeichnen(); },
+  geheZwischen(){ tu.merken(); ansicht = 'zwischen'; frage = null; window.scrollTo(0,0); zeichnen(); },
+  geheEinst(){ tu.merken(); ansicht = 'einst'; frage = null; window.scrollTo(0,0); zeichnen(); },
+  geheInfo(el){
+    tu.merken();
+    infoZiel = el && el.dataset ? (el.dataset.para || null) : null;
+    ansicht = 'info'; frage = null; erklaer = null; rechnung = null;
+    blatt = null; wechsler = false; sicherBlatt = null; benennen = false; fazitOffen = null;
+    if(!infoZiel) window.scrollTo(0,0);
+    zeichnen();
+  },
+  weNeu(){ vorwahl = null; ansicht = 'neu'; window.scrollTo(0,0); zeichnen(); },
+  weDetail(el){ tu.merken(); detailId = +el.dataset.id; ansicht = 'wedetail'; window.scrollTo(0,0); zeichnen(); },
+  wahlAuf(){ state.wahlOffen = !state.wahlOffen; zeichnen(); },
+  bewege(richtung){
+    const k = kette();
+    if(k.length < 2) return;
+    const neu2 = kettePos(k) + richtung;
+    if(neu2 < 0 || neu2 >= k.length) return;
+    state.aktivTag = k[neu2].tagId; state.aktivOrt = k[neu2].ortId;
+    letzteRunde = null; rundeFrage = false; entsperrt = null;
+    sichern(); zeichnen();
+  },
+  zurueckOrt(){ tu.bewege(-1); },
+  vorOrt(){ tu.bewege(1); },
+  entsperren(){ const {ort} = aktuell(); if(ort) entsperrt = ort.id; zeichnen(); },
+  sicherAuf(){ sicherBlatt = {art:'export'}; zeichnen(); },
+  sicherZu(){ sicherBlatt = null; zeichnen(); },
+  sicherHintergrund(){},
+  sicherDatei(){ toast(herunterladen() ? 'Datei erstellt' : 'Download nicht möglich – Text kopieren'); },
+  async sicherKopie(){
+    toast(await inZwischenablage() ? 'In der Zwischenablage' : 'Klappt nicht – Text markieren');
+    zeichnen();
+  },
+  importAuf(){ sicherBlatt = {art:'import'}; zeichnen(); },
+  importPruefen(){
+    const f = document.getElementById('importFeld');
+    try{
+      const kandidat = einlesen((f.value || '').trim());
+      sicherBlatt = {art:'bestaetigen', kandidat};
+    }catch(e){
+      sicherBlatt = {art:'import', fehler:e.message};
+    }
+    zeichnen();
+  },
+  async importAusfuehren(){
+    const k = sicherBlatt.kandidat;
+    state.spieler = k.spieler || [];
+    state.we = migrieren(k.we || []);
+    state.einst = Object.assign({k:40, deckel:0}, k.einst || {});
+    state.geraete = k.geraete || {};
+    state.aktivWe = null; state.aktivTag = null; state.aktivOrt = null;
+    sicherBlatt = null; ansicht = 'archiv'; stapel = [];
+    await sichern({sofort:true});
+    zeichnen();
+    toast('Stand wiederhergestellt');
+  },
+  ichBin(el){ ichSetzen(el.dataset.name || null); zeichnen(); },
+  personAuf(el){ tu.merken(); personId = +el.dataset.id; ansicht = 'person'; window.scrollTo(0,0); zeichnen(); },
+  punkteInfo(){ punkteOffen = true; zeichnen(); },
+  punkteZu(){ punkteOffen = false; zeichnen(); },
+  erklaerAuf(el){ erklaer = el.dataset.was; zeichnen(); },
+  sortieren(el){ state.sortier = el.dataset.k; sichern(); zeichnen(); },
+  async tokenSpeichern(){
+    const f = document.getElementById('tokenFeld');
+    const t = (f.value || '').trim();
+    if(!t){ f.focus(); return; }
+    token = t; ghFehler = null;
+    const ok = await laden();
+    if(ok === false && ghFehler === 'token'){
+      token = null; zeichnen(); toast('Schlüssel wird abgelehnt'); return;
+    }
+    lokal.schreiben(TOKEN_KEY, t);
+    if(ok === 'leer' || !state.spieler.length){
+      if(!state.spieler.length) BUBIDOS.forEach((n,i) => state.spieler.push({id:Date.now()+i, name:n}));
+      geraetSichern();
+      await sichern({sofort:true});
+    } else if(geraetSichern()){
+      await sichern({sofort:true});
+    }
+    ansicht = null; zeichnen();
+    toast('Verbunden');
+  },
+  tokenLoesen(){
+    lokal.loeschen(TOKEN_KEY); token = null; ghSha = null; ghFehler = null;
+    ansicht = null; zeichnen();
+  },
+  spiegelZeigen(){
+    const d = spiegelLesen();
+    if(!d) return;
+    uebernehmen(d); ansicht = 'archiv'; zeichnen();
+    toast('Nur lokale Kopie – nicht mit den anderen abgeglichen');
+  },
+  verlaufOeffnen(){ window.open(GH_VERLAUF(), '_blank'); },
+  erklaerZu(){ erklaer = null; zeichnen(); },
+  geheInfoAusBlatt(el){
+    tu.merken();
+    erklaer = null; punkteOffen = false; rechnung = null;
+    blatt = null; wechsler = false; sicherBlatt = null; benennen = false; fazitOffen = null;
+    infoZiel = el && el.dataset ? (el.dataset.para || null) : null;
+    ansicht = 'info'; frage = null;
+    if(!infoZiel) window.scrollTo(0,0);
+    zeichnen();
+  },
+  rechnungTag(el){
+    const {we, tg} = aktuell();
+    rechnung = {id:el.dataset.id, weId:we.id, tagId:tg.id};
+    zeichnen();
+  },
+  rechnungWe(el){ rechnung = {id:el.dataset.id, weId:+el.dataset.we, tagId:null}; zeichnen(); },
+  rechnungTagAus(el){
+    rechnung = {id:el.dataset.id, weId:+el.dataset.we, tagId:+el.dataset.tag};
+    zeichnen();
+  },
+  rechnungZu(){ rechnung = null; zeichnen(); },
+  rechnungAlle(){ if(rechnung) rechnung = {id:rechnung.id, weId:rechnung.weId, tagId:null};
+    zeichnen(); },
+  rechnungHintergrund(){},
+  wechslerAuf(){ wechsler = true; zeichnen(); },
+  wechslerZu(){ wechsler = false; sichern(); zeichnen(); },
+  wechslerHintergrund(){},
+  spielerRein(){
+    const f = document.getElementById('neuName');
+    const name = (f.value || '').trim();
+    if(!name){ f.focus(); return; }
+    if(state.spieler.some(p => p.name.toLowerCase() === name.toLowerCase())){ toast('Den Namen gibt es schon'); return; }
+    state.spieler.push({id:neueId(), name});
+    f.value = ''; sichern(); zeichnen();
+    const n = document.getElementById('neuName'); if(n) n.focus();
+  },
+  spielerRaus(el){
+    const id = +el.dataset.id;
+    state.spieler = state.spieler.filter(x => x.id !== id);
+    state.we.forEach(w => { w.dabei = (w.dabei||[]).filter(x => x !== id);
+      w.tage.forEach(t => t.orte.forEach(o => delete o.getraenke[id])); });
+    sichern(); zeichnen();
+  },
+  merkeNeu(){
+    const t = document.getElementById('weTitel'), d = document.getElementById('weDatum'),
+          o = document.getElementById('weOrt');
+    if(t) vorwahl.titel = t.value;
+    if(d) vorwahl.datum = d.value;
+    if(o) vorwahl.ort = o.value;
+  },
+  vorAn(el){
+    tu.merkeNeu();
+    const id = +el.dataset.id;
+    vorwahl.ids = vorwahl.ids.some(x => x === id)
+      ? vorwahl.ids.filter(x => x !== id) : vorwahl.ids.concat([id]);
+    zeichnen();
+  },
+  weNeuSpieler(){
+    const f = document.getElementById('weNeuName');
+    const name = (f.value || '').trim();
+    if(!name){ f.focus(); return; }
+    tu.merkeNeu();
+    const da = state.spieler.find(p => p.name.toLowerCase() === name.toLowerCase());
+    if(da){
+      if(!vorwahl.ids.some(x => x === da.id)) vorwahl.ids.push(da.id);
+      toast(da.name + ' war schon dabei – jetzt angehakt');
+    } else {
+      const p = {id:neueId(), name};
+      state.spieler.push(p);
+      vorwahl.ids.push(p.id);
+      sichern();
+    }
+    zeichnen();
+  },
+  weStart(){
+    tu.merkeNeu();
+    const dabei = vorwahl.ids.slice();
+    if(dabei.length < 2){ toast('Mindestens zwei am ersten Tag'); return; }
+    const titel = (vorwahl.titel || '').trim() || 'Wochenende ' + (state.we.length + 1);
+    const datum = vorwahl.datum || new Date().toISOString().slice(0,10);
+    const g = {}; dabei.forEach(id => g[id] = []);
+    const ort = {id:neueId(), name:(vorwahl.ort || '').trim() || 'Location 1', getraenke:g};
+    const tg = {id:neueId(), label:'1. Tag', orte:[ort]};
+    const we = {id:neueId(), titel, datum, zu:false, dabei, tage:[tg]};
+    state.we.push(we);
+    state.aktivWe = we.id; state.aktivTag = tg.id; state.aktivOrt = ort.id;
+    ansicht = null; vorwahl = null; sichern(); zeichnen();
+  },
+  tagWahl(el){
+    letzteRunde = null; rundeFrage = false;
+    const we = state.we.find(w => w.id === state.aktivWe);
+    const tg = we.tage.find(t => t.id === +el.dataset.id);
+    state.aktivTag = tg.id; state.aktivOrt = tg.orte[0] ? tg.orte[0].id : null;
+    sichern(); zeichnen();
+  },
+  tagNeu(){
+    const we = state.we.find(w => w.id === state.aktivWe);
+    const g = {}; we.dabei.forEach(id => g[id] = []);
+    const ort = {id:neueId(), name:'Location 1', getraenke:g};
+    const tg = {id:neueId(), label:(we.tage.length+1) + '. Tag', orte:[ort]};
+    we.tage.push(tg);
+    state.aktivTag = tg.id; state.aktivOrt = ort.id;
+    letzteRunde = null; rundeFrage = false; entsperrt = null; benennen = true;
+    sichern(); zeichnen();
+  },
+  tagWeg(el){
+    const we = state.we.find(w => w.id === state.aktivWe);
+    we.tage = we.tage.filter(t => t.id !== +el.dataset.id);
+    if(!we.tage.length){
+      const g = {}; we.dabei.forEach(id => g[id] = []);
+      we.tage.push({id:neueId(), label:'1. Tag',
+        orte:[{id:neueId(), name:'Location 1', getraenke:g}]});
+    }
+    we.tage.forEach((t,i) => t.label = (i+1) + '. Tag');
+    const tg = we.tage[we.tage.length-1];
+    state.aktivTag = tg.id;
+    state.aktivOrt = tg.orte.length ? tg.orte[tg.orte.length-1].id : null;
+    letzteRunde = null; rundeFrage = false; entsperrt = null;
+    sichern(); zeichnen();
+  },
+  ortWahl(el){ letzteRunde = null; rundeFrage = false; state.aktivOrt = +el.dataset.id; sichern(); zeichnen(); },
+  ortNeu(){
+    const {tg, ort} = aktuell();
+    const g = {}; Object.keys(ort.getraenke).forEach(id => g[id] = []);
+    const neu = {id:neueId(), name:'Location ' + (tg.orte.length + 1), getraenke:g};
+    tg.orte.push(neu);
+    state.aktivOrt = neu.id;
+    letzteRunde = null; rundeFrage = false; benennen = true;
+    sichern(); zeichnen();
+  },
+  benennenFertig(){
+    const f = document.getElementById('ortNameNeu');
+    const {ort} = aktuell();
+    if(f && ort){
+      const n = (f.value || '').trim();
+      if(n) ort.name = n;
+    }
+    benennen = false; sichern(); zeichnen();
+  },
+  benennenHintergrund(){},
+  ortWeg(el){
+    const {we, tg} = aktuell();
+    tg.orte = tg.orte.filter(o => o.id !== +el.dataset.id);
+    if(!tg.orte.length){
+      if(we.tage.length > 1){
+        we.tage = we.tage.filter(t => t.id !== tg.id);
+        we.tage.forEach((t,i) => t.label = (i+1) + '. Tag');
+        const letzter = we.tage[we.tage.length-1];
+        state.aktivTag = letzter.id;
+        state.aktivOrt = letzter.orte.length ? letzter.orte[letzter.orte.length-1].id : null;
+      } else {
+        const g = {}; we.dabei.forEach(id => g[id] = []);
+        const neuOrt = {id:neueId(), name:'Location 1', getraenke:g};
+        tg.orte.push(neuOrt);
+        state.aktivOrt = neuOrt.id;
+      }
+    } else {
+      state.aktivOrt = tg.orte[tg.orte.length-1].id;
+    }
+    letzteRunde = null; rundeFrage = false; entsperrt = null;
+    sichern(); zeichnen();
+  },
+  ortRein(el){
+    const {we, ort} = aktuell();
+    const id = +el.dataset.id;
+    if(we && !we.dabei.some(x => String(x) === String(id))) we.dabei.push(id);
+    ort.getraenke[id] = [];
+    sichern(); zeichnen();
+  },
+  gastRein(){
+    const f = document.getElementById('gastName');
+    const name = (f.value || '').trim();
+    if(!name){ f.focus(); return; }
+    const da = state.spieler.find(p => p.name.toLowerCase() === name.toLowerCase());
+    const {we, ort} = aktuell();
+    if(da){
+      if(ort.getraenke[da.id]){ toast(da.name + ' ist hier schon dabei'); return; }
+      if(!we.dabei.some(x => String(x) === String(da.id))) we.dabei.push(da.id);
+      ort.getraenke[da.id] = [];
+      f.value = ''; sichern(); zeichnen();
+      toast(da.name + ' war schon in der Runde – jetzt hier dabei');
+      return;
+    }
+    const p = {id:neueId(), name};
+    state.spieler.push(p);
+    we.dabei.push(p.id);
+    ort.getraenke[p.id] = [];
+    f.value = ''; sichern(); zeichnen();
+  },
+  ortRaus(el){
+    const {ort} = aktuell();
+    delete ort.getraenke[el.dataset.id];
+    blatt = null; sichern(); zeichnen();
+  },
+  wahlS(el){ state.wahlS = el.dataset.k; zeichnen(); },
+  wahlG(el){ state.wahlG = el.dataset.k; zeichnen(); },
+  nkS(el){ neuKombi.s = el.dataset.k; zeichnen(); },
+  nkG(el){ neuKombi.g = el.dataset.k; zeichnen(); },
+  strich(el){ letzteRunde = null; rundeFrage = false;
+    const {ort} = aktuell();
+    ort.getraenke[el.dataset.id].push(wahlKey());
+    tagebuch(ort, {art:'einzel', key:wahlKey(), pid:el.dataset.id});
+    sichern(); zeichnen(); },
+  minus(el){ letzteRunde = null; rundeFrage = false;
+    const {ort} = aktuell();
+    const weg = ort.getraenke[el.dataset.id].pop();
+    tagebuch(ort, {art:'minus', key:weg, pid:el.dataset.id});
+    sichern(); zeichnen(); },
+  runde(){
+    const {ort} = aktuell();
+    const ids = Object.keys(ort.getraenke);
+    if(!ids.length) return;
+    const vorige = letzteRundeIm(ort);
+    if(vorige && Date.now()-vorige.t < 180000 && !rundeFrage){
+      rundeFrage = true; zeichnen();
+      setTimeout(() => { if(rundeFrage){ rundeFrage = false; zeichnen(); } }, 6000);
+      return;
+    }
+    rundeFrage = false;
+    const key = wahlKey();
+    ids.forEach(id => ort.getraenke[id].push(key));
+    tagebuch(ort, {art:'runde', key, n:ids.length});
+    letzteRunde = {ortId:ort.id, ids:ids.slice(), key};
+    sichern(); zeichnen();
+    toast(ids.length + '× ' + nameVon(key) + ' eingetragen');
+  },
+  rundeZurueck(){
+    const {ort} = aktuell();
+    if(!letzteRunde || letzteRunde.ortId !== ort.id) return;
+    letzteRunde.ids.forEach(id => {
+      const gs = ort.getraenke[id];
+      if(!gs) return;
+      const i = gs.lastIndexOf(letzteRunde.key);
+      if(i >= 0) gs.splice(i,1);
+    });
+    const n = letzteRunde.ids.length, k = letzteRunde.key;
+    tagebuch(ort, {art:'zurueck', key:k, n});
+    if(ort.log){ // die zurückgenommene Runde als erledigt markieren
+      for(let i = ort.log.length-1; i >= 0; i--){
+        if(ort.log[i].art === 'runde' && !ort.log[i].weg){ ort.log[i].weg = true; break; }
+      }
+    }
+    letzteRunde = null;
+    sichern(); zeichnen();
+    toast(n + '× ' + nameVon(k) + ' zurückgenommen');
+  },
+
+  blattAuf(el){
+    const {ort} = aktuell();
+    blatt = {id:el.dataset.id, z:zaehlung(ort.getraenke[el.dataset.id])};
+    zeichnen();
+  },
+  blattPlus(el){ blatt.z[el.dataset.k] = (blatt.z[el.dataset.k]||0) + 1; zeichnen(); },
+  blattMinus(el){ blatt.z[el.dataset.k] = Math.max(0, (blatt.z[el.dataset.k]||0) - 1); zeichnen(); },
+  blattHinzu(){ const k = neuKombi.s + ':' + neuKombi.g;
+    blatt.z[k] = (blatt.z[k]||0) + 1; zeichnen(); },
+  blattSpeichern(){
+    const {ort} = aktuell();
+    ort.getraenke[blatt.id] = ausZaehlung(blatt.z);
+    tagebuch(ort, {art:'sammel', pid:blatt.id});
+    blatt = null; sichern(); zeichnen();
+  },
+  blattZu(){ blatt = null; zeichnen(); },
+  blattHintergrund(){},
+
+  fotoStart(){
+    foto = {modus:'person', person:null, phase:'start', bild:null, treffer:[],
+            sicherheit:'mittel', hinweis:'', ersetzen:true, fehlerText:''};
+    zeichnen();
+  },
+  fotoModus(el){ foto.modus = el.dataset.m; zeichnen(); },
+  fotoPerson(el){ foto.person = el.dataset.id; zeichnen(); },
+  fotoAufnehmen(){ document.getElementById('kamera').click(); },
+  fotoArt(el){ foto.ersetzen = el.dataset.m === 'ersetzen'; zeichnen(); },
+  fotoPlus(el){ const t = foto.treffer[+el.dataset.i];
+    t.z[el.dataset.k] = (t.z[el.dataset.k]||0) + 1; zeichnen(); },
+  fotoMinus(el){ const t = foto.treffer[+el.dataset.i];
+    t.z[el.dataset.k] = Math.max(0, (t.z[el.dataset.k]||0) - 1); zeichnen(); },
+  fotoHinzu(el){ const t = foto.treffer[+el.dataset.i];
+    const k = neuKombi.s + ':' + neuKombi.g;
+    t.z[k] = (t.z[k]||0) + 1; zeichnen(); },
+  fotoZu(){ foto = null; zeichnen(); },
+  fotoHintergrund(){},
+  fotoUebernehmen(){
+    const {ort} = aktuell();
+    if(!ort){ foto = null; zeichnen(); return; }
+    let getroffen = 0;
+    foto.treffer.forEach(t => {
+      const id = foto.modus === 'person' ? foto.person : t.ziel;
+      if(!id || !ort.getraenke[id]) return;
+      const neu = ausZaehlung(t.z);
+      ort.getraenke[id] = foto.ersetzen ? neu : ort.getraenke[id].concat(neu);
+      getroffen++;
+    });
+    if(getroffen) tagebuch(ort, {art:'foto', n:getroffen});
+    foto = null; sichern(); zeichnen();
+    toast(getroffen ? (getroffen === 1 ? 'Eingetragen' : getroffen + ' Strichlisten eingetragen')
+                    : 'Nichts zugeordnet, nichts eingetragen');
+  },
+
+  weSchliessen(){
+    const we = state.we.find(w => w.id === state.aktivWe);
+    we.zu = true; fazitOffen = we.id;
+    state.aktivWe = null; state.aktivTag = null; state.aktivOrt = null;
+    ansicht = 'archiv'; stapel = [];
+    sichern({sicherung:'Wochenende abgeschlossen'}); zeichnen();
+  },
+  weOeffnen(el){
+    const we = state.we.find(w => w.id === +el.dataset.id);
+    we.zu = false;
+    const tg = we.tage[we.tage.length-1];
+    state.aktivWe = we.id; state.aktivTag = tg.id;
+    state.aktivOrt = tg.orte[tg.orte.length-1].id;
+    ansicht = null; detailId = null; sichern(); zeichnen();
+  },
+  weWeg(el){
+    state.we = state.we.filter(w => w.id !== +el.dataset.id);
+    state.aktivWe = null; state.aktivTag = null; state.aktivOrt = null;
+    ansicht = 'archiv'; sichern(); zeichnen();
+  },
+  weLoeschen(el){ state.we = state.we.filter(w => w.id !== +el.dataset.id);
+    detailId = null; ansicht = 'archiv'; sichern(); zeichnen(); },
+  fazitZu(){ fazitOffen = null; zeichnen(); },
+  deckelAn(el){
+    state.einst.deckel = el.dataset.m === 'an' ? (state.einst.deckel > 0 ? state.einst.deckel : 8) : 0;
+    sichern(); zeichnen();
+  },
+  einstSichern(){
+    const k = parseFloat(document.getElementById('kFaktor').value);
+    if(!(k > 0)){ toast('K muss größer als null sein'); return; }
+    state.einst.k = k;
+    const dEl = document.getElementById('deckelWert');
+    if(dEl){
+      const d = parseFloat(dEl.value);
+      if(!(d > 0)){ toast('Deckel muss größer als null sein'); return; }
+      state.einst.deckel = d;
+    }
+    sichern(); zeichnen(); toast('Regler übernommen – alles neu gerechnet');
+  },
+  async frisch(){
+    const vorher = state.stand;
+    const ok = await laden();
+    zeichnen();
+    toast(ok ? (state.stand > vorher ? 'Neuer Stand da' : 'Alles aktuell') : 'Nichts zu holen');
+  },
+  allesWeg(){
+    state.spieler = []; state.we = []; state.einst = {k:40, deckel:0};
+    state.aktivWe = null; state.aktivTag = null; state.aktivOrt = null;
+    fazitOffen = null; foto = null; blatt = null; wechsler = false; detailId = null;
+    personId = null; rechnung = null; punkteOffen = false; benennen = false;
+    sicherBlatt = null; erklaer = null;
+    neuKombi = {s:'normal', g:'05'}; ansicht = 'archiv';
+    sichern(); zeichnen();
+  }
+};
+
+document.getElementById('kamera').addEventListener('change', async ev => {
+  const datei = ev.target.files[0];
+  ev.target.value = '';
+  if(!datei || !foto) return;
+  foto.phase = 'laedt'; foto.bild = null; zeichnen();
+  try{
+    foto.bild = await bildVerkleinern(datei, 1400);
+    zeichnen();
+    const d = await anKI(foto.bild, foto.modus === 'person' ? anweisungEiner() : anweisungZettel());
+    const roh = Array.isArray(d.eintraege) ? d.eintraege : [];
+    if(!roh.length) throw new Error('Es war keine Strichliste zu erkennen');
+    if(foto.modus === 'person'){
+      foto.treffer = [{name:'', ziel:foto.person, z:gruppenLesen(roh[0].gruppen)}];
+    } else {
+      foto.treffer = roh.map(t => ({name:String(t.name || 'ohne Namen'),
+        ziel:nameZuId(t.name), z:gruppenLesen(t.gruppen)}));
+    }
+    foto.sicherheit = ['hoch','mittel','niedrig'].includes(d.sicherheit) ? d.sicherheit : 'mittel';
+    foto.hinweis = typeof d.hinweis === 'string' ? d.hinweis : '';
+    foto.phase = 'ergebnis';
+  }catch(err){
+    foto.phase = 'fehler';
+    foto.fehlerText = err && err.message ? err.message : 'Unbekannter Fehler';
+  }
+  zeichnen();
+});
+
+document.addEventListener('click', ev => {
+  const el = ev.target.closest('[data-tu]');
+  if(el){
+    if(/Hintergrund$/.test(el.dataset.tu) && ev.target !== el) return;
+    if(el.dataset.tu === 'fazitZu' && ev.target === el && ev.target.classList.contains('blende')){
+      tu.fazitZu(); return;
+    }
+    const key = el.dataset.tu + ':' + (el.dataset.id || '');
+    if(el.dataset.frage && frage !== key){
+      frage = key; zeichnen();
+      setTimeout(() => { if(frage === key){ frage = null; zeichnen(); } }, 4000);
+      return;
+    }
+    frage = null;
+    tu[el.dataset.tu](el);
+  }
+});
+document.addEventListener('change', ev => {
+  const s = ev.target.closest('[data-zuord]');
+  if(s && foto) foto.treffer[+s.dataset.zuord].ziel = s.value || null;
+});
+document.addEventListener('input', ev => {
+  if(ev.target.id === 'ortName'){
+    const {ort} = aktuell();
+    if(ort){ ort.name = ev.target.value; clearTimeout(window.__ot);
+      window.__ot = setTimeout(sichern, 700); }
+  }
+});
+let wischStart = null;
+document.addEventListener('touchstart', ev => {
+  if(ev.touches.length !== 1) { wischStart = null; return; }
+  if(modus() !== 'zaehlen') { wischStart = null; return; }
+  if(document.querySelector('.blende')) { wischStart = null; return; }
+  // Waagerecht scrollbare Bereiche und Eingaben ausnehmen
+  if(ev.target.closest('.chips, .leiste, input, select, textarea, .kettennavi')) {
+    wischStart = null; return;
+  }
+  const t = ev.touches[0];
+  wischStart = {x:t.clientX, y:t.clientY, t:Date.now()};
+}, {passive:true});
+
+document.addEventListener('touchend', ev => {
+  if(!wischStart) return;
+  const s = wischStart; wischStart = null;
+  const t = ev.changedTouches[0];
+  if(!t) return;
+  const dx = t.clientX - s.x, dy = t.clientY - s.y;
+  if(Date.now() - s.t > 800) return;
+  if(Math.abs(dx) < 70) return;
+  if(Math.abs(dx) < Math.abs(dy) * 2) return;
+  tu.bewege(dx < 0 ? 1 : -1);
+}, {passive:true});
+
+document.addEventListener('keydown', ev => {
+  if(ev.key === 'Enter' && ev.target.id === 'neuName'){ ev.preventDefault(); tu.spielerRein(); }
+  if(ev.key === 'Enter' && ev.target.id === 'gastName'){ ev.preventDefault(); tu.gastRein(); }
+  if(ev.key === 'Enter' && ev.target.id === 'weNeuName'){ ev.preventDefault(); tu.weNeuSpieler(); }
+  if(ev.key === 'Enter' && ev.target.id === 'weOrt'){ ev.preventDefault(); tu.weStart(); }
+  if(ev.key === 'Enter' && ev.target.id === 'ortNameNeu'){ ev.preventDefault(); tu.benennenFertig(); }
+  if(modus() === 'zaehlen' && !document.querySelector('.blende')
+     && !/INPUT|SELECT|TEXTAREA/.test(ev.target.tagName)){
+    if(ev.key === 'ArrowLeft'){ ev.preventDefault(); tu.bewege(-1); return; }
+    if(ev.key === 'ArrowRight'){ ev.preventDefault(); tu.bewege(1); return; }
+  }
+  if(ev.key === 'Escape'){
+    if(erklaer) tu.erklaerZu(); else if(sicherBlatt) tu.sicherZu();
+    else if(foto) tu.fotoZu();
+    else if(rechnung) { if(rechnung.tagId) tu.rechnungAlle(); else tu.rechnungZu(); }
+    else if(punkteOffen) tu.punkteZu(); else if(blatt) tu.blattZu();
+    else if(benennen) tu.benennenFertig();
+    else if(wechsler) tu.wechslerZu(); else if(fazitOffen) tu.fazitZu();
+  }
+});
+
+const BUBIDOS = ['Korbi','Fifu','Sperry','Gerry','Kammy'];
+
+(async function(){
+  ichLaden();
+  token = lokal.lesen(TOKEN_KEY);
+  if(token){
+    const ok = await laden();
+    if(ok === true || ok === 'leer'){
+      let nochmal = false;
+      if(ok === 'leer' && !state.spieler.length){
+        BUBIDOS.forEach((n,i) => state.spieler.push({id:Date.now()+i, name:n}));
+        nochmal = true;
+      }
+      if(geraetSichern()) nochmal = true;
+      if(nochmal) await sichern({sofort:true});
+    } else if(ghFehler === 'netz'){
+      const sp = spiegelLesen();
+      if(sp){ uebernehmen(sp); toast('Offline – lokale Kopie, Änderungen gehen später raus'); }
+    }
+  }
+  zeichnen();
+})();
+</script>
+</body>
+</html>
