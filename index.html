@@ -471,7 +471,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-04 · G1 (GitHub)';
+const FASSUNG = '2026-09-06 · G2 (GitHub)';
 
 /* ====== EINSTELLUNGEN – hier anpassen, falls sich Namen ändern ====== */
 const GH_BESITZER = 'PyFox1';
@@ -964,7 +964,7 @@ function ansichtToken(){
 
 function ansichtNeuesWe(){
   if(!vorwahl) vorwahl = {ids:state.spieler.map(p => p.id), titel:'', ort:'',
-                          datum:new Date().toISOString().slice(0,10)};
+                          datum:new Date().toISOString().slice(0,10), offen:false};
   if(state.spieler.length < 2){
     return '<div class="leerzustand"><h2>Zu zweit geht’s los</h2>'
       + '<p>Elo vergleicht paarweise. Leg mindestens zwei Namen an.</p>'
@@ -974,24 +974,31 @@ function ansichtNeuesWe(){
   }
   const an = id => vorwahl.ids.some(x => String(x) === String(id));
   const dabei = vorwahl.ids.length;
+  const alle = state.spieler.length;
   return '<div class="deckel"><div class="name" style="font-size:20px">Neues Wochenende</div>'
-    + '<p class="mini" style="margin:8px 0 0">Wer ist am <b>ersten Tag</b> dabei? '
-    + 'Antippen schaltet aus und wieder ein.</p>'
-    + '<div class="teiln" id="vorauswahl">'
-    + state.spieler.map(p => '<button data-tu="vorAn" data-id="'+p.id+'" data-an="'
-        + (an(p.id)?1:0) + '">' + esc(p.name) + '</button>').join('')
-    + '</div>'
-    + '<div class="feld"><input id="weNeuName" placeholder="Neuer Name" autocomplete="off">'
-    + '<button data-tu="weNeuSpieler">Anlegen</button></div>'
-    + '<p class="hinweis" style="margin:10px 2px 0">' + dabei + ' '
-    + (dabei===1?'Person':'Personen') + ' am ersten Tag. Wer erst später anreist, wird an seinem '
-    + 'Tag über „Wer ist noch dazugestoßen?“ ergänzt – vorher darf er nicht mitgeführt werden, '
-    + 'sonst zählt er als anwesend mit null Bier.</p>'
     + '<div class="feld"><input id="weTitel" placeholder="Name des Wochenendes" autocomplete="off" '
     + 'value="' + esc(vorwahl.titel) + '"></div>'
     + '<div class="feld"><input type="date" id="weDatum" value="'+esc(vorwahl.datum)+'"></div>'
     + '<div class="feld"><input id="weOrt" placeholder="Erste Location – wo geht’s los?" '
     + 'autocomplete="off" value="' + esc(vorwahl.ort) + '"></div>'
+    + '<button class="pille" style="margin-top:14px" data-tu="vorwahlAuf" aria-expanded="'
+    + (vorwahl.offen?'true':'false') + '">'
+    + '<span class="pille-name">Wer ist am ersten Tag dabei?</span>'
+    + '<span class="pille-be">' + dabei + '/' + alle + '</span>'
+    + '<span class="pille-pfeil">' + (vorwahl.offen ? '⌃' : '⌄') + '</span></button>'
+    + (vorwahl.offen ? '<div class="wahl-auf">'
+      + '<p class="mini" style="margin:8px 0 0">Antippen schaltet aus und wieder ein.</p>'
+      + '<div class="teiln" id="vorauswahl">'
+      + state.spieler.map(p => '<button data-tu="vorAn" data-id="'+p.id+'" data-an="'
+          + (an(p.id)?1:0) + '">' + esc(p.name) + '</button>').join('')
+      + '</div>'
+      + '<div class="feld"><input id="weNeuName" placeholder="Neuer Name" autocomplete="off">'
+      + '<button data-tu="weNeuSpieler">Anlegen</button></div>'
+      + '<p class="hinweis" style="margin:10px 2px 0">' + dabei + ' '
+      + (dabei===1?'Person':'Personen') + ' am ersten Tag. Wer erst später anreist, wird an seinem '
+      + 'Tag über „Wer ist noch dazugestoßen?“ ergänzt – vorher darf er nicht mitgeführt werden, '
+      + 'sonst zählt er als anwesend mit null Bier.</p>'
+      + '</div>' : '')
     + '<button class="knopf voll" data-tu="weStart"' + (dabei < 2 ? ' disabled' : '')
     + '>Los geht’s</button></div>'
     + '<button class="knopf leer" data-tu="geheArchiv">Abbrechen</button>';
@@ -2546,6 +2553,11 @@ const tu = {
     if(t) vorwahl.titel = t.value;
     if(d) vorwahl.datum = d.value;
     if(o) vorwahl.ort = o.value;
+  },
+  vorwahlAuf(){
+    tu.merkeNeu();
+    vorwahl.offen = !vorwahl.offen;
+    zeichnen();
   },
   vorAn(el){
     tu.merkeNeu();
