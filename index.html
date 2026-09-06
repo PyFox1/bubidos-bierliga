@@ -471,7 +471,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-06 · G2 (GitHub)';
+const FASSUNG = '2026-09-06 · G3 (GitHub)';
 
 /* ====== EINSTELLUNGEN – hier anpassen, falls sich Namen ändern ====== */
 const GH_BESITZER = 'PyFox1';
@@ -1429,10 +1429,9 @@ function fazitBlock(f, mitKnopf){
     + '<div><b>' + f.orteGesamt + '</b><span>Stationen</span></div></div>'
     + zeilen + (orden ? '<div class="orden">' + orden + '</div>' : '')
     + (mitKnopf
-        ? '<div class="sicherhinweis">Wochenende steht in der Tabelle. '
-          + 'Jetzt eine Kopie in die Gruppe schicken?</div>'
-          + '<button class="knopf voll" data-tu="sicherAuf">Stand sichern</button>'
-          + '<button class="knopf leer" data-tu="fazitZu">Später</button>'
+        ? '<div class="sicherhinweis">Wochenende steht in der Tabelle und ist als Commit '
+          + 'im Datenspeicher.</div>'
+          + '<button class="knopf voll" data-tu="fazitZu">Fertig</button>'
         : '') + '</div>';
 }
 
@@ -1827,26 +1826,30 @@ function ansichtInfo(){
     + 'Wertung dieses Tages schlicht nicht vor.</p></div>'
 
     + '<div class="para" id="p8"><h2><i>§ 8</i> Datenschutz</h2>'
-    + '<p>Diese App liegt als veröffentlichtes Artefakt bei Anthropic. Das heißt: <strong>jeder mit dem '
-    + 'Link</strong> kann sie öffnen, die Tabelle lesen und sie auch ändern — ohne Konto, ohne Anmeldung. '
-    + 'Ein Passwort gibt es nicht und kann es nicht geben, der Code ist offen einsehbar.</p>'
-    + '<p>Gespeichert werden Namen, Getränke und Locations, auf Anthropics Servern, nicht auf euren '
-    + 'Handys. Fotos gehen zum Zählen einmal durch die Schnittstelle und werden nicht abgelegt. Wird die '
-    + 'Veröffentlichung zurückgenommen, sind alle Daten endgültig weg.</p>'
-    + '<p><strong>Praktisch heißt das:</strong> Link nur in der Gruppe weitergeben, keine Klarnamen wo '
-    + 'Vornamen reichen, und nichts eintragen, was niemanden etwas angeht.</p></div>'
+    + '<p>App und Daten liegen getrennt. Die App selbst steht öffentlich auf GitHub Pages — '
+    + '<strong>jeder mit dem Link</strong> kann sie öffnen und den Code lesen. Die Tabelle bekommt '
+    + 'er damit nicht zu sehen: Die Daten liegen in einem <strong>privaten</strong> Repository, und '
+    + 'ohne Zugriffsschlüssel zeigt die App nur den Verbinden-Bildschirm.</p>'
+    + '<p>Gespeichert werden Namen, Getränke und Locations, bei GitHub. Der Schlüssel liegt auf dem '
+    + 'jeweiligen Gerät und wird an niemanden sonst weitergereicht. Wer ihn hat, darf lesen und '
+    + 'schreiben — abgestufte Rechte je Person gibt es nicht.</p>'
+    + '<p><strong>Praktisch heißt das:</strong> Schlüssel nur in der Gruppe weitergeben, keine '
+    + 'Klarnamen wo Vornamen reichen, und nichts eintragen, was niemanden etwas angeht.</p></div>'
 
     + '<div class="para" id="p9"><h2><i>§ 9</i> Sicherung</h2>'
-    + '<p>Die Tabelle liegt in <strong>einer</strong> Kopie am geteilten Link. Verschwindet der Link, '
-    + 'verschwinden die Daten. Deshalb sichert das Gerät auf drei Ebenen:</p><ul>'
-    + '<li><strong>Automatisch bei jedem Wochenendabschluss</strong> wird eine Kopie in den '
-    + 'gemeinsamen Speicher gelegt. Die letzten sechs bleiben erhalten.</li>'
-    + '<li><strong>Automatisch bei gleichzeitigem Tippen:</strong> Schreiben zwei Handys im selben '
-    + 'Moment, wird die Fassung, die sonst still überschrieben würde, vorher gesichert.</li>'
-    + '<li><strong>Automatisch auf jedem Gerät</strong> läuft eine stille Nebenkopie mit.</li></ul>'
-    + '<div class="warnung"><p>Keine davon hilft, wenn der Link selbst wegfällt. Dagegen hilft nur '
-    + 'der <strong>Export</strong> hinterm Zahnrad: einmal je Wochenende in die Gruppe schicken, '
-    + 'dann liegen fünf Kopien auf fünf Handys. Nach jedem Abschluss erinnert die App daran.</p></div>'
+    + '<p>Die Daten liegen in einem eigenen Repository, und <strong>jede Änderung wird dort ein '
+    + 'Commit</strong>. Überschrieben wird nichts, jeder frühere Stand bleibt abrufbar. Darauf '
+    + 'setzen drei Ebenen auf:</p><ul>'
+    + '<li><strong>Bei jeder Eingabe:</strong> Der Stand wandert in die Historie. Über '
+    + '„Historie auf GitHub öffnen“ hinterm Zahnrad ist jeder Zwischenstand nachlesbar.</li>'
+    + '<li><strong>Bei gleichzeitigem Tippen:</strong> Schreiben zwei Handys im selben Moment, '
+    + 'wird der fremde Stand geholt und der eigene daraufgesetzt. Beide Fassungen stehen danach '
+    + 'in der Historie — es geht nichts verloren.</li>'
+    + '<li><strong>Auf jedem Gerät</strong> läuft eine stille Nebenkopie des letzten Stands mit, '
+    + 'damit die App auch ohne Netz startet.</li></ul>'
+    + '<p>Eine Erinnerung nach jedem Wochenende gibt es deshalb nicht mehr. Der <strong>Export</strong> '
+    + 'hinterm Zahnrad bleibt trotzdem: Er ist die einzige Kopie außerhalb von GitHub und damit das '
+    + 'Mittel gegen den Fall, dass das Repository selbst wegfällt. Einmal im Jahr genügt.</p>'
     + '<p>Zurückholen geht über <strong>Stand wiederherstellen</strong>: Text einfügen, prüfen, '
     + 'übernehmen. Vorher wird der jetzige Stand automatisch gesichert. Der Löschknopf bleibt '
     + 'gesperrt, solange in dieser Sitzung nicht exportiert wurde.</p></div>'
