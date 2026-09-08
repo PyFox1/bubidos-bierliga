@@ -461,6 +461,8 @@ table.rechnung td.schlecht{color:#E09084}
 .sicher.niedrig{background:rgba(158,50,38,.22);color:#E09084}
 .laedt{text-align:center;padding:26px 0}
 .laedt b{font-family:var(--display);font-size:20px;text-transform:uppercase;display:block;margin-bottom:6px}
+.wemblock{margin-top:14px;padding:12px 13px;border-radius:5px;
+  border:1px solid var(--linie);background:rgba(255,255,255,.03)}
 .restblock{margin-top:16px;padding:12px 13px;border-radius:5px;
   border:1px dashed var(--malz);background:rgba(184,117,19,.09)}
 .restzeile{margin-top:10px}
@@ -479,7 +481,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-08 · G4 (GitHub)';
+const FASSUNG = '2026-09-08 · G5 (GitHub)';
 
 /* ====== EINSTELLUNGEN – hier anpassen, falls sich Namen ändern ====== */
 const GH_BESITZER = 'PyFox1';
@@ -1353,10 +1355,6 @@ const HINWEIS_REGEL =
   'Setz "sicherheit" danach, wie gut das Bild lesbar war. In "hinweis" gehört ein kurzer Satz, '
   + 'falls etwas unklar blieb, sonst ein leerer Text. Erfinde nichts, was nicht dasteht: '
   + 'Lieber eine Gruppe weglassen als eine geraten.';
-function anweisungEiner(){
-  return 'Auf dem Bild ist ein Bierdeckel oder Zettel mit einer handschriftlichen Strichliste. '
-    + ZAEHL_REGEL + ' ' + SORTEN_REGEL + ' Lass "name" leer. ' + HINWEIS_REGEL;
-}
 function anweisungZettel(){
   return 'Auf dem Bild ist ein Zettel, ein Bierdeckel oder ein Kassenzettel. '
     + 'Bei einer handschriftlichen Strichliste gilt: ' + ZAEHL_REGEL + ' '
@@ -1410,6 +1408,37 @@ function fotoTrefferFuer(id){
   }
   return t;
 }
+/* Baut die Zuordnung aus dem Gelesenen neu auf. Läuft nach dem Foto und noch einmal,
+   wenn jemand sagt, dass das Namenlose doch ihm allein gehört. */
+function fotoVerteilen(){
+  const {ort} = aktuell();
+  const hier = ort ? Object.keys(ort.getraenke) : [];
+  foto.treffer = [];
+  (foto.benannt || []).forEach(e => {
+    const t = fotoTrefferFuer(e.ziel);
+    KOMBIS.forEach(k => t.z[k] += e.z[k] || 0);
+  });
+  const topf = foto.ohne || leereZaehlung();
+  const alleinIst = foto.ohneZiel && hier.some(id => String(id) === String(foto.ohneZiel));
+  if(alleinIst){
+    const t = fotoTrefferFuer(foto.ohneZiel);
+    KOMBIS.forEach(k => t.z[k] += topf[k] || 0);
+    foto.rest = {};
+  } else {
+    const {je, rest} = aufteilen(topf, hier);
+    hier.forEach(id => {
+      const anteil = je[id];
+      if(anteil && KOMBIS.some(k => anteil[k])){
+        const t = fotoTrefferFuer(id);
+        KOMBIS.forEach(k => t.z[k] += anteil[k]);
+      }
+    });
+    foto.rest = rest;
+  }
+}
+const topfLeer = t => !KOMBIS.some(k => (t || {})[k] > 0);
+const topfText = t => KOMBIS.filter(k => (t || {})[k] > 0)
+  .map(k => t[k] + ' × ' + nameVon(k)).join(', ');
 function gruppenLesen(gruppen){
   const z = leereZaehlung();
   (Array.isArray(gruppen) ? gruppen : []).forEach(gr => {
@@ -1429,27 +1458,12 @@ function ansichtFoto(){
   let inhalt = '';
 
   if(foto.phase === 'start'){
-    inhalt = '<h3>Deckel abfotografieren</h3>'
-      + '<p class="mini" style="margin:2px 0 14px">Striche und, wenn Kürzel danebenstehen, auch die Sorten. '
-      + 'Alles lässt sich vor dem Eintragen korrigieren.</p>'
-      + '<div class="teiln" style="margin-bottom:6px">'
-      + '<button data-tu="fotoModus" data-m="person" data-an="'+(foto.modus==='person'?1:0)+'">Ein Deckel</button>'
-      + '<button data-tu="fotoModus" data-m="zettel" data-an="'+(foto.modus==='zettel'?1:0)+'">Zettel oder Rechnung</button>'
-      + '</div>';
-    if(foto.modus === 'person'){
-      inhalt += '<p class="mini" style="margin:12px 0 6px">Wessen Deckel ist das?</p><div class="teiln">'
-        + hier.map(id => { const p = state.spieler.find(x => String(x.id) === String(id));
-            return p ? '<button data-tu="fotoPerson" data-id="'+id+'" data-an="'
-              + (String(foto.person) === String(id) ? 1 : 0) + '">' + esc(p.name) + '</button>' : ''; }).join('')
-        + '</div>';
-    } else {
-      inhalt += '<p class="mini" style="margin:12px 0 0">Ein Blatt mit Namen und Strichlisten, oder '
-        + 'ein Kassenzettel. Was ohne Namen dasteht, wird durch die Anwesenden geteilt. '
-        + 'Die Zuordnung kannst du danach noch ändern.</p>';
-    }
-    const bereit = foto.modus === 'zettel' || foto.person;
-    inhalt += '<button class="knopf voll" data-tu="fotoAufnehmen"' + (bereit ? '' : ' disabled') + '>'
-      + 'Foto aufnehmen</button><button class="knopf leer" data-tu="fotoZu">Abbrechen</button>';
+    inhalt = '<h3>Abfotografieren</h3>'
+      + '<p class="mini" style="margin:2px 0 14px">Ein Deckel, ein Zettel mit Namen oder die '
+      + 'Rechnung – einfach draufhalten. Wem was gehört, wird danach geklärt, und alles lässt '
+      + 'sich vor dem Eintragen korrigieren.</p>'
+      + '<button class="knopf voll" data-tu="fotoAufnehmen">Foto aufnehmen</button>'
+      + '<button class="knopf leer" data-tu="fotoZu">Abbrechen</button>';
   }
 
   if(foto.phase === 'laedt'){
@@ -1473,9 +1487,8 @@ function ansichtFoto(){
     const sk = foto.sicherheit || 'mittel';
 
     const liste = foto.treffer.map((t,i) => {
-      const kopf = foto.modus === 'person'
-        ? ''
-        : '<div class="trefferzeile"><select data-zuord="'+i+'" aria-label="Zuordnung für '+esc(t.name)+'">'
+      const kopf =
+        '<div class="trefferzeile"><select data-zuord="'+i+'" aria-label="Zuordnung für '+esc(t.name)+'">'
           + '<option value="">nicht eintragen</option>'
           + hier.map(id => { const p = state.spieler.find(x => String(x.id) === String(id));
               return p ? '<option value="'+id+'"' + (String(t.ziel) === String(id) ? ' selected' : '') + '>'
@@ -1499,18 +1512,30 @@ function ansichtFoto(){
         + '<button class="knopf leer" data-tu="fotoRestVerteilen">Gleichmäßig verteilen</button></div>'
       : '';
 
+    /* Wem das Namenlose gehört, steht nicht im Bild – das muss vom Tisch kommen.
+       Vorgabe ist die Teilung, ein Tipp macht daraus der Deckel einer Person. */
+    const wemBlock = topfLeer(foto.ohne) ? '' :
+      '<div class="wemblock"><div class="wahl-titel">Ohne Namen notiert</div>'
+      + '<p class="mini" style="margin:0 0 10px">' + esc(topfText(foto.ohne))
+      + ' – niemand steht daneben. Gehört alles einer Person, tipp sie an; sonst bleibt es '
+      + 'geteilt durch die ' + hier.length + ' hier.</p>'
+      + '<div class="teiln">'
+      + '<button data-tu="fotoOhneZiel" data-an="' + (foto.ohneZiel ? 0 : 1) + '">Geteilt</button>'
+      + hier.map(id => { const p = state.spieler.find(x => String(x.id) === String(id));
+          return p ? '<button data-tu="fotoOhneZiel" data-id="'+id+'" data-an="'
+            + (String(foto.ohneZiel) === String(id) ? 1 : 0) + '">' + esc(p.name) + '</button>' : '';
+        }).join('')
+      + '</div></div>';
+
     inhalt = '<h3>Stimmt das so?</h3>'
       + '<span class="sicher ' + sk + '">' + (sicherText[sk] || 'teils unklar') + '</span>'
       + (foto.hinweis ? '<p class="mini" style="margin:8px 0 0">' + esc(foto.hinweis) + '</p>' : '')
-      + (foto.geteilt
-          ? '<p class="mini" style="margin:8px 0 0">Ohne Namen daneben wurde durch die '
-            + hier.length + ' hier Anwesenden geteilt.</p>' : '')
       + ((foto.fremdeNamen || []).length
           ? '<p class="mini" style="margin:8px 0 0;color:#E0A254">Gelesen, aber hier nicht am Tisch: '
-            + foto.fremdeNamen.map(esc).join(', ') + '. Diese Striche sind in die Teilung gewandert. '
+            + foto.fremdeNamen.map(esc).join(', ') + '. Diese Striche liegen unten ohne Namen. '
             + 'Wer doch dabei war, gehört über „Wer ist noch dazugestoßen?“ ergänzt.</p>' : '')
       + (foto.bild ? '<img class="vorschau" src="'+foto.bild+'" alt="Aufgenommenes Foto">' : '')
-      + liste + restBlock
+      + wemBlock + liste + restBlock
       + '<div class="teiln" style="margin-top:16px">'
       + '<button data-tu="fotoArt" data-m="ersetzen" data-an="'+(foto.ersetzen?1:0)+'">Ersetzt den Stand</button>'
       + '<button data-tu="fotoArt" data-m="dazu" data-an="'+(foto.ersetzen?0:1)+'">Kommt dazu</button></div>'
@@ -1520,7 +1545,7 @@ function ansichtFoto(){
   }
 
   return '<div class="blende" data-tu="fotoHintergrund"><div class="blatt">'
-    + '<div class="karte" role="dialog" aria-label="Deckel abfotografieren">' + inhalt + '</div></div></div>';
+    + '<div class="karte" role="dialog" aria-label="Abfotografieren">' + inhalt + '</div></div></div>';
 }
 
 /* ---------- Fazit / Verlauf ---------- */
@@ -1848,16 +1873,19 @@ function ansichtInfo(){
     + '</ul></div>'
 
     + '<div class="para" id="p5"><h2><i>§ 5</i> Optische Erfassung</h2>'
-    + '<p>Knopf <strong>Deckel abfotografieren</strong>: entweder <strong>ein Deckel</strong>, der '
-    + 'einer Person gehört, oder ein <strong>Zettel oder eine Rechnung</strong>. Die Zählung liest '
-    + 'Striche und, wenn sie danebenstehen, auch Stärke und Größe. Ein Kassenzettel braucht keinen '
-    + 'eigenen Knopf: Dort steht die Menge als Zahl vor der Position, gelesen wird sie genauso.</p>'
-    + '<div class="warnung"><p><strong>Steht kein Name dabei, wird geteilt.</strong> Was ohne '
-    + 'Zuordnung notiert ist, geht zu gleichen Teilen an die, die an dieser Location eingetragen '
-    + 'sind — nicht an alle fünf. Geht es nicht glatt auf, bleibt der Rest sichtbar stehen und '
-    + 'will vergeben werden; wen es nicht kümmert, drückt <em>Gleichmäßig verteilen</em>. Ein '
-    + 'gelesener Name, der hier gar nicht am Tisch sitzt, landet ebenfalls in der Teilung und '
-    + 'wird dabei angezeigt.</p></div>'
+    + '<p>Knopf <strong>Deckel abfotografieren</strong>: einfach draufhalten. Es gibt nichts '
+    + 'vorzuwählen — Deckel, Zettel mit Namen und Kassenzettel gehen durch dieselbe Tür. Die '
+    + 'Zählung liest Striche und, wenn sie danebenstehen, auch Stärke und Größe; auf einer '
+    + 'Rechnung steht die Menge stattdessen als Zahl vor der Position.</p>'
+    + '<div class="warnung"><p><strong>Wem etwas gehört, steht selten im Bild.</strong> Ein Deckel '
+    + 'ohne Namen sieht aus wie eine Runde ohne Namen — das kann keine Zählung erraten, das kommt '
+    + 'vom Tisch. Deshalb fragt die App <em>nach</em> dem Foto: Was ohne Namen gelesen wurde, ist '
+    + 'ab Werk <strong>geteilt</strong> durch die an dieser Location Eingetragenen — nicht durch '
+    + 'alle fünf. Ein Tipp auf einen Namen macht daraus dessen Deckel, ein Tipp auf '
+    + '<em>Geteilt</em> zurück. Geht die Teilung nicht glatt auf, bleibt der Rest sichtbar stehen '
+    + 'und will vergeben werden; wen es nicht kümmert, drückt <em>Gleichmäßig verteilen</em>. Ein '
+    + 'gelesener Name, der hier gar nicht am Tisch sitzt, landet ebenfalls im Namenlosen und wird '
+    + 'dabei angezeigt.</p></div>'
     + '<div class="warnung"><p><strong>Die Grundregel: nichts dabei heißt Halbe.</strong> Wer normal '
     + 'trinkt und ein 0,5er-Glas vor sich hat, schreibt einfach Striche. Alles andere wird '
     + 'dazugeschrieben.</p></div>'
@@ -2951,14 +2979,17 @@ const tu = {
     sichern(); zeichnen();
   },
   fotoStart(){
-    foto = {modus:'person', person:null, phase:'start', bild:null, treffer:[],
-            sicherheit:'mittel', hinweis:'', ersetzen:true, fehlerText:'',
-            rest:{}, geteilt:false, fremdeNamen:[]};
+    foto = {phase:'start', bild:null, treffer:[], benannt:[], ohne:leereZaehlung(),
+            ohneZiel:null, sicherheit:'mittel', hinweis:'', ersetzen:true, fehlerText:'',
+            rest:{}, fremdeNamen:[]};
     zeichnen();
   },
-  fotoModus(el){ foto.modus = el.dataset.m; zeichnen(); },
-  fotoPerson(el){ foto.person = el.dataset.id; zeichnen(); },
   fotoAufnehmen(){ document.getElementById('kamera').click(); },
+  fotoOhneZiel(el){
+    foto.ohneZiel = el.dataset.id || null;
+    fotoVerteilen();
+    zeichnen();
+  },
   fotoArt(el){ foto.ersetzen = el.dataset.m === 'ersetzen'; zeichnen(); },
   fotoPlus(el){ const t = foto.treffer[+el.dataset.i];
     t.z[el.dataset.k] = (t.z[el.dataset.k]||0) + 1; zeichnen(); },
@@ -3000,7 +3031,7 @@ const tu = {
        beim Ersetzen nicht gegenseitig überschreiben. */
     const proPerson = {};
     foto.treffer.forEach(t => {
-      const id = foto.modus === 'person' ? foto.person : t.ziel;
+      const id = t.ziel;
       if(!id || !ort.getraenke[id]) return;
       if(!proPerson[id]) proPerson[id] = leereZaehlung();
       KOMBIS.forEach(k => proPerson[id][k] += Math.max(0, Math.round(t.z[k] || 0)));
@@ -3086,43 +3117,27 @@ document.getElementById('kamera').addEventListener('change', async ev => {
   try{
     foto.bild = await bildVerkleinern(datei, 1400);
     zeichnen();
-    const d = await anKI(foto.bild, foto.modus === 'person' ? anweisungEiner() : anweisungZettel());
+    const d = await anKI(foto.bild, anweisungZettel());
     const roh = Array.isArray(d.eintraege) ? d.eintraege : [];
     if(!roh.length) throw new Error('Es war keine Strichliste zu erkennen');
-    if(foto.modus === 'person'){
-      foto.treffer = [{name:'', ziel:foto.person, z:gruppenLesen(roh[0].gruppen)}];
-      foto.rest = {}; foto.geteilt = false; foto.fremdeNamen = [];
-    } else {
-      const {ort} = aktuell();
-      const hier = ort ? Object.keys(ort.getraenke) : [];
-      foto.treffer = [];
-      const offen = leereZaehlung();
-      let ohneNamen = 0;
-      const fremde = [];
-      roh.forEach(e => {
-        const z = gruppenLesen(e.gruppen);
-        const id = nameZuId(e.name, hier);
-        if(id){ const t = fotoTrefferFuer(id); KOMBIS.forEach(k => t.z[k] += z[k]); }
-        else {
-          /* Ein gelesener Name, der hier nicht am Tisch sitzt, wandert in die Teilung –
-             das wird angezeigt, statt still zu passieren. */
-          const gelesen = String(e.name || '').trim();
-          if(gelesen && !fremde.includes(gelesen)) fremde.push(gelesen);
-          KOMBIS.forEach(k => offen[k] += z[k]); ohneNamen++;
-        }
-      });
-      foto.fremdeNamen = fremde;
-      const {je, rest} = aufteilen(offen, hier);
-      hier.forEach(id => {
-        const anteil = je[id];
-        if(anteil && KOMBIS.some(k => anteil[k])){
-          const t = fotoTrefferFuer(id);
-          KOMBIS.forEach(k => t.z[k] += anteil[k]);
-        }
-      });
-      foto.rest = rest;
-      foto.geteilt = ohneNamen > 0;
-    }
+    const {ort} = aktuell();
+    const hier = ort ? Object.keys(ort.getraenke) : [];
+    const benannt = [], ohne = leereZaehlung(), fremde = [];
+    roh.forEach(e => {
+      const z = gruppenLesen(e.gruppen);
+      const id = nameZuId(e.name, hier);
+      if(id){ benannt.push({ziel:id, z:z}); return; }
+      /* Ein gelesener Name, der hier nicht am Tisch sitzt, wandert in den Topf –
+         das wird angezeigt, statt still zu passieren. */
+      const gelesen = String(e.name || '').trim();
+      if(gelesen && !fremde.includes(gelesen)) fremde.push(gelesen);
+      KOMBIS.forEach(k => ohne[k] += z[k]);
+    });
+    foto.benannt = benannt;
+    foto.ohne = ohne;
+    foto.ohneZiel = null;
+    foto.fremdeNamen = fremde;
+    fotoVerteilen();
     foto.sicherheit = ['hoch','mittel','niedrig'].includes(d.sicherheit) ? d.sicherheit : 'mittel';
     foto.hinweis = typeof d.hinweis === 'string' ? d.hinweis : '';
     foto.phase = 'ergebnis';
