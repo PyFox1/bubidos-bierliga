@@ -485,7 +485,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-08 19:20 · G8 (GitHub)';
+const FASSUNG = '2026-09-08 19:38 · G9 (GitHub)';
 
 /* ====== EINSTELLUNGEN – hier anpassen, falls sich Namen ändern ====== */
 const GH_BESITZER = 'PyFox1';
@@ -592,7 +592,7 @@ let fotoLauf = null;
 let wechsler = false, detailId = null, personId = null;
 let rechnung = null, punkteOffen = false, letzteRunde = null;
 let rundeFrage = false, benennen = false, entsperrt = null;
-let exportiert = false, sicherBlatt = null, infoZiel = null, erklaer = null;
+let sicherBlatt = null, infoZiel = null, erklaer = null;
 let stapel = [];
 let vorwahl = null;
 
@@ -1851,10 +1851,7 @@ function ansichtEinst(){
     + '<div class="abschnitt">Nachschlagen</div>'
     + '<button class="knopf leer" data-tu="geheInfo">Betriebsanleitung öffnen</button>'
     + '<p class="hinweis" style="text-align:center;margin-top:14px">Fassung <b '
-    + 'style="color:var(--malz)">' + FASSUNG + '</b></p>'
-    + (exportiert
-        ? gefahr('allesWeg', null, 'Alle Daten löschen', 'knopf gefahr')
-        : '<button class="knopf gefahr" data-tu="sicherAuf">Alle Daten löschen – erst exportieren</button>');
+    + 'style="color:var(--malz)">' + FASSUNG + '</b></p>';
 }
 
 /* ---------- Anleitung ---------- */
@@ -2107,8 +2104,11 @@ function ansichtInfo(){
     + 'hinterm Zahnrad bleibt trotzdem: Er ist die einzige Kopie außerhalb von GitHub und damit das '
     + 'Mittel gegen den Fall, dass das Repository selbst wegfällt. Einmal im Jahr genügt.</p>'
     + '<p>Zurückholen geht über <strong>Stand wiederherstellen</strong>: Text einfügen, prüfen, '
-    + 'übernehmen. Vorher wird der jetzige Stand automatisch gesichert. Der Löschknopf bleibt '
-    + 'gesperrt, solange in dieser Sitzung nicht exportiert wurde.</p></div>'
+    + 'übernehmen. Vorher wird der jetzige Stand automatisch gesichert.</p>'
+    + '<p>Einen Knopf, der alles auf einmal löscht, gibt es nicht mehr. Für eine Liga, die über '
+    + 'Jahre mitwächst, gab es keinen Fall, in dem er das Richtige getan hätte. Einzelne Namen, '
+    + 'Locations, Tage und Wochenenden lassen sich weiterhin gezielt entfernen — und selbst das '
+    + 'steht danach noch in der Historie.</p></div>'
 
     + '<div class="para" id="p10"><h2><i>§ 10</i> Störungsbehebung</h2>'
     + '<table class="info">'
@@ -2445,12 +2445,11 @@ function herunterladen(){
     a.href = u; a.download = dateiName();
     document.body.appendChild(a); a.click();
     setTimeout(() => { URL.revokeObjectURL(u); a.remove(); }, 1000);
-    exportiert = true;
     return true;
   }catch(e){ return false; }
 }
 async function inZwischenablage(){
-  try{ await navigator.clipboard.writeText(exportText()); exportiert = true; return true; }
+  try{ await navigator.clipboard.writeText(exportText()); return true; }
   catch(e){ return false; }
 }
 function einlesen(text){
@@ -3183,20 +3182,6 @@ const tu = {
     zeichnen();
     toast(ok ? (state.stand > vorher ? 'Neuer Stand da' : 'Alles aktuell') : 'Nichts zu holen');
   },
-  allesWeg(){
-    /* Der Zugangsschlüssel gehört zur Verbindung, nicht zur Liga – er überlebt,
-       damit das Foto-Zählen nach einem Rücksetzen nicht still tot ist. */
-    const kiAlt = {kiSchluessel:state.einst.kiSchluessel || '',
-                   kiModell:state.einst.kiModell || 'claude-opus-5'};
-    state.spieler = []; state.we = [];
-    state.einst = Object.assign({k:40, deckel:0}, kiAlt);
-    state.aktivWe = null; state.aktivTag = null; state.aktivOrt = null;
-    fazitOffen = null; foto = null; blatt = null; wechsler = false; detailId = null;
-    personId = null; rechnung = null; punkteOffen = false; benennen = false;
-    sicherBlatt = null; erklaer = null;
-    neuKombi = {s:'normal', g:'05'}; ansicht = 'archiv';
-    sichern(); zeichnen();
-  }
 };
 
 document.getElementById('kamera').addEventListener('change', async ev => {
