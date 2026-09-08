@@ -461,6 +461,10 @@ table.rechnung td.schlecht{color:#E09084}
 .sicher.niedrig{background:rgba(158,50,38,.22);color:#E09084}
 .laedt{text-align:center;padding:26px 0}
 .laedt b{font-family:var(--display);font-size:20px;text-transform:uppercase;display:block;margin-bottom:6px}
+.restblock{margin-top:16px;padding:12px 13px;border-radius:5px;
+  border:1px dashed var(--malz);background:rgba(184,117,19,.09)}
+.restzeile{margin-top:10px}
+.restzeile b{display:block;font-size:14px;margin-bottom:6px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:26px;z-index:60;
   background:var(--deckel);color:var(--tinte);padding:11px 18px;border-radius:5px;
   font-weight:700;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.4);max-width:88vw;text-align:center}
@@ -475,7 +479,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-06 · G3 (GitHub)';
+const FASSUNG = '2026-09-08 · G4 (GitHub)';
 
 /* ====== EINSTELLUNGEN – hier anpassen, falls sich Namen ändern ====== */
 const GH_BESITZER = 'PyFox1';
@@ -548,6 +552,7 @@ const beVon = key => { const {s,g} = teile(key); return s && g ? g.l*s.v/2.5 : 0
 const literVon = key => { const {g} = teile(key); return g ? g.l : 0; };
 const KOMBIS = (function(){ const a = [];
   STAERKE.forEach(s => GROESSE.forEach(g => a.push(s.k + ':' + g.k))); return a; })();
+const leereZaehlung = () => { const z = {}; KOMBIS.forEach(k => z[k] = 0); return z; };
 function nameVon(key){
   const {s,g} = teile(key);
   if(!s || !g) return '—';
@@ -609,7 +614,7 @@ function migrieren(we){
 function uebernehmen(d){
   state.spieler = d.spieler || [];
   state.we = migrieren(d.we || []);
-  state.einst = Object.assign({k:40, deckel:0}, d.einst || {});
+  state.einst = Object.assign({k:40, deckel:0, kiSchluessel:'', kiModell:'claude-opus-5'}, d.einst || {});
   state.geraete = d.geraete || {};
   state.sortier = d.sortier || 'elo';
   state.aktivWe = d.aktivWe === undefined ? null : d.aktivWe;
@@ -1251,33 +1256,85 @@ function bildVerkleinern(datei, max){
     fr.readAsDataURL(datei);
   });
 }
-function jsonAus(text){
-  const sauber = text.replace(/```json|```/g, '').trim();
-  try{ return JSON.parse(sauber); }
-  catch(e){
-    const a = sauber.indexOf('{'), b = sauber.lastIndexOf('}');
-    if(a >= 0 && b > a) return JSON.parse(sauber.slice(a, b+1));
-    throw new Error('Antwort nicht lesbar');
-  }
-}
+/* Schema der Antwort. Die Schnittstelle erzwingt es, deshalb braucht es weder
+   Formatvorgaben im Text noch ein Nachputzen der Antwort. */
+const KI_SCHEMA = {
+  type:'object',
+  properties:{
+    eintraege:{
+      type:'array',
+      items:{
+        type:'object',
+        properties:{
+          name:{type:'string'},
+          gruppen:{
+            type:'array',
+            items:{
+              type:'object',
+              properties:{
+                staerke:{type:'string', enum:['leicht','normal','stark','af']},
+                groesse:{type:'string', enum:['033','05','10']},
+                striche:{type:'integer'}
+              },
+              required:['staerke','groesse','striche'],
+              additionalProperties:false
+            }
+          }
+        },
+        required:['name','gruppen'],
+        additionalProperties:false
+      }
+    },
+    sicherheit:{type:'string', enum:['hoch','mittel','niedrig']},
+    hinweis:{type:'string'}
+  },
+  required:['eintraege','sicherheit','hinweis'],
+  additionalProperties:false
+};
+const KI_MODELLE = [
+  {k:'claude-opus-5',  n:'Opus 5'},
+  {k:'claude-sonnet-5', n:'Sonnet 5'}
+];
+const kiModell = () => (state.einst && state.einst.kiModell) || 'claude-opus-5';
+const kiSchluessel = () => (state.einst && state.einst.kiSchluessel || '').trim();
+
 async function anKI(bild, anweisung){
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({
-      model:'claude-sonnet-4-6', max_tokens:1000,
-      messages:[{role:'user', content:[
-        {type:'image', source:{type:'base64', media_type:'image/jpeg', data:bild.split(',')[1]}},
-        {type:'text', text:anweisung}
-      ]}]
-    })
-  });
-  if(r.status === 401 || r.status === 403 || r.status === 404)
-    throw new Error('Die Foto-Zählung läuft nur innerhalb von Claude. Auf der eigenen Adresse '
-      + 'ist sie nicht verfügbar – trag die Striche bitte über den Namen ein.');
-  if(!r.ok) throw new Error('Die Zählung ist nicht durchgekommen');
+  const schluessel = kiSchluessel();
+  if(!schluessel)
+    throw new Error('Es ist kein Zugangsschlüssel für die Zählung hinterlegt. '
+      + 'Einer genügt für die ganze Gruppe – hinterlegt wird er hinterm Zahnrad.');
+  let r;
+  try{
+    r = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':schluessel,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body: JSON.stringify({
+        model:kiModell(), max_tokens:2000,
+        output_config:{format:{type:'json_schema', schema:KI_SCHEMA}},
+        messages:[{role:'user', content:[
+          {type:'image', source:{type:'base64', media_type:'image/jpeg', data:bild.split(',')[1]}},
+          {type:'text', text:anweisung}
+        ]}]
+      })
+    });
+  }catch(e){ throw new Error('Keine Verbindung zur Zählung – Netz prüfen'); }
+  if(r.status === 401 || r.status === 403)
+    throw new Error('Der Zugangsschlüssel für die Zählung wird nicht angenommen. '
+      + 'Vermutlich abgelaufen oder zurückgezogen – hinterm Zahnrad neu hinterlegen.');
+  if(r.status === 429)
+    throw new Error('Das Zähl-Guthaben ist aufgebraucht oder das Monatslimit erreicht. '
+      + 'Die Striche lassen sich weiter von Hand eintragen.');
+  if(!r.ok) throw new Error('Die Zählung ist nicht durchgekommen (Fehler ' + r.status + ')');
   const d = await r.json();
+  if(d.stop_reason === 'refusal') throw new Error('Die Zählung wurde abgelehnt');
   const text = (d.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
-  return jsonAus(text);
+  try{ return JSON.parse(text); }
+  catch(e){ throw new Error('Antwort nicht lesbar'); }
 }
 const SORTEN_REGEL =
   'Neben oder über einer Strichgruppe können zwei Angaben stehen. '
@@ -1292,32 +1349,69 @@ const SORTEN_REGEL =
 const ZAEHL_REGEL =
   'Deutsche Zählweise: vier senkrechte Striche, der fünfte quer darüber, macht fünf. '
   + 'Zähle alle Striche zusammen, den Querstrich mitgerechnet.';
-const JSON_FORM =
-  '{"eintraege":[{"name":"<Name oder leer>","gruppen":[{"staerke":"leicht"|"normal"|"stark"|"af",'
-  + '"groesse":"033"|"05"|"10","striche":<ganze Zahl>}]}],'
-  + '"sicherheit":"hoch"|"mittel"|"niedrig","hinweis":"<kurzer Satz falls etwas unklar war, sonst \\"\\">"}';
+const HINWEIS_REGEL =
+  'Setz "sicherheit" danach, wie gut das Bild lesbar war. In "hinweis" gehört ein kurzer Satz, '
+  + 'falls etwas unklar blieb, sonst ein leerer Text. Erfinde nichts, was nicht dasteht: '
+  + 'Lieber eine Gruppe weglassen als eine geraten.';
 function anweisungEiner(){
   return 'Auf dem Bild ist ein Bierdeckel oder Zettel mit einer handschriftlichen Strichliste. '
-    + ZAEHL_REGEL + ' ' + SORTEN_REGEL + ' '
-    + 'Antworte ausschließlich mit JSON, ohne Markdown und ohne Vorwort. Lass "name" leer: ' + JSON_FORM;
+    + ZAEHL_REGEL + ' ' + SORTEN_REGEL + ' Lass "name" leer. ' + HINWEIS_REGEL;
 }
 function anweisungZettel(){
-  return 'Auf dem Bild ist ein Zettel mit mehreren Namen und je einer handschriftlichen Strichliste. '
-    + ZAEHL_REGEL + ' ' + SORTEN_REGEL + ' '
-    + 'Diese Namen sind zu erwarten: ' + state.spieler.map(p => p.name).join(', ') + '. '
+  return 'Auf dem Bild ist ein Zettel, ein Bierdeckel oder ein Kassenzettel. '
+    + 'Bei einer handschriftlichen Strichliste gilt: ' + ZAEHL_REGEL + ' '
+    + 'Bei einem Kassenzettel steht die Menge stattdessen als Zahl vor oder hinter der Position, '
+    + 'etwa "3x Helles 0,5" oder "Weissbier 0,5 2". Trag diese Menge als "striche" ein. '
+    + 'Übliche Bezeichnungen: Hell, Helles, Lager und Pils sind normal. Weissbier und Weizen sind '
+    + 'ebenfalls normal, Bock und Doppelbock sind stark, Radler und Leichtbier sind leicht, '
+    + 'alles mit "alkoholfrei", "0,0" oder "Malz" ist af. Preise, Summen, Trinkgeld, Mehrwertsteuer '
+    + 'und alles, was kein Getränk ist, gehören nicht ins Ergebnis. '
+    + SORTEN_REGEL + ' '
+    + 'Steht ein Name bei einer Gruppe, trag ihn ein. Diese Namen sind möglich: '
+    + state.spieler.map(p => p.name).join(', ') + '. '
     + 'Schreib einen erkannten Namen genau so, wie er in dieser Liste steht, wenn er passt. '
-    + 'Antworte ausschließlich mit JSON, ohne Markdown und ohne Vorwort: ' + JSON_FORM;
+    + 'Steht kein Name dabei, lass "name" leer – rate keinen. ' + HINWEIS_REGEL;
 }
-function nameZuId(name){
+/* Nur wer an dieser Location eingetragen ist, kommt als Treffer in Frage. Ein Name,
+   der hier nicht dabei sein kann, ist eher verlesen als anwesend. */
+function nameZuId(name, nur){
   const n = String(name || '').trim().toLowerCase();
   if(!n) return null;
-  const genau = state.spieler.find(p => p.name.toLowerCase() === n);
+  const kreis = Array.isArray(nur)
+    ? state.spieler.filter(p => nur.some(id => String(id) === String(p.id)))
+    : state.spieler;
+  const genau = kreis.find(p => p.name.toLowerCase() === n);
   if(genau) return genau.id;
-  const teil = state.spieler.find(p => p.name.toLowerCase().startsWith(n) || n.startsWith(p.name.toLowerCase()));
+  const teil = kreis.find(p => p.name.toLowerCase().startsWith(n) || n.startsWith(p.name.toLowerCase()));
   return teil ? teil.id : null;
 }
+/* Was ohne Namen notiert ist, gehört der Runde: gleichmäßig auf die Anwesenden.
+   Was nicht aufgeht, bleibt als Rest stehen – geraten wird nichts. */
+function aufteilen(summe, ids){
+  const je = {}, rest = {};
+  ids.forEach(id => je[id] = leereZaehlung());
+  KOMBIS.forEach(k => {
+    const n = Math.max(0, Math.round(summe[k] || 0));
+    if(!n) return;
+    if(!ids.length){ rest[k] = n; return; }
+    const proKopf = Math.floor(n / ids.length);
+    if(proKopf) ids.forEach(id => je[id][k] = proKopf);
+    const uebrig = n - proKopf * ids.length;
+    if(uebrig) rest[k] = uebrig;
+  });
+  return {je, rest};
+}
+function fotoTrefferFuer(id){
+  let t = foto.treffer.find(x => String(x.ziel) === String(id));
+  if(!t){
+    const p = state.spieler.find(x => String(x.id) === String(id));
+    t = {name:p ? p.name : '—', ziel:id, z:leereZaehlung()};
+    foto.treffer.push(t);
+  }
+  return t;
+}
 function gruppenLesen(gruppen){
-  const z = {}; KOMBIS.forEach(k => z[k] = 0);
+  const z = leereZaehlung();
   (Array.isArray(gruppen) ? gruppen : []).forEach(gr => {
     const n = Math.max(0, Math.round(Number(gr && gr.striche) || 0));
     if(!n) return;
@@ -1340,7 +1434,7 @@ function ansichtFoto(){
       + 'Alles lässt sich vor dem Eintragen korrigieren.</p>'
       + '<div class="teiln" style="margin-bottom:6px">'
       + '<button data-tu="fotoModus" data-m="person" data-an="'+(foto.modus==='person'?1:0)+'">Ein Deckel</button>'
-      + '<button data-tu="fotoModus" data-m="zettel" data-an="'+(foto.modus==='zettel'?1:0)+'">Zettel mit Namen</button>'
+      + '<button data-tu="fotoModus" data-m="zettel" data-an="'+(foto.modus==='zettel'?1:0)+'">Zettel oder Rechnung</button>'
       + '</div>';
     if(foto.modus === 'person'){
       inhalt += '<p class="mini" style="margin:12px 0 6px">Wessen Deckel ist das?</p><div class="teiln">'
@@ -1349,7 +1443,8 @@ function ansichtFoto(){
               + (String(foto.person) === String(id) ? 1 : 0) + '">' + esc(p.name) + '</button>' : ''; }).join('')
         + '</div>';
     } else {
-      inhalt += '<p class="mini" style="margin:12px 0 0">Ein Blatt mit allen Namen und Strichlisten. '
+      inhalt += '<p class="mini" style="margin:12px 0 0">Ein Blatt mit Namen und Strichlisten, oder '
+        + 'ein Kassenzettel. Was ohne Namen dasteht, wird durch die Anwesenden geteilt. '
         + 'Die Zuordnung kannst du danach noch ändern.</p>';
     }
     const bereit = foto.modus === 'zettel' || foto.person;
@@ -1381,7 +1476,7 @@ function ansichtFoto(){
       const kopf = foto.modus === 'person'
         ? ''
         : '<div class="trefferzeile"><select data-zuord="'+i+'" aria-label="Zuordnung für '+esc(t.name)+'">'
-          + '<option value="">' + esc(t.name) + ' – nicht zuordnen</option>'
+          + '<option value="">nicht eintragen</option>'
           + hier.map(id => { const p = state.spieler.find(x => String(x.id) === String(id));
               return p ? '<option value="'+id+'"' + (String(t.ziel) === String(id) ? ' selected' : '') + '>'
                 + esc(p.name) + '</option>' : ''; }).join('') + '</select></div>';
@@ -1389,11 +1484,33 @@ function ansichtFoto(){
         + '<div class="i-waehler" data-fuer="'+i+'">' + kombiWaehler('fotoHinzu', ' data-i="'+i+'"') + '</div>';
     }).join('');
 
+    const restKombis = KOMBIS.filter(k => (foto.rest || {})[k] > 0);
+    const restBlock = restKombis.length
+      ? '<div class="restblock"><div class="wahl-titel">Geht nicht auf</div>'
+        + '<p class="mini" style="margin:0 0 10px">Durch ' + hier.length
+        + ' geteilt bleibt etwas übrig. Antippen, wer es bekommt – sonst wird es nicht eingetragen.</p>'
+        + restKombis.map(k => '<div class="restzeile">'
+            + '<b>' + foto.rest[k] + ' × ' + esc(nameVon(k)) + '</b>'
+            + '<div class="teiln">' + hier.map(id => {
+                const p = state.spieler.find(x => String(x.id) === String(id));
+                return p ? '<button data-tu="fotoRestAn" data-k="'+k+'" data-id="'+id+'">'
+                  + esc(p.name) + '</button>' : '';
+              }).join('') + '</div></div>').join('')
+        + '<button class="knopf leer" data-tu="fotoRestVerteilen">Gleichmäßig verteilen</button></div>'
+      : '';
+
     inhalt = '<h3>Stimmt das so?</h3>'
       + '<span class="sicher ' + sk + '">' + (sicherText[sk] || 'teils unklar') + '</span>'
       + (foto.hinweis ? '<p class="mini" style="margin:8px 0 0">' + esc(foto.hinweis) + '</p>' : '')
+      + (foto.geteilt
+          ? '<p class="mini" style="margin:8px 0 0">Ohne Namen daneben wurde durch die '
+            + hier.length + ' hier Anwesenden geteilt.</p>' : '')
+      + ((foto.fremdeNamen || []).length
+          ? '<p class="mini" style="margin:8px 0 0;color:#E0A254">Gelesen, aber hier nicht am Tisch: '
+            + foto.fremdeNamen.map(esc).join(', ') + '. Diese Striche sind in die Teilung gewandert. '
+            + 'Wer doch dabei war, gehört über „Wer ist noch dazugestoßen?“ ergänzt.</p>' : '')
       + (foto.bild ? '<img class="vorschau" src="'+foto.bild+'" alt="Aufgenommenes Foto">' : '')
-      + liste
+      + liste + restBlock
       + '<div class="teiln" style="margin-top:16px">'
       + '<button data-tu="fotoArt" data-m="ersetzen" data-an="'+(foto.ersetzen?1:0)+'">Ersetzt den Stand</button>'
       + '<button data-tu="fotoArt" data-m="dazu" data-an="'+(foto.ersetzen?0:1)+'">Kommt dazu</button></div>'
@@ -1581,7 +1698,7 @@ function ansichtEinst(){
   return '<div class="abschnitt oben">Die Bubidos</div>' + spieler
     + '<div class="feld"><input id="neuName" placeholder="Name" autocomplete="off">'
     + '<button data-tu="spielerRein">Rein</button></div>'
-    + '<p class="hinweis">Alle sehen dieselbe Tabelle. Wer den Link hat, kann auch ändern – '
+    + '<p class="hinweis">Alle sehen dieselbe Tabelle. Wer den Schlüssel hat, kann auch ändern – '
     + 'also nur innerhalb der Bubidos weitergeben.</p>'
     + '<button class="knopf leer" data-tu="frisch">Stand jetzt holen'
     + (state.stand ? ' · zuletzt '
@@ -1625,6 +1742,22 @@ function ansichtEinst(){
     + esc(GH_REPO) + '</b>' + (ghFehler === 'netz' ? ' · <b style="color:#E09084">gerade offline</b>' : '')
     + '. Jede Änderung wird ein Commit – gelöscht werden kann nichts.</p>'
     + '<button class="knopf leer" data-tu="tokenLoesen">Schlüssel von diesem Gerät entfernen</button>'
+
+    + '<div class="abschnitt">Foto-Zählung</div>'
+    + '<p class="hinweis" style="margin:6px 2px 0">Zum Auslesen der Striche braucht es einen '
+    + 'Zugangsschlüssel. Er liegt im gemeinsamen Datenbestand, also genügt einer für die ganze '
+    + 'Gruppe – die anderen Geräte bekommen ihn beim nächsten Laden von selbst. '
+    + (kiSchluessel() ? 'Zurzeit ist einer hinterlegt.' : 'Zurzeit ist keiner hinterlegt, '
+        + 'das Foto-Zählen meldet sich entsprechend.') + '</p>'
+    + '<div class="feld"><input id="kiSchluessel" placeholder="sk-ant-…" autocomplete="off" '
+    + 'autocapitalize="off" autocorrect="off" spellcheck="false" value="'
+    + esc(kiSchluessel()) + '"><button data-tu="kiSchluesselSichern">Merken</button></div>'
+    + '<p class="hinweis" style="margin:10px 2px 0">Welches Modell zählt. Beide können es; '
+    + 'wer vergleichen will, fotografiert denselben Deckel zweimal.</p>'
+    + '<div class="teiln">'
+    + KI_MODELLE.map(m => '<button data-tu="kiModellWahl" data-m="'+m.k+'" data-an="'
+        + (kiModell() === m.k ? 1 : 0) + '">' + esc(m.n) + '</button>').join('')
+    + '</div>'
 
     + '<div class="abschnitt">Nachschlagen</div>'
     + '<button class="knopf leer" data-tu="geheInfo">Betriebsanleitung öffnen</button>'
@@ -1715,9 +1848,16 @@ function ansichtInfo(){
     + '</ul></div>'
 
     + '<div class="para" id="p5"><h2><i>§ 5</i> Optische Erfassung</h2>'
-    + '<p>Knopf <strong>Deckel abfotografieren</strong>: entweder ein einzelner Deckel für eine Person '
-    + 'oder ein Zettel mit allen Namen. Die Zählung liest Striche und, wenn sie danebenstehen, auch '
-    + 'Stärke und Größe.</p>'
+    + '<p>Knopf <strong>Deckel abfotografieren</strong>: entweder <strong>ein Deckel</strong>, der '
+    + 'einer Person gehört, oder ein <strong>Zettel oder eine Rechnung</strong>. Die Zählung liest '
+    + 'Striche und, wenn sie danebenstehen, auch Stärke und Größe. Ein Kassenzettel braucht keinen '
+    + 'eigenen Knopf: Dort steht die Menge als Zahl vor der Position, gelesen wird sie genauso.</p>'
+    + '<div class="warnung"><p><strong>Steht kein Name dabei, wird geteilt.</strong> Was ohne '
+    + 'Zuordnung notiert ist, geht zu gleichen Teilen an die, die an dieser Location eingetragen '
+    + 'sind — nicht an alle fünf. Geht es nicht glatt auf, bleibt der Rest sichtbar stehen und '
+    + 'will vergeben werden; wen es nicht kümmert, drückt <em>Gleichmäßig verteilen</em>. Ein '
+    + 'gelesener Name, der hier gar nicht am Tisch sitzt, landet ebenfalls in der Teilung und '
+    + 'wird dabei angezeigt.</p></div>'
     + '<div class="warnung"><p><strong>Die Grundregel: nichts dabei heißt Halbe.</strong> Wer normal '
     + 'trinkt und ein 0,5er-Glas vor sich hat, schreibt einfach Striche. Alles andere wird '
     + 'dazugeschrieben.</p></div>'
@@ -1753,7 +1893,12 @@ function ansichtInfo(){
     + 'Dasselbe gilt für das L: es heißt hier <em>leicht</em> und nie Liter.</p></div>'
     + '<p>Die gezählten Zahlen kommen mit Plus und Minus zurück. Das ist keine Höflichkeit, sondern der '
     + 'eigentliche Arbeitsschritt: Bierflecken gelten gelegentlich als Strich. Was fehlt, lässt sich über '
-    + '„Weitere Sorte eintragen" ergänzen. Fotos werden nicht gespeichert.</p></div>'
+    + '„Weitere Sorte eintragen" ergänzen. Fotos werden nicht gespeichert.</p>'
+    + '<p>Die Zählung braucht einen Zugangsschlüssel, der hinterm Zahnrad hinterlegt wird. Er liegt '
+    + 'im gemeinsamen Datenbestand, also genügt einer für die ganze Gruppe — die übrigen Geräte '
+    + 'bekommen ihn beim nächsten Laden. Fehlt er, sagt die App das und ihr tippt von Hand. Welches '
+    + 'Modell zählt, steht ebenfalls dort; beide können es, und wer vergleichen will, fotografiert '
+    + 'denselben Deckel zweimal.</p></div>'
 
     + '<div class="para" id="p6"><h2><i>§ 6</i> Ordensverleihung</h2>'
     + '<table class="info">'
@@ -1862,6 +2007,10 @@ function ansichtInfo(){
     + '<table class="info">'
     + '<tr><td class="frage">Das Foto meldet 47 Striche</td><td>Entweder galt ein Bierfleck als Strich, '
     + 'oder ihr wart fleißig. Mit Minus korrigieren. Bei 47 bitte auch § 2 nochmals lesen.</td></tr>'
+    + '<tr><td class="frage">Das Foto sagt, es fehle ein Zugangsschlüssel</td>'
+    + '<td>Dann ist keiner hinterlegt oder er wurde zurückgezogen. Hinterm Zahnrad unter '
+    + '<em>Foto-Zählung</em> einen eintragen — einer genügt für alle Geräte. Bis dahin von Hand '
+    + 'tippen, das geht ja auch.</td></tr>'
     + '<tr><td class="frage">Jemand hat am meisten getrunken und kaum Punkte gewonnen</td>'
     + '<td>Keine Störung. Von oben wird das erwartet — E ist hoch, also bleibt (S − E) klein. '
     + 'Rechenweg steht in § 7, das lässt sich am Tisch nachprüfen.</td></tr>'
@@ -2168,7 +2317,12 @@ function ansichtPerson(){
 
 /* ---------- Sichern ---------- */
 function exportText(){
-  return JSON.stringify({app:'bubidos-bierliga', version:1, t:Date.now(), daten:standDaten()});
+  /* Der Zugangsschlüssel bleibt draußen: Ein Export wird verschickt, und Verschicktes
+     wird weitergeleitet. Er gehört zur Verbindung und ist jederzeit neu einzutragen. */
+  const daten = standDaten();
+  daten.einst = Object.assign({}, daten.einst);
+  delete daten.einst.kiSchluessel;
+  return JSON.stringify({app:'bubidos-bierliga', version:1, t:Date.now(), daten:daten});
 }
 function dateiName(){
   const d = new Date();
@@ -2464,9 +2618,13 @@ const tu = {
   },
   async importAusfuehren(){
     const k = sicherBlatt.kandidat;
+    /* Ein Export führt den Zugangsschlüssel absichtlich nicht mit – der hier
+       hinterlegte bleibt deshalb stehen, statt beim Wiederherstellen zu verschwinden. */
+    const kiAlt = {kiSchluessel:state.einst.kiSchluessel || '',
+                   kiModell:state.einst.kiModell || 'claude-opus-5'};
     state.spieler = k.spieler || [];
     state.we = migrieren(k.we || []);
-    state.einst = Object.assign({k:40, deckel:0}, k.einst || {});
+    state.einst = Object.assign({k:40, deckel:0}, kiAlt, k.einst || {}, {kiSchluessel:kiAlt.kiSchluessel});
     state.geraete = k.geraete || {};
     state.aktivWe = null; state.aktivTag = null; state.aktivOrt = null;
     sicherBlatt = null; ansicht = 'archiv'; stapel = [];
@@ -2781,9 +2939,21 @@ const tu = {
   blattZu(){ blatt = null; zeichnen(); },
   blattHintergrund(){},
 
+  kiSchluesselSichern(){
+    const f = document.getElementById('kiSchluessel');
+    if(!f) return;
+    state.einst.kiSchluessel = (f.value || '').trim();
+    sichern({sofort:true}); zeichnen();
+    toast(state.einst.kiSchluessel ? 'Schlüssel gemerkt' : 'Schlüssel entfernt');
+  },
+  kiModellWahl(el){
+    state.einst.kiModell = el.dataset.m;
+    sichern(); zeichnen();
+  },
   fotoStart(){
     foto = {modus:'person', person:null, phase:'start', bild:null, treffer:[],
-            sicherheit:'mittel', hinweis:'', ersetzen:true, fehlerText:''};
+            sicherheit:'mittel', hinweis:'', ersetzen:true, fehlerText:'',
+            rest:{}, geteilt:false, fremdeNamen:[]};
     zeichnen();
   },
   fotoModus(el){ foto.modus = el.dataset.m; zeichnen(); },
@@ -2797,19 +2967,50 @@ const tu = {
   fotoHinzu(el){ const t = foto.treffer[+el.dataset.i];
     const k = neuKombi.s + ':' + neuKombi.g;
     t.z[k] = (t.z[k]||0) + 1; zeichnen(); },
+  fotoRestAn(el){
+    const k = el.dataset.k, id = el.dataset.id;
+    if(!foto.rest || !foto.rest[k]) return;
+    foto.rest[k]--;
+    if(!foto.rest[k]) delete foto.rest[k];
+    const t = fotoTrefferFuer(id);
+    t.z[k] = (t.z[k] || 0) + 1;
+    zeichnen();
+  },
+  fotoRestVerteilen(){
+    const {ort} = aktuell();
+    const hier = ort ? Object.keys(ort.getraenke) : [];
+    if(!hier.length || !foto.rest) return;
+    let i = 0;
+    Object.keys(foto.rest).forEach(k => {
+      while(foto.rest[k] > 0){
+        const t = fotoTrefferFuer(hier[i % hier.length]); i++;
+        t.z[k] = (t.z[k] || 0) + 1;
+        foto.rest[k]--;
+      }
+      delete foto.rest[k];
+    });
+    zeichnen();
+  },
   fotoZu(){ foto = null; zeichnen(); },
   fotoHintergrund(){},
   fotoUebernehmen(){
     const {ort} = aktuell();
     if(!ort){ foto = null; zeichnen(); return; }
-    let getroffen = 0;
+    /* Erst je Person zusammenfassen: Zwei Zeilen auf denselben Namen dürfen sich
+       beim Ersetzen nicht gegenseitig überschreiben. */
+    const proPerson = {};
     foto.treffer.forEach(t => {
       const id = foto.modus === 'person' ? foto.person : t.ziel;
       if(!id || !ort.getraenke[id]) return;
-      const neu = ausZaehlung(t.z);
-      ort.getraenke[id] = foto.ersetzen ? neu : ort.getraenke[id].concat(neu);
-      getroffen++;
+      if(!proPerson[id]) proPerson[id] = leereZaehlung();
+      KOMBIS.forEach(k => proPerson[id][k] += Math.max(0, Math.round(t.z[k] || 0)));
     });
+    const ids = Object.keys(proPerson);
+    ids.forEach(id => {
+      const neu = ausZaehlung(proPerson[id]);
+      ort.getraenke[id] = foto.ersetzen ? neu : ort.getraenke[id].concat(neu);
+    });
+    const getroffen = ids.length;
     if(getroffen) tagebuch(ort, {art:'foto', n:getroffen});
     foto = null; sichern(); zeichnen();
     toast(getroffen ? (getroffen === 1 ? 'Eingetragen' : getroffen + ' Strichlisten eingetragen')
@@ -2862,7 +3063,12 @@ const tu = {
     toast(ok ? (state.stand > vorher ? 'Neuer Stand da' : 'Alles aktuell') : 'Nichts zu holen');
   },
   allesWeg(){
-    state.spieler = []; state.we = []; state.einst = {k:40, deckel:0};
+    /* Der Zugangsschlüssel gehört zur Verbindung, nicht zur Liga – er überlebt,
+       damit das Foto-Zählen nach einem Rücksetzen nicht still tot ist. */
+    const kiAlt = {kiSchluessel:state.einst.kiSchluessel || '',
+                   kiModell:state.einst.kiModell || 'claude-opus-5'};
+    state.spieler = []; state.we = [];
+    state.einst = Object.assign({k:40, deckel:0}, kiAlt);
     state.aktivWe = null; state.aktivTag = null; state.aktivOrt = null;
     fazitOffen = null; foto = null; blatt = null; wechsler = false; detailId = null;
     personId = null; rechnung = null; punkteOffen = false; benennen = false;
@@ -2885,9 +3091,37 @@ document.getElementById('kamera').addEventListener('change', async ev => {
     if(!roh.length) throw new Error('Es war keine Strichliste zu erkennen');
     if(foto.modus === 'person'){
       foto.treffer = [{name:'', ziel:foto.person, z:gruppenLesen(roh[0].gruppen)}];
+      foto.rest = {}; foto.geteilt = false; foto.fremdeNamen = [];
     } else {
-      foto.treffer = roh.map(t => ({name:String(t.name || 'ohne Namen'),
-        ziel:nameZuId(t.name), z:gruppenLesen(t.gruppen)}));
+      const {ort} = aktuell();
+      const hier = ort ? Object.keys(ort.getraenke) : [];
+      foto.treffer = [];
+      const offen = leereZaehlung();
+      let ohneNamen = 0;
+      const fremde = [];
+      roh.forEach(e => {
+        const z = gruppenLesen(e.gruppen);
+        const id = nameZuId(e.name, hier);
+        if(id){ const t = fotoTrefferFuer(id); KOMBIS.forEach(k => t.z[k] += z[k]); }
+        else {
+          /* Ein gelesener Name, der hier nicht am Tisch sitzt, wandert in die Teilung –
+             das wird angezeigt, statt still zu passieren. */
+          const gelesen = String(e.name || '').trim();
+          if(gelesen && !fremde.includes(gelesen)) fremde.push(gelesen);
+          KOMBIS.forEach(k => offen[k] += z[k]); ohneNamen++;
+        }
+      });
+      foto.fremdeNamen = fremde;
+      const {je, rest} = aufteilen(offen, hier);
+      hier.forEach(id => {
+        const anteil = je[id];
+        if(anteil && KOMBIS.some(k => anteil[k])){
+          const t = fotoTrefferFuer(id);
+          KOMBIS.forEach(k => t.z[k] += anteil[k]);
+        }
+      });
+      foto.rest = rest;
+      foto.geteilt = ohneNamen > 0;
     }
     foto.sicherheit = ['hoch','mittel','niedrig'].includes(d.sicherheit) ? d.sicherheit : 'mittel';
     foto.hinweis = typeof d.hinweis === 'string' ? d.hinweis : '';
