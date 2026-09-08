@@ -135,7 +135,10 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
 ## Gewohnheiten
 
 - **Die Fassungskennung `FASSUNG` bei jeder Änderung hochzählen.** Sie steht in den Einstellungen
-  und im Fuß der Anleitung und dient dazu, veraltete Versionen zu erkennen.
+  und im Fuß der Anleitung und dient dazu, veraltete Versionen zu erkennen. Format
+  `JJJJ-MM-TT HH:MM · G<n> (GitHub)`, Uhrzeit lokal (Europa/Berlin), `<n>` bei jeder Änderung eins
+  hoch. Die Uhrzeit hilft beim Unterscheiden, wenn wegen Cache/CDN-Verzögerung kurzzeitig zwei
+  Fassungen im Umlauf sind.
 - **Die Betriebsanleitung mitpflegen.** Sie ist Teil der Datei (`ansichtInfo`), im Ton einer
   augenzwinkernden DIN-Norm. Wer eine Funktion ändert, ändert den Paragrafen mit.
 - **Das Fangnetz nicht entfernen.** `zeichnen()` fängt Ausnahmen ab und zeigt einen
