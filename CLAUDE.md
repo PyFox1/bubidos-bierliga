@@ -42,6 +42,10 @@ Die Variable `ansicht` überschreibt das für Unteransichten. Werte: `null` (aut
 Überlagerungen (`.blende`), gezeichnet in dieser Rangfolge: `foto`, `rechnung`, `erklaer`,
 `blatt` (Sammel-Eingabe), `sicherBlatt`, `benennen`, `wechsler`, `fazitOffen`.
 
+`benennen` ist ein Objekt, kein Schalter: `{ortId, mit?, name?}`. `mit` trägt die Vorauswahl
+für „Wer geht mit?“ und fehlt beim neuen Tag, `name` hält den eingetippten Ortsnamen fest,
+weil jeder Tipp auf ein Namenschip das Blatt neu zeichnet.
+
 **Navigation**: `stapel` merkt bis zu zwölf Schritte, der Zurück-Pfeil ruft `zurueckNavi()`.
 `geheArchiv` und `geheZaehlen` sind Heimatziele und leeren den Stapel.
 
@@ -54,6 +58,8 @@ Die Variable `ansicht` überschreibt das für Unteransichten. Werte: `null` (aut
 - `fazitVon(e)` — Wochenendbilanz samt Orden
 - `rangDaten()` / `rangZeilen()` — die sortierbare Tabelle, Spalten in `SPALTEN`
 - `laden()` / `sichern()` / `schreiben()` — GitHub-Anbindung
+- `zusammenfuehren()` — Drei-Wege-Abgleich bei gleichzeitiger Änderung, samt `listeVereinen()`
+- `aktuell()` / `pinGueltig()` — wo dieses Gerät steht, siehe Aufteilung
 - `zeichnen()` — Fangnetz, ruft `zeichnenRoh()`
 - `ERKLAERUNGEN` — die Erklär-Blätter, jedes mit Verweis auf einen Paragrafen-Anker
 
@@ -63,8 +69,12 @@ Die Variable `ansicht` überschreibt das für Unteransichten. Werte: `null` (aut
    Weitere Änderungen verschieben den Termin — eine Serie von Tipps wird ein Commit.
    `sichern({sofort:true})` schreibt ohne Verzögerung.
 2. `schreiben()` schickt die Datei mit dem bekannten `sha`. Antwortet GitHub mit **409**, war
-   jemand schneller: Der fremde Stand wird geladen, der eigene daraufgesetzt, erneut geschrieben.
-   Beide Fassungen stehen dann in der Historie — es geht nichts verloren.
+   jemand schneller: Der fremde Stand wird geladen und über `zusammenfuehren()` mit dem eigenen
+   verschmolzen, dann erneut geschrieben. Drei Wege — `basisDaten` ist der zuletzt vom Server
+   bekannte Stand und dient als gemeinsamer Vorfahr. Getränke sind Strichlisten, deshalb je
+   Sorte `meins + fremd − Basis`, nie unter null: beide Seiten behalten ihre Biere, ein
+   Zurücknehmen bleibt zurückgenommen. Neue Locations, Tage, Wochenenden und Spieler von drüben
+   kommen dazu; hier gezielt Gelöschtes kommt nicht zurück.
 3. `abgleichen()` vergleicht den `sha` und lädt bei Änderung neu — alle 25 Sekunden und
    zusätzlich, sobald die App wieder nach vorn kommt. Einen Knopf zum Holen gibt es nicht,
    der Stand ist beim Öffnen da.
@@ -116,6 +126,26 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   damit jemand, der erst am Samstag anreist, nicht chancenlos ist.
 - **Zurückliegende Locations sind schreibgeschützt.** Man kann durch die Kette wischen, aber
   nicht versehentlich Bier am falschen Abend eintragen. Entsperren geht mit einem Tipp.
+  Ausnahme: die Station, auf die `state.aktivOrt` zeigt, ist nie gesperrt — sonst stünde die
+  zurückgebliebene Hälfte einer aufgeteilten Runde plötzlich vor einem „Rückblick“.
+- **Die Runde darf sich aufteilen.** Ziehen zwei schon in den Neubau, während der Rest sitzen
+  bleibt, laufen zwei Stationen desselben Tages nebeneinander. Der Rechenkern kann das von
+  Haus aus, weil der Tag gewertet wird und nicht die Location — es war reine Bediensache:
+  - `state.aktivOrt` ist der **Zeiger der Gruppe**: zieht die Runde geschlossen weiter, folgen
+    alle Geräte. Das ist der Normalfall und bleibt unverändert.
+  - Daneben gibt es einen **geräte-lokalen Standort** (`ortPin`, `localStorage`). Blättern und
+    Springen setzen nur ihn und reißen niemanden mehr mit. Landet man wieder dort, wo die
+    Gruppe steht, löst er sich auf.
+  - Der Pin hält über parallele Stationen hinweg, aber **nicht über Tage**: macht die Gruppe
+    einen neuen Tag auf, läuft jedes Gerät mit. Sonst landen Biere im falschen Tag, und der
+    Tag ist die Einheit, die gewertet wird. Dafür merkt sich der Pin in `gruppeTag`, auf
+    welchem Tag die Gruppe stand, als er gesetzt wurde.
+  - Ausgelöst wird die Aufteilung über „Wer geht mit?“ im Blatt nach **+ Location**. Kommen
+    alle mit, zieht der Gruppenzeiger weiter; bleibt jemand zurück, bleibt er stehen und nur
+    dieses Gerät geht voraus. `ortNeu()` bietet niemanden an, der an diesem Tag schon an einer
+    späteren Station steht — der ist vorausgezogen und sitzt nicht mehr am Tisch.
+  - Voraussetzung dafür ist das Zusammenführen beim Schreibkonflikt (siehe Speicher-Ablauf).
+    Ohne das schreiben sich zwei parallel zählende Grüppchen gegenseitig die Biere weg.
 - **Erklärungen sitzen im Kontext, nicht in der Anleitung.** Tipp auf eine Zahl öffnet ein kurzes
   Blatt mit Verweis in den passenden Paragrafen. Die Betriebsanleitung ist Nachschlagewerk,
   kein Einstieg. Jeder Paragraf hat einen Anker `p1` bis `p11`.
@@ -133,8 +163,12 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
 - **Das Foto-Zählen funktioniert auf GitHub Pages nicht.** Es ruft die Anthropic-API auf, was nur
   innerhalb eines Claude-Artefakts geht. Der Code ist noch da und meldet das ehrlich. Soll
   irgendwann über einen Zwischendienst zurückkommen oder ganz raus.
-- **Kein `localStorage` für die eigentlichen Daten.** Nur Token, Gerätekennung und eine
-  Notfallkopie liegen lokal. Die Wahrheit steht immer im Repository.
+- **Kein `localStorage` für die eigentlichen Daten.** Nur Token, Gerätekennung, der eigene
+  Standort (`ortPin`) und eine Notfallkopie liegen lokal. Die Wahrheit steht immer im
+  Repository.
+- **`basisDaten` nie mit `state` verwechseln.** `uebernehmen()` ruft `migrieren()`, und das
+  arbeitet in den Listen. Deshalb wird der Serverstand zweimal geparst — einmal als Basis,
+  einmal für `state`. Teilen sich beide dieselben Objekte, ist der Drei-Wege-Abgleich wertlos.
 
 ## Gewohnheiten
 
