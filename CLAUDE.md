@@ -142,6 +142,8 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   Fehlerbildschirm statt einzufrieren. Eine App, die am Bierabend hängenbleibt, ist wertlos.
 - **Nach Änderungen prüfen**, dass alle `data-tu`-Aktionen einen Handler im `tu`-Objekt haben —
   das war mehrfach die Fehlerquelle.
+- **Nicht pushen ohne ausdrückliches Go.** Committen ist in Ordnung, `git push` erst nach
+  expliziter Freigabe durch den Nutzer in diesem Gespräch.
 
 ## Ton
 
