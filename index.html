@@ -433,7 +433,11 @@ table.rechnung td.schlecht{color:#E09084}
 .blende{position:fixed;inset:0;background:rgba(20,23,27,.85);z-index:50;display:grid;place-items:end center}
 .blatt{width:100%;max-width:640px;max-height:92vh;overflow-y:auto;
   padding:8px 14px calc(20px + env(safe-area-inset-bottom))}
-.karte{background:var(--zinn);border-top:3px solid var(--malz);border-radius:8px;padding:20px 16px 18px}
+.karte{background:var(--zinn);border-top:3px solid var(--malz);border-radius:8px;padding:20px 16px 18px;
+  position:relative}
+.kreuz{position:absolute;top:10px;right:10px;width:38px;height:38px;line-height:1;
+  background:transparent;border:1px solid var(--linie);border-radius:5px;color:var(--tinte);
+  font-size:23px;cursor:pointer;padding:0}
 .karte h3{font-family:var(--display);font-size:23px;text-transform:uppercase;margin:0 0 2px;letter-spacing:.02em}
 .vorschau{width:100%;max-height:180px;object-fit:cover;border-radius:5px;margin:12px 0;
   border:1px solid var(--linie);display:block}
@@ -481,7 +485,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-08 18:18 · G6 (GitHub)';
+const FASSUNG = '2026-09-08 19:05 · G7 (GitHub)';
 
 /* ====== EINSTELLUNGEN – hier anpassen, falls sich Namen ändern ====== */
 const GH_BESITZER = 'PyFox1';
@@ -583,6 +587,8 @@ const mischung = gs => { const z = zaehlung(gs);
 /* ---------- Zustand ---------- */
 let ansicht = null;
 let fazitOffen = null, frage = null, foto = null, blatt = null;
+/* Läuft gerade eine Zählung, steckt hier ihr Abbruch. */
+let fotoLauf = null;
 let wechsler = false, detailId = null, personId = null;
 let rechnung = null, punkteOffen = false, letzteRunde = null;
 let rundeFrage = false, benennen = false, entsperrt = null;
@@ -1301,7 +1307,7 @@ const KI_MODELLE = [
 const kiModell = () => (state.einst && state.einst.kiModell) || 'claude-opus-5';
 const kiSchluessel = () => (state.einst && state.einst.kiSchluessel || '').trim();
 
-async function anKI(bild, anweisung){
+async function anKI(bild, anweisung, signal){
   const schluessel = kiSchluessel();
   if(!schluessel)
     throw new Error('Es ist kein Zugangsschlüssel für die Zählung hinterlegt. '
@@ -1310,6 +1316,7 @@ async function anKI(bild, anweisung){
   try{
     r = await fetch('https://api.anthropic.com/v1/messages', {
       method:'POST',
+      signal:signal,
       headers:{
         'Content-Type':'application/json',
         'x-api-key':schluessel,
@@ -1325,7 +1332,10 @@ async function anKI(bild, anweisung){
         ]}]
       })
     });
-  }catch(e){ throw new Error('Keine Verbindung zur Zählung – Netz prüfen'); }
+  }catch(e){
+    if(e && e.name === 'AbortError') throw e;
+    throw new Error('Keine Verbindung zur Zählung – Netz prüfen');
+  }
   if(r.status === 401 || r.status === 403)
     throw new Error('Der Zugangsschlüssel für die Zählung wird nicht angenommen. '
       + 'Vermutlich abgelaufen oder zurückgezogen – hinterm Zahnrad neu hinterlegen.');
@@ -1478,6 +1488,28 @@ function gruppenLesen(gruppen){
   return z;
 }
 
+/* Ein Deckel sammelt den ganzen Abend: das zweite Foto zeigt die Striche des ersten
+   noch mit. Wer den dann draufrechnet, zählt alles doppelt – deshalb die Wahl. Ab Werk
+   steht sie auf „dazu“, weil Doppeltes sichtbar ist und sich wegtippen lässt, ein
+   überschriebener Abend aber weg ist. */
+function artBlock(hier){
+  const {ort} = aktuell();
+  const verlust = !ort ? 0 : foto.treffer.reduce((s,t) =>
+    s + (t.ziel && ort.getraenke[t.ziel] ? ort.getraenke[t.ziel].length : 0), 0);
+  return '<div class="wemblock"><div class="wahl-titel">Was mit dem Bisherigen geschieht</div>'
+    + '<p class="mini" style="margin:0 0 10px">Ein Deckel sammelt den ganzen Abend – beim '
+    + 'zweiten Foto stehen die alten Striche wieder mit drauf, das gehört ersetzt. Ein Zettel '
+    + 'mit nur der letzten Runde kommt dazu.</p>'
+    + '<div class="teiln">'
+    + '<button data-tu="fotoArt" data-m="dazu" data-an="'+(foto.ersetzen?0:1)+'">Kommt dazu</button>'
+    + '<button data-tu="fotoArt" data-m="ersetzen" data-an="'+(foto.ersetzen?1:0)+'">Ersetzt den Stand</button>'
+    + '</div>'
+    + (foto.ersetzen && verlust
+        ? '<p class="mini" style="margin:10px 0 0;color:#E0A254">Hier stehen schon ' + verlust
+          + ' Getränke. Ersetzen wirft sie weg und setzt allein das Foto.</p>' : '')
+    + '</div>';
+}
+
 function ansichtFoto(){
   if(!foto) return '';
   const {ort} = aktuell();
@@ -1494,10 +1526,14 @@ function ansichtFoto(){
   }
 
   if(foto.phase === 'laedt'){
-    inhalt = '<h3>Wird gezählt</h3>'
+    /* Hängt die Zählung, muss ein Weg heraus da sein – sonst steht der Deckelführer
+       mit einem eingefrorenen Blatt am Tisch. */
+    inhalt = '<button class="kreuz" data-tu="fotoAbbrechen" aria-label="Zählung abbrechen">&times;</button>'
+      + '<h3>Wird gezählt</h3>'
       + (foto.bild ? '<img class="vorschau" src="'+foto.bild+'" alt="Aufgenommenes Foto">' : '')
       + '<div class="laedt"><b>Striche werden gezählt</b>'
-      + '<span class="mini">Das dauert ein paar Sekunden.</span></div>';
+      + '<span class="mini">Das dauert ein paar Sekunden. Dauert es länger, oben rechts abbrechen '
+      + 'und nochmal fotografieren.</span></div>';
   }
 
   if(foto.phase === 'fehler'){
@@ -1566,9 +1602,7 @@ function ansichtFoto(){
             + 'Wer doch dabei war, gehört über „Wer ist noch dazugestoßen?“ ergänzt.</p>' : '')
       + (foto.bild ? '<img class="vorschau" src="'+foto.bild+'" alt="Aufgenommenes Foto">' : '')
       + wemBlock + liste + restBlock
-      + '<div class="teiln" style="margin-top:16px">'
-      + '<button data-tu="fotoArt" data-m="ersetzen" data-an="'+(foto.ersetzen?1:0)+'">Ersetzt den Stand</button>'
-      + '<button data-tu="fotoArt" data-m="dazu" data-an="'+(foto.ersetzen?0:1)+'">Kommt dazu</button></div>'
+      + artBlock(hier)
       + '<button class="knopf voll" data-tu="fotoUebernehmen">Eintragen</button>'
       + '<button class="knopf leer" data-tu="fotoAufnehmen">Nochmal fotografieren</button>'
       + '<button class="knopf leer" data-tu="fotoZu">Abbrechen</button>';
@@ -1922,6 +1956,15 @@ function ansichtInfo(){
     + 'und will vergeben werden; wen es nicht kümmert, drückt <em>Gleichmäßig verteilen</em>. Ein '
     + 'gelesener Name, der hier gar nicht am Tisch sitzt, landet ebenfalls im Namenlosen und wird '
     + 'dabei angezeigt.</p></div>'
+    + '<p><strong>Dazu oder ersetzen.</strong> Unten steht, was mit dem Bisherigen geschieht. Ein '
+    + 'Deckel sammelt den ganzen Abend: Wird er zum zweiten Mal fotografiert, stehen die alten '
+    + 'Striche wieder mit drauf — der gehört <em>ersetzt</em>, sonst zählt alles doppelt. Ein '
+    + 'Zettel mit nur der letzten Runde <em>kommt dazu</em>. Ab Werk steht die Wahl auf dazu, denn '
+    + 'Doppeltes sieht man und tippt es weg, ein überschriebener Abend ist fort. Wo bereits etwas '
+    + 'eingetragen ist, sagt ein Hinweis, wie viel das Ersetzen wegwürfe.</p>'
+    + '<p>Während gezählt wird, sitzt oben rechts ein <strong>Kreuz</strong>. Es bricht die '
+    + 'Zählung ab und führt zurück zum Auslöser — für den Fall, dass das Netz am Tisch schlechter '
+    + 'ist als die Handschrift.</p>'
     + '<div class="warnung"><p><strong>Die Grundregel: nichts dabei heißt Halbe.</strong> Wer normal '
     + 'trinkt und ein 0,5er-Glas vor sich hat, schreibt einfach Striche. Alles andere wird '
     + 'dazugeschrieben.</p></div>'
@@ -3017,7 +3060,7 @@ const tu = {
   fotoStart(){
     foto = {phase:'start', bild:null, treffer:[], benannt:[], ohne:leereZaehlung(),
             jeder:leereZaehlung(), ohneZiel:null, sicherheit:'mittel', hinweis:'',
-            ersetzen:true, fehlerText:'', rest:{}, fremdeNamen:[]};
+            ersetzen:false, fehlerText:'', rest:{}, fremdeNamen:[]};
     zeichnen();
   },
   fotoAufnehmen(){ document.getElementById('kamera').click(); },
@@ -3058,7 +3101,13 @@ const tu = {
     });
     zeichnen();
   },
-  fotoZu(){ foto = null; zeichnen(); },
+  fotoZu(){ if(fotoLauf) fotoLauf.abort(); fotoLauf = null; foto = null; zeichnen(); },
+  fotoAbbrechen(){
+    if(fotoLauf) fotoLauf.abort();
+    fotoLauf = null;
+    if(foto){ foto.phase = 'start'; foto.bild = null; }
+    zeichnen();
+  },
   fotoHintergrund(){},
   fotoUebernehmen(){
     const {ort} = aktuell();
@@ -3149,11 +3198,15 @@ document.getElementById('kamera').addEventListener('change', async ev => {
   const datei = ev.target.files[0];
   ev.target.value = '';
   if(!datei || !foto) return;
+  if(fotoLauf) fotoLauf.abort();
+  const lauf = new AbortController();
+  fotoLauf = lauf;
   foto.phase = 'laedt'; foto.bild = null; zeichnen();
   try{
     foto.bild = await bildVerkleinern(datei, 1400);
+    if(lauf.signal.aborted) return;
     zeichnen();
-    const d = await anKI(foto.bild, anweisungZettel());
+    const d = await anKI(foto.bild, anweisungZettel(), lauf.signal);
     const roh = Array.isArray(d.eintraege) ? d.eintraege : [];
     if(!roh.length) throw new Error('Es war keine Strichliste zu erkennen');
     const {ort} = aktuell();
@@ -3182,8 +3235,12 @@ document.getElementById('kamera').addEventListener('change', async ev => {
     foto.hinweis = typeof d.hinweis === 'string' ? d.hinweis : '';
     foto.phase = 'ergebnis';
   }catch(err){
+    /* Selbst abgebrochen ist kein Fehler – fotoAbbrechen hat den Bildschirm schon gesetzt. */
+    if(lauf.signal.aborted) return;
     foto.phase = 'fehler';
     foto.fehlerText = err && err.message ? err.message : 'Unbekannter Fehler';
+  }finally{
+    if(fotoLauf === lauf) fotoLauf = null;
   }
   zeichnen();
 });
