@@ -159,10 +159,6 @@ input,select{font:inherit}
 .zahlfeld p{margin:2px 0 0;font-size:12px;color:#98A0AA;max-width:38ch}
 .zahlfeld strong{font-size:15px}
 .entfernen{color:#D98A7E;font-size:13px;font-weight:600;padding:6px 8px}
-.schalter{display:flex;gap:8px;margin-top:6px}
-.schalter button{flex:1;padding:11px;border-radius:5px;border:1px solid var(--linie);
-  font-size:14px;font-weight:700;color:#98A0AA}
-.schalter button[data-an="1"]{background:var(--deckel);border-color:var(--deckel);color:var(--tinte)}
 
 .fazit{background:var(--deckel);color:var(--tinte);border-radius:5px;padding:20px 18px;margin:14px 0;
   position:relative;box-shadow:0 2px 0 var(--deckel-tief),0 6px 14px rgba(0,0,0,.28)}
@@ -407,9 +403,6 @@ table.rechnung td.schlecht{color:#E09084}
 .bekachel span{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
   color:var(--tinte-weich);text-decoration:underline;text-decoration-style:dotted;
   text-underline-offset:2px}
-.reglerfrage{font-size:15px;font-weight:800;color:var(--deckel);padding:0}
-.reglerfrage i{font-style:normal;color:var(--malz);font-family:var(--mono);font-size:12px;
-  border:1px solid var(--malz);border-radius:50%;padding:0 5px;margin-left:5px}
 
 .sortreihe{margin:14px 0 10px}
 .sortreihe > span{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;
@@ -494,7 +487,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-08 22:05 · G12 (GitHub)';
+const FASSUNG = '2026-09-08 22:17 · G13 (GitHub)';
 
 /* ====== EINSTELLUNGEN – hier anpassen, falls sich Namen ändern ====== */
 const GH_BESITZER = 'PyFox1';
@@ -607,7 +600,7 @@ let stapel = [];
 let vorwahl = null;
 
 let state = {
-  spieler: [], we: [], einst: {k:40, deckel:0}, geraete: {}, sortier:'elo',
+  spieler: [], we: [], einst: {k:40}, geraete: {}, sortier:'elo',
   aktivWe:null, aktivTag:null, aktivOrt:null, wahlS:'normal', wahlG:'05',
   wahlOffen:false, stand:0
 };
@@ -632,7 +625,7 @@ function migrieren(we){
 function uebernehmen(d){
   state.spieler = d.spieler || [];
   state.we = migrieren(d.we || []);
-  state.einst = Object.assign({k:40, deckel:0, kiSchluessel:'', kiModell:'claude-opus-5'}, d.einst || {});
+  state.einst = Object.assign({k:40, kiSchluessel:'', kiModell:'claude-opus-5'}, d.einst || {});
   state.geraete = d.geraete || {};
   state.sortier = d.sortier || 'elo';
   state.aktivWe = d.aktivWe === undefined ? null : d.aktivWe;
@@ -767,7 +760,9 @@ async function sichern(opt){
   schreibTimer = setTimeout(schreiben, 2500);
 }
 
-setInterval(async () => {
+/* Läuft im 25-Sekunden-Takt und zusätzlich, sobald die App wieder nach vorn kommt.
+   Damit ist der Stand beim Öffnen da, ohne dass jemand ihn holen muss. */
+async function abgleichen(){
   if(document.hidden || !token || foto || blatt || schreibTimer || schreibtGerade) return;
   if(document.activeElement && /INPUT|SELECT/.test(document.activeElement.tagName)) return;
   try{
@@ -779,7 +774,8 @@ setInterval(async () => {
     const d = JSON.parse(b64dec(j.content));
     if((d.stand || 0) > (state.stand || 0)){ uebernehmen(d); spiegelAblegen(); zeichnen(); }
   }catch(e){}
-}, 25000);
+}
+setInterval(abgleichen, 25000);
 
 /* ---------- Elo: gewertet wird der Tag ---------- */
 function berechnen(){
@@ -798,7 +794,7 @@ function berechnen(){
     we.tage.forEach(tg => {
       const ids = [...new Set(tg.orte.flatMap(o => Object.keys(o.getraenke)))]
         .filter(id => R[id] !== undefined);
-      const be = {}, roh = {}, liter = {}, literAf = {}, anzahl = {}, orte = {}, sorten = {};
+      const be = {}, liter = {}, literAf = {}, anzahl = {}, orte = {}, sorten = {};
       ids.forEach(id => {
         let b = 0, l = 0, a = 0, o = 0;
         const z = {}; KOMBIS.forEach(k => z[k] = 0);
@@ -812,8 +808,7 @@ function berechnen(){
           });
         });
         literAf[id] = lAf;
-        roh[id] = b;
-        be[id] = state.einst.deckel > 0 ? Math.min(state.einst.deckel, b) : b;
+        be[id] = b;
         liter[id] = l; anzahl[id] = a; orte[id] = o; sorten[id] = z;
         tagTeil[id]++; ortTeil[id] += o; dabeiWe.add(id);
       });
@@ -828,7 +823,7 @@ function berechnen(){
           const E = 1/(1 + Math.pow(10,(R[b]-R[a])/400));
           summe += S - E;
         });
-        erg[a] = {be:be[a], roh:roh[a], liter:liter[a], literAf:literAf[a] || 0,
+        erg[a] = {be:be[a], liter:liter[a], literAf:literAf[a] || 0,
                   anzahl:anzahl[a], orte:orte[a],
                   sorten:sorten[a], vorher:R[a], delta: n >= 2 ? state.einst.k/(n-1)*summe : 0};
       });
@@ -954,7 +949,11 @@ async function fassungPruefen(){
     }
   }catch(e){}
 }
-document.addEventListener('visibilitychange', () => { if(!document.hidden) fassungPruefen(); });
+document.addEventListener('visibilitychange', () => {
+  if(document.hidden) return;
+  fassungPruefen();
+  abgleichen();
+});
 function gefahr(name, id, label, klasse){
   const key = name + ':' + (id === null || id === undefined ? '' : id);
   return '<button class="'+klasse+'" data-tu="'+name+'" data-id="'+(id === null || id === undefined ? '' : id)
@@ -1786,8 +1785,7 @@ function ansichtArchiv(){
 
   return start
     + '<div class="abschnitt oben">Tabelle</div>' + rangZeilen()
-    + '<p class="hinweis">Gewertet wird je Tag über alle Locations · K ' + state.einst.k
-    + (state.einst.deckel > 0 ? ' · Deckel ' + zahl(state.einst.deckel,1) + ' BE' : '') + '</p>'
+    + '<p class="hinweis">Gewertet wird je Tag über alle Locations · K ' + state.einst.k + '</p>'
     + '<div class="abschnitt">Wochenenden</div>' + wochenenden;
 }
 
@@ -1816,30 +1814,16 @@ function ansichtEinst(){
     + '<p>' + (weTeil[p.id]||0) + ' ' + ((weTeil[p.id]||0)===1?'Wochenende':'Wochenenden') + ' dabei</p></div>'
     + gefahr('spielerRaus', p.id, 'entfernen', 'entfernen') + '</div>').join('')
     || '<p class="hinweis" style="margin:6px 2px">Noch niemand am Tisch.</p>';
-  const anDeckel = state.einst.deckel > 0;
 
   return '<div class="abschnitt oben">Die Bubidos</div>' + spieler
     + '<div class="feld"><input id="neuName" placeholder="Name" autocomplete="off">'
     + '<button data-tu="spielerRein">Rein</button></div>'
     + '<p class="hinweis">Alle sehen dieselbe Tabelle. Wer den Schlüssel hat, kann auch ändern – '
     + 'also nur innerhalb der Bubidos weitergeben.</p>'
-    + '<button class="knopf leer" data-tu="frisch">Stand jetzt holen'
-    + (state.stand ? ' · zuletzt '
-        + String(new Date(state.stand).getHours()).padStart(2,'0') + ':'
-        + String(new Date(state.stand).getMinutes()).padStart(2,'0') : '') + '</button>'
-
     + '<div class="abschnitt">Regler</div>'
     + '<div class="zahlfeld"><div><strong>K-Faktor</strong><p>Wie stark ein Tag die Tabelle bewegt. '
     + '40 passt bei zwei bis drei Wochenenden im Jahr.</p></div>'
     + '<input type="number" id="kFaktor" value="' + state.einst.k + '" min="4" max="200" step="1" inputmode="numeric"></div>'
-    + '<div style="padding:12px 0;border-bottom:1px solid var(--linie)">'
-    + '<button class="reglerfrage" data-tu="erklaerAuf" data-was="deckel">Deckel <i>?</i></button>'
-    + '<p style="margin:2px 0 0;font-size:12px;color:#98A0AA;max-width:40ch">Obergrenze je Tag. '
-    + 'Steht er aus, zählt jedes weitere Bier voll mit – dann führt die Tabelle, wer am meisten trinkt.</p>'
-    + '<div class="schalter"><button data-tu="deckelAn" data-m="aus" data-an="'+(anDeckel?0:1)+'">Aus</button>'
-    + '<button data-tu="deckelAn" data-m="an" data-an="'+(anDeckel?1:0)+'">An</button></div>'
-    + (anDeckel ? '<div class="feld"><input type="number" id="deckelWert" value="' + state.einst.deckel
-        + '" min="1" max="40" step="0.5" inputmode="decimal"></div>' : '') + '</div>'
     + '<button class="knopf leer" data-tu="einstSichern">Regler übernehmen</button>'
     + '<p class="hinweis">Änderungen rechnen die gesamte Historie sofort neu.</p>'
 
@@ -1906,9 +1890,9 @@ function ansichtInfo(){
     + '<p>Untersagt ist die Verwendung als Beweismittel sowie als Argument gegenüber Ehepartnern.</p></div>'
 
     + '<div class="para" id="p2"><h2><i>§ 2</i> Sicherheitshinweise</h2><div class="warnung">'
-    + '<p>Das Gerät zählt. Es fordert nicht auf. Der <strong>Deckel</strong> — eine Obergrenze, ab der '
-    + 'Weitertrinken null Punkte bringt — ist ab Werk ausgeschaltet. Damit führt die Tabelle, wer am '
-    + 'meisten trinkt. Wem das zu weit geht, schaltet ihn unter <strong>Runde</strong> wieder an.</p>'
+    + '<p>Das Gerät zählt. Es fordert nicht auf. Eine Obergrenze kennt es nicht: Jedes weitere Bier '
+    + 'zählt voll mit, und damit führt die Tabelle, wer am meisten trinkt. Wer das anders will, '
+    + 'regelt das am Tisch und nicht am Regler.</p>'
     + '<p>Alkoholfrei ist als Sorte hinterlegt und mit 0,00 bewertet — mitzählen geht also auch ohne '
     + 'mittrinken. Und niemand fährt. Kein Tabellenplatz ist einen Führerschein wert.</p></div></div>'
 
@@ -2225,11 +2209,6 @@ const ERKLAERUNGEN = {
     text:['An wie vielen <b>Tagen</b> jemand überhaupt dabei war — quer über alle Wochenenden.',
       'Ein Tag zählt, sobald jemand an mindestens einer Location eingetragen war. Wie viele '
       + 'Stationen es an dem Tag wurden, steht auf der Personenseite.']},
-  deckel: {titel:'Der Deckel', para:'p2', paraName:'§ 2 Sicherheitshinweise',
-    text:['Eine Obergrenze je Tag: Ab dieser Grenze bringt Weitertrinken <b>null</b> zusätzliche '
-        + 'Punkte.',
-      'Ab Werk ist er <b>aus</b>. Damit führt die Tabelle schlicht, wer am meisten trinkt. Wem das '
-      + 'zu weit geht, schaltet ihn hinterm Zahnrad an — 8 BE je Tag ist der vorgeschlagene Wert.']}
 };
 
 function ansichtErklaer(){
@@ -2814,7 +2793,7 @@ const tu = {
                    kiModell:state.einst.kiModell || 'claude-opus-5'};
     state.spieler = k.spieler || [];
     state.we = migrieren(k.we || []);
-    state.einst = Object.assign({k:40, deckel:0}, kiAlt, k.einst || {}, {kiSchluessel:kiAlt.kiSchluessel});
+    state.einst = Object.assign({k:40}, kiAlt, k.einst || {}, {kiSchluessel:kiAlt.kiSchluessel});
     state.geraete = k.geraete || {};
     state.aktivWe = null; state.aktivTag = null; state.aktivOrt = null;
     sicherBlatt = null; ansicht = 'archiv'; stapel = [];
@@ -3239,20 +3218,10 @@ const tu = {
   weLoeschen(el){ state.we = state.we.filter(w => w.id !== +el.dataset.id);
     detailId = null; ansicht = 'archiv'; sichern(); zeichnen(); },
   fazitZu(){ fazitOffen = null; zeichnen(); },
-  deckelAn(el){
-    state.einst.deckel = el.dataset.m === 'an' ? (state.einst.deckel > 0 ? state.einst.deckel : 8) : 0;
-    sichern(); zeichnen();
-  },
   einstSichern(){
     const k = parseFloat(document.getElementById('kFaktor').value);
     if(!(k > 0)){ toast('K muss größer als null sein'); return; }
     state.einst.k = k;
-    const dEl = document.getElementById('deckelWert');
-    if(dEl){
-      const d = parseFloat(dEl.value);
-      if(!(d > 0)){ toast('Deckel muss größer als null sein'); return; }
-      state.einst.deckel = d;
-    }
     sichern(); zeichnen(); toast('Regler übernommen – alles neu gerechnet');
   },
   async frisch(){

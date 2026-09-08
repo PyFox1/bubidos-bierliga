@@ -65,7 +65,9 @@ Die Variable `ansicht` überschreibt das für Unteransichten. Werte: `null` (aut
 2. `schreiben()` schickt die Datei mit dem bekannten `sha`. Antwortet GitHub mit **409**, war
    jemand schneller: Der fremde Stand wird geladen, der eigene daraufgesetzt, erneut geschrieben.
    Beide Fassungen stehen dann in der Historie — es geht nichts verloren.
-3. Alle 25 Sekunden wird der `sha` verglichen und bei Änderung neu geladen.
+3. `abgleichen()` vergleicht den `sha` und lädt bei Änderung neu — alle 25 Sekunden und
+   zusätzlich, sobald die App wieder nach vorn kommt. Einen Knopf zum Holen gibt es nicht,
+   der Stand ist beim Öffnen da.
 4. Ohne Verbindung startet die App aus der lokalen Notfallkopie (`SPIEGEL_KEY`) mit Hinweis.
 5. **Export/Import** in den Einstellungen als zusätzliche Sicherung außerhalb von GitHub.
 
@@ -100,8 +102,10 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
 
 - **Gewertet wird der Tag, nicht die Location.** Die Gruppe zieht an einem Abend durch bis zu
   fünf Kneipen. Jede Station einzeln zu werten würde die Tabelle wild schwanken lassen.
-- **Der Deckel ist ab Werk aus.** Er war ursprünglich an (8 BE je Tag), wurde auf Wunsch
-  abgeschaltet. Er bleibt als Regler erhalten. Ohne ihn führt die Tabelle, wer am meisten trinkt.
+- **Es gibt keine Obergrenze.** Der Deckel war ursprünglich an (8 BE je Tag), wurde auf Wunsch
+  abgeschaltet und blieb eine Weile als Regler stehen. Auch der ist raus — er wurde nie benutzt.
+  Jedes Bier zählt voll, damit führt die Tabelle, wer am meisten trinkt. Ein `deckel` in alten
+  Beständen wird nicht mehr gelesen.
 - **Alkoholfrei zählt 0,00 BE und wird bei den Litern getrennt geführt.** Sonst stünde jemand
   oben, der den Abend über Malzbier getrunken hat. Es muss aber eintragbar bleiben, damit
   „anwesend, trinkt nichts" abbildbar ist — das kostet nämlich Punkte, und das ist gewollt.
