@@ -481,7 +481,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-08 17:52 · G5 (GitHub)';
+const FASSUNG = '2026-09-08 18:18 · G6 (GitHub)';
 
 /* ====== EINSTELLUNGEN – hier anpassen, falls sich Namen ändern ====== */
 const GH_BESITZER = 'PyFox1';
@@ -1269,6 +1269,7 @@ const KI_SCHEMA = {
         type:'object',
         properties:{
           name:{type:'string'},
+          jeder:{type:'boolean'},
           gruppen:{
             type:'array',
             items:{
@@ -1283,7 +1284,7 @@ const KI_SCHEMA = {
             }
           }
         },
-        required:['name','gruppen'],
+        required:['name','jeder','gruppen'],
         additionalProperties:false
       }
     },
@@ -1356,19 +1357,37 @@ const HINWEIS_REGEL =
   + 'falls etwas unklar blieb, sonst ein leerer Text. Erfinde nichts, was nicht dasteht: '
   + 'Lieber eine Gruppe weglassen als eine geraten.';
 function anweisungZettel(){
+  const {ort} = aktuell();
+  const dabei = ort
+    ? Object.keys(ort.getraenke).map(id => {
+        const p = state.spieler.find(x => String(x.id) === String(id));
+        return p ? p.name : null; }).filter(Boolean)
+    : state.spieler.map(p => p.name);
   return 'Auf dem Bild ist ein Zettel, ein Bierdeckel oder ein Kassenzettel. '
-    + 'Bei einer handschriftlichen Strichliste gilt: ' + ZAEHL_REGEL + ' '
-    + 'Bei einem Kassenzettel steht die Menge stattdessen als Zahl vor oder hinter der Position, '
+    + 'Es gibt drei Schreibweisen, und oft stehen sie gemischt auf demselben Blatt.\n'
+    + 'ERSTENS Strichlisten: ' + ZAEHL_REGEL + '\n'
+    + 'ZWEITENS Kassenzettel: Die Menge steht als Zahl vor oder hinter der Position, '
     + 'etwa "3x Helles 0,5" oder "Weissbier 0,5 2". Trag diese Menge als "striche" ein. '
-    + 'Übliche Bezeichnungen: Hell, Helles, Lager und Pils sind normal. Weissbier und Weizen sind '
-    + 'ebenfalls normal, Bock und Doppelbock sind stark, Radler und Leichtbier sind leicht, '
-    + 'alles mit "alkoholfrei", "0,0" oder "Malz" ist af. Preise, Summen, Trinkgeld, Mehrwertsteuer '
-    + 'und alles, was kein Getränk ist, gehören nicht ins Ergebnis. '
+    + 'Preise, Summen, Trinkgeld, Mehrwertsteuer und alles, was kein Getränk ist, gehören nicht '
+    + 'ins Ergebnis.\n'
+    + 'DRITTENS formlose Notizen, eine Zeile je Eintrag, etwa "Korbi +1 Pils", "Fifu 3 IPA extra" '
+    + 'oder "Pils alle 3". Die Zahl ist die Menge und gehört als "striche" ins Ergebnis. Wörter wie '
+    + '"extra", "noch", "dazu" oder ein Pluszeichen ändern die Menge nicht, sie betonen nur, dass '
+    + 'es zusätzlich war.\n'
+    + 'Übliche Bezeichnungen: Hell, Helles, Lager, Pils, Weissbier und Weizen sind normal. '
+    + 'IPA, Pale Ale, Stout, Porter, Bock und Doppelbock sind stark. Radler und Leichtbier sind '
+    + 'leicht. Alles mit "alkoholfrei", "0,0" oder "Malz" ist af. '
     + SORTEN_REGEL + ' '
     + 'Steht ein Name bei einer Gruppe, trag ihn ein. Diese Namen sind möglich: '
-    + state.spieler.map(p => p.name).join(', ') + '. '
+    + dabei.join(', ') + '. '
     + 'Schreib einen erkannten Namen genau so, wie er in dieser Liste steht, wenn er passt. '
-    + 'Steht kein Name dabei, lass "name" leer – rate keinen. ' + HINWEIS_REGEL;
+    + 'Steht kein Name dabei, lass "name" leer – rate keinen.\n'
+    + 'Das Feld "jeder": Steht statt eines Namens "alle", "jeder", "je", "pro Mann" oder etwas '
+    + 'Gleichbedeutendes, dann hat JEDE anwesende Person diese Menge einzeln bekommen. Setz dann '
+    + '"jeder" auf true und lass "name" leer. "Pils alle 3" heißt also: jeder drei Pils, nicht drei '
+    + 'Pils für die ganze Runde. In allen anderen Fällen ist "jeder" false. Ist ein Name angegeben, '
+    + 'ist "jeder" immer false. Bleibt unklar, ob eine Menge pro Person oder für die Runde gemeint '
+    + 'war, entscheide dich und schreib es in "hinweis". ' + HINWEIS_REGEL;
 }
 /* Nur wer an dieser Location eingetragen ist, kommt als Treffer in Frage. Ein Name,
    der hier nicht dabei sein kann, ist eher verlesen als anwesend. */
@@ -1414,6 +1433,14 @@ function fotoVerteilen(){
   const {ort} = aktuell();
   const hier = ort ? Object.keys(ort.getraenke) : [];
   foto.treffer = [];
+  /* Was "für jeden" notiert war, bekommt jede anwesende Person einzeln. */
+  const proKopf = foto.jeder || leereZaehlung();
+  if(!topfLeer(proKopf)){
+    hier.forEach(id => {
+      const t = fotoTrefferFuer(id);
+      KOMBIS.forEach(k => t.z[k] += proKopf[k] || 0);
+    });
+  }
   (foto.benannt || []).forEach(e => {
     const t = fotoTrefferFuer(e.ziel);
     KOMBIS.forEach(k => t.z[k] += e.z[k] || 0);
@@ -1530,6 +1557,9 @@ function ansichtFoto(){
     inhalt = '<h3>Stimmt das so?</h3>'
       + '<span class="sicher ' + sk + '">' + (sicherText[sk] || 'teils unklar') + '</span>'
       + (foto.hinweis ? '<p class="mini" style="margin:8px 0 0">' + esc(foto.hinweis) + '</p>' : '')
+      + (!topfLeer(foto.jeder)
+          ? '<p class="mini" style="margin:8px 0 0">Für jeden einzeln gelesen: '
+            + esc(topfText(foto.jeder)) + ' – also je Person, nicht für die Runde zusammen.</p>' : '')
       + ((foto.fremdeNamen || []).length
           ? '<p class="mini" style="margin:8px 0 0;color:#E0A254">Gelesen, aber hier nicht am Tisch: '
             + foto.fremdeNamen.map(esc).join(', ') + '. Diese Striche liegen unten ohne Namen. '
@@ -1874,9 +1904,15 @@ function ansichtInfo(){
 
     + '<div class="para" id="p5"><h2><i>§ 5</i> Optische Erfassung</h2>'
     + '<p>Knopf <strong>Deckel abfotografieren</strong>: einfach draufhalten. Es gibt nichts '
-    + 'vorzuwählen — Deckel, Zettel mit Namen und Kassenzettel gehen durch dieselbe Tür. Die '
-    + 'Zählung liest Striche und, wenn sie danebenstehen, auch Stärke und Größe; auf einer '
-    + 'Rechnung steht die Menge stattdessen als Zahl vor der Position.</p>'
+    + 'vorzuwählen — Deckel, Zettel und Kassenzettel gehen durch dieselbe Tür. Gelesen werden '
+    + 'drei Schreibweisen, auch gemischt auf einem Blatt: <strong>Strichlisten</strong>, '
+    + '<strong>Rechnungspositionen</strong> mit der Menge als Zahl, und <strong>formlose '
+    + 'Notizen</strong> Zeile für Zeile — „Korbi +1 Pils", „Fifu 3 IPA extra".</p>'
+    + '<p>Eine Zeile ohne Namen, aber mit <strong>alle</strong>, <strong>jeder</strong> oder '
+    + '<strong>je</strong>, gilt pro Kopf: „Pils alle 3" heißt drei Pils für jeden Anwesenden, '
+    + 'nicht drei für die Runde. Der Bestätigungsbildschirm sagt eigens dazu, was er so gelesen '
+    + 'hat — das ist der Unterschied zwischen mal drei und geteilt durch drei und deshalb einen '
+    + 'eigenen Satz wert.</p>'
     + '<div class="warnung"><p><strong>Wem etwas gehört, steht selten im Bild.</strong> Ein Deckel '
     + 'ohne Namen sieht aus wie eine Runde ohne Namen — das kann keine Zählung erraten, das kommt '
     + 'vom Tisch. Deshalb fragt die App <em>nach</em> dem Foto: Was ohne Namen gelesen wurde, ist '
@@ -2980,8 +3016,8 @@ const tu = {
   },
   fotoStart(){
     foto = {phase:'start', bild:null, treffer:[], benannt:[], ohne:leereZaehlung(),
-            ohneZiel:null, sicherheit:'mittel', hinweis:'', ersetzen:true, fehlerText:'',
-            rest:{}, fremdeNamen:[]};
+            jeder:leereZaehlung(), ohneZiel:null, sicherheit:'mittel', hinweis:'',
+            ersetzen:true, fehlerText:'', rest:{}, fremdeNamen:[]};
     zeichnen();
   },
   fotoAufnehmen(){ document.getElementById('kamera').click(); },
@@ -3122,11 +3158,14 @@ document.getElementById('kamera').addEventListener('change', async ev => {
     if(!roh.length) throw new Error('Es war keine Strichliste zu erkennen');
     const {ort} = aktuell();
     const hier = ort ? Object.keys(ort.getraenke) : [];
-    const benannt = [], ohne = leereZaehlung(), fremde = [];
+    const benannt = [], ohne = leereZaehlung(), jeder = leereZaehlung(), fremde = [];
     roh.forEach(e => {
       const z = gruppenLesen(e.gruppen);
       const id = nameZuId(e.name, hier);
       if(id){ benannt.push({ziel:id, z:z}); return; }
+      /* "alle 3" heißt drei für jeden, nicht drei für die Runde – das ist das
+         Gegenteil der Teilung und muss deshalb getrennt geführt werden. */
+      if(e.jeder === true){ KOMBIS.forEach(k => jeder[k] += z[k]); return; }
       /* Ein gelesener Name, der hier nicht am Tisch sitzt, wandert in den Topf –
          das wird angezeigt, statt still zu passieren. */
       const gelesen = String(e.name || '').trim();
@@ -3134,6 +3173,7 @@ document.getElementById('kamera').addEventListener('change', async ev => {
       KOMBIS.forEach(k => ohne[k] += z[k]);
     });
     foto.benannt = benannt;
+    foto.jeder = jeder;
     foto.ohne = ohne;
     foto.ohneZiel = null;
     foto.fremdeNamen = fremde;
