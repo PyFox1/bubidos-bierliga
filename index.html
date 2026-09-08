@@ -54,7 +54,9 @@ input,select{font:inherit}
 .kopf-zahlen{font-family:var(--mono);font-size:10px;color:#8A929C;margin-top:3px;letter-spacing:.03em;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kopf-zaehlen{display:flex;align-items:center;gap:10px;padding-bottom:12px}
-.kopf-ort{flex:1;min-width:0;text-align:left}
+.kopf-ort{flex:1;min-width:0;text-align:left;display:flex;align-items:center;gap:8px}
+.kz-text{flex:0 1 auto;min-width:0}
+.kz-pfeil{flex:0 0 auto;font-family:var(--mono);font-size:13px;color:#98A0AA;line-height:1}
 .kz-titel{display:block;font-family:var(--display);font-size:19px;text-transform:uppercase;
   letter-spacing:.02em;color:var(--deckel);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kz-wo{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;
@@ -492,7 +494,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-08 21:57 · G11 (GitHub)';
+const FASSUNG = '2026-09-08 22:05 · G12 (GitHub)';
 
 /* ====== EINSTELLUNGEN – hier anpassen, falls sich Namen ändern ====== */
 const GH_BESITZER = 'PyFox1';
@@ -1943,8 +1945,9 @@ function ansichtInfo(){
     + 'Formular, bei <strong>+ Tag</strong> und bei <strong>+ Location</strong> jeweils gleich '
     + 'danach. Eingeben oder einfach bestätigen — ohne Eingabe bleibt es bei „Location 1, 2, 3“, '
     + 'je Tag neu gezählt. Die Leute von vorher kommen automatisch mit.</li>'
-    + '<li>In der Kopfzeile stehen Tag und Location samt Zählung. Ein Tipp darauf öffnet den '
-    + 'Wechsler, um weit zu springen oder eine Station umzubenennen.</li>'
+    + '<li>In der Kopfzeile steht groß die Location, weil sie im Lauf des Abends wechselt. '
+    + 'Darunter klein das Wochenende, der Wochentag und die wievielte Station von wie vielen. '
+    + 'Ein Tipp darauf öffnet den Wechsler, um weit zu springen oder eine Station umzubenennen.</li>'
     + '<li><strong>Blättern:</strong> Wischen nach rechts geht einen Schritt zurück in der Kette '
     + '1. Tag/Location 1, 2, 3 → 2. Tag/Location 1 … , wischen nach links wieder nach vorn. Wer '
     + 'lieber tippt, nimmt die Pfeile über den Namen; die Punkte dazwischen zeigen, wo man steckt, '
@@ -2576,6 +2579,20 @@ function modus(){
   if(ansicht) return ansicht;
   return state.aktivWe ? 'zaehlen' : 'archiv';
 }
+/* Ein Tag trägt kein eigenes Datum, nur seine Nummer. Der Wochentag ergibt sich aus dem
+   Start des Wochenendes plus dieser Nummer — bei aufeinanderfolgenden Tagen stimmt das,
+   und anders trifft sich die Gruppe nicht. Geht die Rechnung nicht auf, bleibt es beim Label. */
+const WOCHENTAGE = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+function tagKurz(we, tg){
+  if(!we || !tg) return '';
+  const i = we.tage.findIndex(t => t.id === tg.id);
+  if(i < 0 || !we.datum) return tg.label || '';
+  const d = new Date(we.datum + 'T12:00:00');
+  if(isNaN(d.getTime())) return tg.label || '';
+  d.setDate(d.getDate() + i);
+  return WOCHENTAGE[d.getDay()];
+}
+
 function kopfBauen(m){
   if(m === 'token'){
     return '<div class="kopf-inner"><div class="kopf-unter">'
@@ -2586,11 +2603,12 @@ function kopfBauen(m){
     if(!we) return '';
     return '<div class="kopf-inner kopf-zaehlen">'
       + '<button class="kopf-ort" data-tu="wechslerAuf">'
-      + '<span class="kz-titel">' + esc(we.titel) + '</span>'
-      + '<span class="kz-wo">' + esc(tg ? tg.label : '') + ' · '
-      + esc(ort && ort.name ? ort.name : 'Location benennen')
+      + '<span class="kz-text">'
+      + '<span class="kz-titel">' + esc(ort && ort.name ? ort.name : 'Location benennen') + '</span>'
+      + '<span class="kz-wo">' + esc(we.titel)
+      + (tg ? ' · ' + esc(tagKurz(we, tg)) : '')
       + (tg && ort ? ' · ' + (tg.orte.findIndex(o => o.id === ort.id)+1) + '/' + tg.orte.length : '')
-      + ' ⌄</span></button>'
+      + '</span></span><span class="kz-pfeil">⌄</span></button>'
       + '<div class="kopf-tasten">'
       + '<button data-tu="fotoStart" aria-label="Deckel abfotografieren">'
       + '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" '
