@@ -100,6 +100,12 @@ hinweg festhält.
 3. `abgleichen()` vergleicht den `sha` und lädt bei Änderung neu — alle 25 Sekunden und
    zusätzlich, sobald die App wieder nach vorn kommt. Einen Knopf zum Holen gibt es nicht,
    der Stand ist beim Öffnen da.
+   Gefragt wird zweistufig: `fernSha()` ruft über `GH_ORDNER()` das **Verzeichnis** ab. Die
+   Contents-API liefert dafür die Einträge mit `sha`, aber ohne `content` — ein paar hundert
+   Byte statt der ganzen Datei. Erst wenn dieser `sha` von `ghSha` abweicht, wird die Datei
+   selbst geholt. Der `sha` aus der Liste ist der git-Blob-Hash, also derselbe Wert wie beim
+   Datei-Abruf und beim Schreiben; das ist gegen die echte API geprüft. `fernSha()` gibt
+   `null` für „nicht feststellbar" zurück, dann bleibt es beim bisherigen Stand.
 4. Ohne Verbindung startet die App aus der lokalen Notfallkopie (`SPIEGEL_KEY`) mit Hinweis.
 5. **Export/Import** in den Einstellungen als zusätzliche Sicherung außerhalb von GitHub.
 
