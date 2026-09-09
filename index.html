@@ -487,7 +487,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-09 10:20 · G20 (GitHub)';
+const FASSUNG = '2026-09-09 14:06 · G21 (GitHub)';
 
 /* ====== EINSTELLUNGEN – hier anpassen, falls sich Namen ändern ====== */
 const GH_BESITZER = 'PyFox1';
@@ -1255,9 +1255,11 @@ function ansichtNeuesWe(){
       + '<div class="feld"><input id="weNeuName" placeholder="Neuer Name" autocomplete="off">'
       + '<button data-tu="weNeuSpieler">Anlegen</button></div>'
       + '<p class="hinweis" style="margin:10px 2px 0">' + dabei + ' '
-      + (dabei===1?'Person':'Personen') + ' am ersten Tag. Wer erst später anreist, wird an seinem '
-      + 'Tag über „Wer ist noch dazugestoßen?“ ergänzt – vorher darf er nicht mitgeführt werden, '
-      + 'sonst zählt er als anwesend mit null Bier.</p>'
+      + (dabei===1?'Person':'Personen') + ' am ersten Tag. Kommt jemand im Lauf des Tages erst an '
+      + 'einer späteren Location dazu, darf er trotzdem schon jetzt angehakt werden – gewertet wird '
+      + 'der ganze Tag, das ändert an den Punkten nichts. Erst wer an einem <strong>späteren Tag</strong> '
+      + 'dazustößt, darf hier nicht mitgeführt werden, sonst zählt er als anwesend mit null Bier. Der '
+      + 'wird an seinem eigenen Tag über „Wer ist noch dazugestoßen?“ ergänzt.</p>'
       + '</div>' : '')
     + '<button class="knopf voll" data-tu="weStart"' + (dabei < 2 ? ' disabled' : '')
     + '>Los geht’s</button></div>'
