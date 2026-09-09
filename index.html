@@ -487,7 +487,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-08 22:43 · G14 (GitHub)';
+const FASSUNG = '2026-09-09 07:58 · G15 (GitHub)';
 
 /* ====== EINSTELLUNGEN – hier anpassen, falls sich Namen ändern ====== */
 const GH_BESITZER = 'PyFox1';
@@ -657,12 +657,17 @@ function listeVereinen(bas, mein, fremd){
 }
 function logVereinen(mein, fremd){
   if(!fremd || !fremd.length) return mein || [];
-  const gesehen = new Set(), raus = [];
+  /* Eigenheit des Tagebuchs: eine zurückgenommene Runde wird im vorhandenen Eintrag
+     mit weg:true markiert, nicht neu angehängt. Über den ganzen Eintrag zu
+     vergleichen, ließe sie doppelt stehen – deshalb Zeit und Gerät als Kennung,
+     und im Zweifel gewinnt die Fassung mit der Rücknahme. */
+  const nach = new Map();
   [...(mein || []), ...fremd].forEach(x => {
-    const k = JSON.stringify(x);
-    if(!gesehen.has(k)){ gesehen.add(k); raus.push(x); }
+    const k = (x.t || 0) + '|' + (x.gid || '') + '|' + (x.art || '');
+    const da = nach.get(k);
+    if(!da || (x.weg && !da.weg)) nach.set(k, x);
   });
-  return raus.sort((a,b) => (a.t || 0) - (b.t || 0));
+  return [...nach.values()].sort((a,b) => (a.t || 0) - (b.t || 0)).slice(-40);
 }
 function zusammenfuehren(basis, meins, fremd){
   if(!basis) return meins;
@@ -675,6 +680,13 @@ function zusammenfuehren(basis, meins, fremd){
     if(!drin(raus.spieler, p.id) && !drin(basis.spieler, p.id)) raus.spieler.push(p);
   });
   raus.geraete = Object.assign({}, fremd.geraete || {}, meins.geraete || {});
+
+  /* Zeiger der Gruppe: wer ihn gegenüber der Basis bewegt hat, behält recht. Sonst
+     zieht ein Schreibkonflikt die Runde an die vorige Station zurück – und alle
+     Geräte, die dem Zeiger folgen, gleich mit. */
+  ['aktivWe', 'aktivTag', 'aktivOrt'].forEach(f => {
+    if(meins[f] === basis[f] && fremd[f] !== basis[f]) raus[f] = fremd[f];
+  });
 
   raus.we = (meins.we || []).map(w => Object.assign({}, w));
   (fremd.we || []).forEach(fw => {
@@ -850,7 +862,9 @@ async function sichern(opt){
    Damit ist der Stand beim Öffnen da, ohne dass jemand ihn holen muss. */
 async function abgleichen(){
   if(document.hidden || !token || foto || blatt || schreibTimer || schreibtGerade) return;
-  if(document.activeElement && /INPUT|SELECT/.test(document.activeElement.tagName)) return;
+  /* TEXTAREA gehört dazu: im Wiederherstellen-Blatt steht dort ein eingefügter
+     Stand, den ein Neuzeichnen wegwerfen würde. */
+  if(document.activeElement && /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) return;
   try{
     const r = await fetch(GH_URL(), {headers:ghKopf(), cache:'no-store'});
     if(!r.ok) return;
@@ -2994,6 +3008,10 @@ const tu = {
     state.geraete = k.geraete || {};
     state.aktivWe = null; state.aktivTag = null; state.aktivOrt = null;
     sicherBlatt = null; ansicht = 'archiv'; stapel = [];
+    /* Eine Wiederherstellung ersetzt den Stand absichtlich. Ohne Basis führt
+       zusammenfuehren() nicht zusammen, sondern lässt den eigenen stehen –
+       sonst holte ein Schreibkonflikt genau das zurück, was gerade weg soll. */
+    basisDaten = null;
     await sichern({sofort:true});
     zeichnen();
     toast('Stand wiederhergestellt');
@@ -3532,6 +3550,8 @@ document.addEventListener('change', ev => {
   if(s && foto) foto.treffer[+s.dataset.zuord].ziel = s.value || null;
 });
 document.addEventListener('input', ev => {
+  /* Das Blatt kann zwischendurch neu gezeichnet werden – Getipptes festhalten. */
+  if(ev.target.id === 'ortNameNeu' && benennen) benennen.name = ev.target.value;
   if(ev.target.id === 'ortName'){
     const {ort} = aktuell();
     if(ort){ ort.name = ev.target.value; clearTimeout(window.__ot);

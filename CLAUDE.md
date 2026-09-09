@@ -74,7 +74,14 @@ weil jeder Tipp auf ein Namenschip das Blatt neu zeichnet.
    bekannte Stand und dient als gemeinsamer Vorfahr. Getränke sind Strichlisten, deshalb je
    Sorte `meins + fremd − Basis`, nie unter null: beide Seiten behalten ihre Biere, ein
    Zurücknehmen bleibt zurückgenommen. Neue Locations, Tage, Wochenenden und Spieler von drüben
-   kommen dazu; hier gezielt Gelöschtes kommt nicht zurück.
+   kommen dazu; hier gezielt Gelöschtes kommt nicht zurück. Bei `aktivWe`/`aktivTag`/`aktivOrt`
+   gewinnt, wer sie gegenüber der Basis bewegt hat — sonst zöge ein Konflikt die Runde an die
+   vorige Station zurück. Das Tagebuch wird über `t|gid|art` verglichen, nicht über den ganzen
+   Eintrag: eine zurückgenommene Runde wird im vorhandenen Eintrag mit `weg:true` markiert und
+   stünde sonst doppelt da.
+   Eine **Wiederherstellung** setzt `basisDaten` vorher auf `null`. Ohne Basis führt
+   `zusammenfuehren()` nicht zusammen, sondern lässt den eigenen Stand stehen — ein Konflikt
+   holte sonst genau das zurück, was der Import gerade wegräumen soll.
 3. `abgleichen()` vergleicht den `sha` und lädt bei Änderung neu — alle 25 Sekunden und
    zusätzlich, sobald die App wieder nach vorn kommt. Einen Knopf zum Holen gibt es nicht,
    der Stand ist beim Öffnen da.
