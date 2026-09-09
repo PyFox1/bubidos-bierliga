@@ -487,7 +487,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-09 14:22 · G23 (GitHub)';
+const FASSUNG = '2026-09-09 15:08 · G24 (GitHub)';
 
 /* ====== EINSTELLUNGEN – hier anpassen, falls sich Namen ändern ====== */
 const GH_BESITZER = 'PyFox1';
@@ -1243,7 +1243,7 @@ function ansichtNeuesWe(){
     + 'autocomplete="off" value="' + esc(vorwahl.ort) + '"></div>'
     + '<button class="pille" style="margin-top:14px" data-tu="vorwahlAuf" aria-expanded="'
     + (vorwahl.offen?'true':'false') + '">'
-    + '<span class="pille-name">Wer ist am ersten Tag dabei?</span>'
+    + '<span class="pille-name">Wer ist an der ersten Location dabei?</span>'
     + '<span class="pille-be">' + dabei + '/' + alle + '</span>'
     + '<span class="pille-pfeil">' + (vorwahl.offen ? '⌃' : '⌄') + '</span></button>'
     + (vorwahl.offen ? '<div class="wahl-auf">'
@@ -1254,13 +1254,12 @@ function ansichtNeuesWe(){
       + '</div>'
       + '<div class="feld"><input id="weNeuName" placeholder="Neuer Name" autocomplete="off">'
       + '<button data-tu="weNeuSpieler">Anlegen</button></div>'
-      + '<p class="hinweis" style="margin:10px 2px 0">Hier nur, wer schon an der ersten Location '
-      + 'dabei ist – aktuell ' + dabei + ' ' + (dabei===1?'Person':'Personen') + '. Wer erst später '
-      + 'dazustößt, egal ob an diesem Tag oder einem folgenden, wird dort über „Wer ist noch '
-      + 'dazugestoßen?“ ergänzt. Vorher mitzuführen wirkt harmlos, bis jemand '
-      + '<strong>Runde für alle</strong> drückt: die trägt bei jedem ein, der schon als Schlüssel '
-      + 'steht, auch bei wer noch gar nicht da ist.</p>'
+      + '<p class="hinweis" style="margin:10px 2px 0">' + dabei + ' '
+      + (dabei===1?'Person':'Personen') + '. Wer später dazustößt, kommt dort über '
+      + '„Wer ist noch dazugestoßen?“ dazu.</p>'
       + '</div>' : '')
+    + (dabei < 2 ? '<p class="hinweis" style="margin:14px 2px 0">Zum Start braucht es zwei — '
+        + 'Elo vergleicht paarweise. Wer noch am Parkplatz steht, kommt später dazu.</p>' : '')
     + '<button class="knopf voll" data-tu="weStart"' + (dabei < 2 ? ' disabled' : '')
     + '>Los geht’s</button></div>'
     + '<button class="knopf leer" data-tu="geheArchiv">Abbrechen</button>';
@@ -2182,7 +2181,9 @@ function ansichtInfo(){
     + '<li><strong>Später dazugestoßen?</strong> Unter den Namenskarten steht „Wer ist hier noch '
     + 'dazugestoßen?". Bekannte Namen kommen per Tipp dazu, ein neuer wird gleich dort angelegt — '
     + 'der Umweg über <strong>Runde</strong> entfällt. Gezählt wird ab dieser Location; frühere Tage '
-    + 'bleiben unberührt und kosten keine Punkte.</li>'
+    + 'bleiben unberührt und kosten keine Punkte. Deshalb wird beim Eröffnen auch nur angehakt, wer '
+    + 'an der ersten Location steht: Wer verfrüht mitgeführt wird, bekommt bei der nächsten '
+    + '<strong>Runde für alle</strong> ein Bier, das er nicht getrunken hat.</li>'
     + '<li>Neuer Tag heißt <strong>+ Tag</strong>. Die ganze bisherige Runde ist gleich an dessen '
     + 'erster Location wieder eingetragen — wer einen Tag gemeinsam beendet, ist am nächsten auch '
     + 'wieder gemeinsam da. Schläft ausnahmsweise jemand länger, erst über „War hier nicht dabei“ '
