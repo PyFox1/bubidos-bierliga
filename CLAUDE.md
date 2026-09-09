@@ -85,9 +85,16 @@ hinweg festhält.
    vorige Station zurück. Das Tagebuch wird über `t|gid|art` verglichen, nicht über den ganzen
    Eintrag: eine zurückgenommene Runde wird im vorhandenen Eintrag mit `weg:true` markiert und
    stünde sonst doppelt da.
+   `einst` wird je Schlüssel nach derselben Regel behandelt, `sortier` ebenso — sonst setzt
+   ein Bier-Tipp den K-Faktor oder den hinterlegten Schlüssel zurück, den jemand Sekunden
+   vorher eingetragen hat.
    Eine **Wiederherstellung** setzt `basisDaten` vorher auf `null`. Ohne Basis führt
    `zusammenfuehren()` nicht zusammen, sondern lässt den eigenen Stand stehen — ein Konflikt
    holte sonst genau das zurück, was der Import gerade wegräumen soll.
+   **Offen:** Startet die App ohne Netz aus der Notfallkopie, bleibt `basisDaten` leer. Der
+   erste Schreibvorgang danach überschreibt fremde Änderungen, statt sie einzuarbeiten. Das
+   ist älter als der Drei-Wege-Abgleich und mit ihm behebbar, indem die Basis neben dem
+   Spiegel in `localStorage` mitgeführt und beim Start wieder eingelesen wird.
 3. `abgleichen()` vergleicht den `sha` und lädt bei Änderung neu — alle 25 Sekunden und
    zusätzlich, sobald die App wieder nach vorn kommt. Einen Knopf zum Holen gibt es nicht,
    der Stand ist beim Öffnen da.
