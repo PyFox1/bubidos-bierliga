@@ -171,8 +171,16 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
 - **Erklärungen sitzen im Kontext, nicht in der Anleitung.** Tipp auf eine Zahl öffnet ein kurzes
   Blatt mit Verweis in den passenden Paragrafen. Die Betriebsanleitung ist Nachschlagewerk,
   kein Einstieg. Jeder Paragraf hat einen Anker `p1` bis `p11`.
-- **Das Eingabe-Tagebuch wird beim Abschließen eines Wochenendes gelöscht.** Es macht 70 % der
-  Dateigröße aus und ist nach dem Abend wertlos. Die Getränkedaten bleiben vollständig.
+- **Das Eingabe-Tagebuch wird beim Abschließen eines Wochenendes gelöscht.** Gemessen macht es
+  rund 81 % der Dateigröße aus und ist nach dem Abend wertlos: gelesen wird `ort.log` nur auf
+  dem Zählbildschirm und für die Warnung vor der doppelten Runde. Die Getränkedaten bleiben
+  vollständig, und der letzte Stand mit Tagebuch steht weiter in der Historie.
+  Umgesetzt an drei Stellen, damit die Regel überall gilt: `weSchliessen()` räumt beim
+  Abschließen auf, `migrieren()` bei jedem Laden für alle bereits abgeschlossenen Wochenenden
+  (räumt also Altbestände nach), und `zusammenfuehren()` zum Schluss — sonst holt der Abgleich
+  das Tagebuch von einem Gerät zurück, das den Abschluss noch nicht kennt.
+  Mit dem 1-MB-Limit der Contents-API gerechnet: mit Tagebuch war bei 23 Wochenenden ≈ 9 Jahren
+  Schluss, jetzt bei 117 ≈ 47 Jahren.
 
 ## Fallen
 

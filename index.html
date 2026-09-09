@@ -487,7 +487,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-09 10:03 · G18 (GitHub)';
+const FASSUNG = '2026-09-09 10:10 · G19 (GitHub)';
 
 /* ====== EINSTELLUNGEN – hier anpassen, falls sich Namen ändern ====== */
 const GH_BESITZER = 'PyFox1';
@@ -616,12 +616,22 @@ function standDaten(){
           stand:state.stand};
 }
 
+/* Ein abgeschlossenes Wochenende führt kein Tagebuch mehr. Es ist nach dem Abend
+   wertlos – gelesen wird es nur auf dem Zählbildschirm und für die Warnung vor der
+   doppelten Runde –, macht aber rund vier Fünftel der Dateigröße aus. Die Getränke
+   bleiben unberührt, und der letzte Stand mit Tagebuch steht in der Historie. */
+function tagebuchWeg(w){
+  (w.tage || []).forEach(t => (t.orte || []).forEach(o => { delete o.log; }));
+}
 function migrieren(we){
-  (we || []).forEach(w => (w.tage || []).forEach(t => (t.orte || []).forEach(o => {
-    Object.keys(o.getraenke || {}).forEach(id => {
-      o.getraenke[id] = (o.getraenke[id] || []).map(k => ALT_NEU[k] || k);
-    });
-  })));
+  (we || []).forEach(w => {
+    if(w.zu) tagebuchWeg(w);
+    (w.tage || []).forEach(t => (t.orte || []).forEach(o => {
+      Object.keys(o.getraenke || {}).forEach(id => {
+        o.getraenke[id] = (o.getraenke[id] || []).map(k => ALT_NEU[k] || k);
+      });
+    }));
+  });
   return we;
 }
 function uebernehmen(d){
@@ -746,6 +756,10 @@ function zusammenfuehren(basis, meins, fremd){
       });
     });
   });
+
+  /* Zuletzt: abgeschlossene Wochenenden bleiben ohne Tagebuch. Sonst holt der
+     Abgleich es von einem Gerät zurück, das den Abschluss noch nicht kennt. */
+  raus.we.forEach(w => { if(w.zu) tagebuchWeg(w); });
   return raus;
 }
 
@@ -2325,6 +2339,10 @@ function ansichtInfo(){
     + 'Grüppchen nebeneinander zählen können, ohne sich gegenseitig Biere wegzuschreiben.</li>'
     + '<li><strong>Auf jedem Gerät</strong> läuft eine stille Nebenkopie des letzten Stands mit, '
     + 'damit die App auch ohne Netz startet.</li></ul>'
+    + '<p>Beim <strong>Abschließen</strong> eines Wochenendes wird der Verlauf der Eingaben '
+    + 'verworfen — wer wann worauf getippt hat. Er ist nach dem Abend wertlos, macht aber vier '
+    + 'Fünftel der Datei aus. Die Getränke bleiben vollständig, und der letzte Stand mitsamt '
+    + 'Verlauf steht weiter in der Historie.</p>'
     + '<p>Eine Erinnerung nach jedem Wochenende gibt es deshalb nicht mehr. Der <strong>Export</strong> '
     + 'hinterm Zahnrad bleibt trotzdem: Er ist die einzige Kopie außerhalb von GitHub und damit das '
     + 'Mittel gegen den Fall, dass das Repository selbst wegfällt. Einmal im Jahr genügt.</p>'
@@ -3484,6 +3502,7 @@ const tu = {
   weSchliessen(){
     const we = state.we.find(w => w.id === state.aktivWe);
     we.zu = true; fazitOffen = we.id;
+    tagebuchWeg(we);
     state.aktivWe = null; state.aktivTag = null; state.aktivOrt = null;
     ansicht = 'archiv'; stapel = [];
     sichern({sicherung:'Wochenende abgeschlossen'}); zeichnen();
