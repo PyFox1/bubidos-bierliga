@@ -174,6 +174,17 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
     späteren Station steht — der ist vorausgezogen und sitzt nicht mehr am Tisch.
   - Voraussetzung dafür ist das Zusammenführen beim Schreibkonflikt (siehe Speicher-Ablauf).
     Ohne das schreiben sich zwei parallel zählende Grüppchen gegenseitig die Biere weg.
+- **Ein neuer Tag übernimmt stillschweigend die ganze bisherige Runde.** `tagNeu()` trägt beim
+  Anlegen alle `we.dabei` automatisch als Schlüssel an der ersten Location des neuen Tages ein,
+  ohne zu fragen — anders als `ortNeu()` (+ Location), das seit der Aufteilungs-Funktion „Wer
+  geht mit?" fragt. Bewusst so: Wer einen Tag gemeinsam beendet, ist am nächsten Tag auch wieder
+  gemeinsam da — für eine feste Gruppe, die zusammen übernachtet, der Normalfall. Ein eigenes
+  „Wer ist heute schon dabei?"-Blatt wäre dafür nur eine zusätzliche Frage ohne Nutzen.
+  Schläft ausnahmsweise jemand länger, wird er über `ortRaus` („War hier nicht dabei") entfernt,
+  bevor eine Runde läuft — sonst trägt „Runde für alle" ihm ein Bier ein, das er nie getrunken
+  hat (`runde()` trägt bei jedem Schlüssel der Location ein, unabhängig von echter Anwesenheit),
+  und ein ganzer verschlafener Tag kostet ihn spürbar Punkte (~20 in einer Dreierrunde,
+  nachgestellt in `tagneu.mjs` im Scratchpad).
 - **Erklärungen sitzen im Kontext, nicht in der Anleitung.** Tipp auf eine Zahl öffnet ein kurzes
   Blatt mit Verweis in den passenden Paragrafen. Die Betriebsanleitung ist Nachschlagewerk,
   kein Einstieg. Jeder Paragraf hat einen Anker `p1` bis `p11`.
