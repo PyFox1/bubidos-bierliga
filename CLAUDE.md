@@ -46,6 +46,12 @@ Die Variable `ansicht` überschreibt das für Unteransichten. Werte: `null` (aut
 für „Wer geht mit?“ und fehlt beim neuen Tag, `name` hält den eingetippten Ortsnamen fest,
 weil jeder Tipp auf ein Namenschip das Blatt neu zeichnet.
 
+Das Blatt löst seine Station über **`benennenOrt()`** aus `ortId` auf, nie über `aktuell()`.
+`aktuell()` folgt dem eigenen Standort, und den kann ein Abgleich im Hintergrund aufheben
+(etwa wenn drüben ein neuer Tag aufgemacht wird). Sonst benennt „Passt“ die falsche Location
+um und löscht Leute aus ihr. Gilt für jedes Blatt, das eine Sache über mehrere Zeichnungen
+hinweg festhält.
+
 **Navigation**: `stapel` merkt bis zu zwölf Schritte, der Zurück-Pfeil ruft `zurueckNavi()`.
 `geheArchiv` und `geheZaehlen` sind Heimatziele und leeren den Stapel.
 

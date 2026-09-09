@@ -487,7 +487,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-09 07:58 · G15 (GitHub)';
+const FASSUNG = '2026-09-09 09:44 · G16 (GitHub)';
 
 /* ====== EINSTELLUNGEN – hier anpassen, falls sich Namen ändern ====== */
 const GH_BESITZER = 'PyFox1';
@@ -2506,8 +2506,22 @@ function ansichtRechnung(){
     + '</div></div></div>';
 }
 
+/* Das Blatt gehört zu der Station, für die es aufgemacht wurde – nicht zu der, auf
+   der das Gerät gerade steht. Ein Abgleich im Hintergrund kann den eigenen Standort
+   aufheben (etwa wenn drüben ein neuer Tag aufgemacht wird), und dann würde „Passt"
+   sonst die falsche Location umbenennen und Leute aus ihr löschen. */
+function benennenOrt(){
+  const we = benennen ? state.we.find(w => w.id === state.aktivWe) : null;
+  if(!we) return {};
+  for(const tg of we.tage){
+    const ort = tg.orte.find(o => o.id === benennen.ortId);
+    if(ort) return {tg, ort};
+  }
+  return {};
+}
+
 function ansichtBenennen(){
-  const {tg, ort} = aktuell();
+  const {tg, ort} = benennenOrt();
   if(!ort) return '';
   const nr = tg ? tg.orte.findIndex(o => o.id === ort.id) + 1 : 1;
   const mit = benennen && benennen.mit;
@@ -3211,7 +3225,7 @@ const tu = {
   },
   benennenFertig(){
     const f = document.getElementById('ortNameNeu');
-    const {tg, ort} = aktuell();
+    const {tg, ort} = benennenOrt();
     if(f && ort){
       const n = (f.value || '').trim();
       if(n) ort.name = n;
@@ -3222,8 +3236,13 @@ const tu = {
       bleibt.forEach(id => delete ort.getraenke[id]);
       /* Kommen alle mit, zieht die Gruppe weiter und alle Geräte folgen. Bleibt
          jemand zurück, ist das eine Aufteilung: der Zeiger der Gruppe bleibt an
-         der alten Station, dieses Gerät behält seinen eigenen Standort. */
-      if(!bleibt.length){ state.aktivTag = tg.id; state.aktivOrt = ort.id; pinLoeschen(); }
+         der alten Station, dieses Gerät behält seinen eigenen Standort.
+         Steht die Gruppe inzwischen auf einem anderen Tag, bleibt sie dort –
+         sie zurückzuholen wäre schlimmer als eine verwaiste Station. */
+      if(!bleibt.length){
+        if(state.aktivTag === tg.id) state.aktivOrt = ort.id;
+        pinLoeschen();
+      }
     }
     benennen = false; sichern(); zeichnen();
   },
