@@ -487,7 +487,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-09 09:52 · G17 (GitHub)';
+const FASSUNG = '2026-09-09 10:03 · G18 (GitHub)';
 
 /* ====== EINSTELLUNGEN – hier anpassen, falls sich Namen ändern ====== */
 const GH_BESITZER = 'PyFox1';
@@ -500,6 +500,7 @@ const TOKEN_KEY = 'bubidos-token';
 const SPIEGEL_KEY = 'bubidos-spiegel';
 const ICH_KEY = 'bubidos-ich';
 const PIN_KEY = 'bubidos-ortpin';
+const BASIS_KEY = 'bubidos-basis';
 
 const GETRAENKE_PLATZ = null;
 
@@ -641,8 +642,20 @@ function uebernehmen(d){
    Stand vom Server, dazu kommen die eigenen und die fremden Änderungen. Getränke sind
    Strichlisten und keine Reihenfolgen, also wird je Sorte gezählt:
    Ergebnis = meins + fremd − Basis, nie unter null. So bleibt jedes Bier stehen,
-   und ein Zurücknehmen bleibt ein Zurücknehmen. */
+   und ein Zurücknehmen bleibt ein Zurücknehmen.
+
+   Die Basis liegt neben dem Spiegel auch lokal. Startet die App ohne Netz, hat sie
+   sonst keinen gemeinsamen Vorfahren, und der erste Schreibvorgang nach der
+   Rückkehr des Empfangs überschreibt alles, was in der Zwischenzeit an anderen
+   Tischen eingetragen wurde. */
 let basisDaten = null;
+function basisSetzen(d){
+  basisDaten = d;
+  if(d) lokal.schreiben(BASIS_KEY, JSON.stringify(d)); else lokal.loeschen(BASIS_KEY);
+}
+function basisLaden(){
+  try{ basisDaten = JSON.parse(lokal.lesen(BASIS_KEY)); }catch(e){ basisDaten = null; }
+}
 
 function listeVereinen(bas, mein, fremd){
   if(JSON.stringify(mein || []) === JSON.stringify(fremd || [])) return mein || [];
@@ -798,7 +811,7 @@ async function laden(){
   if(!token) return false;
   try{
     const r = await fetch(GH_URL(), {headers:ghKopf(), cache:'no-store'});
-    if(r.status === 404){ ghSha = null; ghFehler = null; basisDaten = null; return 'leer'; }
+    if(r.status === 404){ ghSha = null; ghFehler = null; basisSetzen(null); return 'leer'; }
     if(r.status === 401 || r.status === 403){ ghFehler = 'token'; return false; }
     if(!r.ok){ ghFehler = 'netz'; return false; }
     const j = await r.json();
@@ -806,7 +819,7 @@ async function laden(){
     ghFehler = null;
     /* Zweimal lesen: migrieren() arbeitet in den Listen, die Basis muss unberührt bleiben. */
     const roh = b64dec(j.content);
-    basisDaten = JSON.parse(roh);
+    basisSetzen(JSON.parse(roh));
     uebernehmen(JSON.parse(roh));
     spiegelAblegen();
     return true;
@@ -844,7 +857,7 @@ async function schreiben(){
     const j = await r.json();
     ghSha = j.content && j.content.sha ? j.content.sha : ghSha;
     ghFehler = null;
-    basisDaten = JSON.parse(JSON.stringify(standDaten()));
+    basisSetzen(JSON.parse(JSON.stringify(standDaten())));
     spiegelAblegen();
   }catch(e){
     ghFehler = 'netz'; toast('Nicht gespeichert – Verbindung prüfen');
@@ -883,7 +896,7 @@ async function abgleichen(){
     const roh = b64dec(j.content);
     const d = JSON.parse(roh);
     const basis = basisDaten;
-    basisDaten = JSON.parse(roh);
+    basisSetzen(JSON.parse(roh));
     if((d.stand || 0) > (state.stand || 0)) uebernehmen(d);
     /* Ältere fremde Fassung: mit dem übernommenen sha würde der nächste eigene
        Schreibvorgang sie klaglos überschreiben. Deshalb hier einarbeiten. */
@@ -3034,7 +3047,7 @@ const tu = {
     /* Eine Wiederherstellung ersetzt den Stand absichtlich. Ohne Basis führt
        zusammenfuehren() nicht zusammen, sondern lässt den eigenen stehen –
        sonst holte ein Schreibkonflikt genau das zurück, was gerade weg soll. */
-    basisDaten = null;
+    basisSetzen(null);
     await sichern({sofort:true});
     zeichnen();
     toast('Stand wiederhergestellt');
@@ -3637,6 +3650,7 @@ const BUBIDOS = ['Korbi','Fifu','Sperry','Gerry','Kammy'];
 (async function(){
   ichLaden();
   pinLaden();
+  basisLaden();
   token = lokal.lesen(TOKEN_KEY);
   if(token){
     const ok = await laden();

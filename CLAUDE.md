@@ -91,10 +91,12 @@ hinweg festhält.
    Eine **Wiederherstellung** setzt `basisDaten` vorher auf `null`. Ohne Basis führt
    `zusammenfuehren()` nicht zusammen, sondern lässt den eigenen Stand stehen — ein Konflikt
    holte sonst genau das zurück, was der Import gerade wegräumen soll.
-   **Offen:** Startet die App ohne Netz aus der Notfallkopie, bleibt `basisDaten` leer. Der
-   erste Schreibvorgang danach überschreibt fremde Änderungen, statt sie einzuarbeiten. Das
-   ist älter als der Drei-Wege-Abgleich und mit ihm behebbar, indem die Basis neben dem
-   Spiegel in `localStorage` mitgeführt und beim Start wieder eingelesen wird.
+   Die Basis liegt über `basisSetzen()` auch in `localStorage` (`BASIS_KEY`) und wird beim
+   Start mit `basisLaden()` wieder eingelesen. Ohne das hätte die App nach einem Start ohne
+   Netz keinen gemeinsamen Vorfahren, und der erste Schreibvorgang nach Rückkehr des Empfangs
+   überschriebe alles, was in der Zwischenzeit an anderen Tischen eingetragen wurde. Rest:
+   Wer von einer Fassung vor G18 kommt, hat beim ersten Start noch keine Basis — einmalig
+   greift dort das alte Verhalten, danach heilt es sich mit dem ersten erfolgreichen Abgleich.
 3. `abgleichen()` vergleicht den `sha` und lädt bei Änderung neu — alle 25 Sekunden und
    zusätzlich, sobald die App wieder nach vorn kommt. Einen Knopf zum Holen gibt es nicht,
    der Stand ist beim Öffnen da.
@@ -184,8 +186,10 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   innerhalb eines Claude-Artefakts geht. Der Code ist noch da und meldet das ehrlich. Soll
   irgendwann über einen Zwischendienst zurückkommen oder ganz raus.
 - **Kein `localStorage` für die eigentlichen Daten.** Nur Token, Gerätekennung, der eigene
-  Standort (`ortPin`) und eine Notfallkopie liegen lokal. Die Wahrheit steht immer im
-  Repository.
+  Standort (`ortPin`), die Notfallkopie und die Abgleich-Basis liegen lokal. Die Wahrheit
+  steht immer im Repository. Spiegel und Basis sind je eine volle Fassung des Stands — bei
+  einem vollen Speicher fällt `lokal.schreiben()` still auf eine Kopie im Arbeitsspeicher
+  zurück, und der Abgleich verhält sich wie vorher.
 - **`basisDaten` nie mit `state` verwechseln.** `uebernehmen()` ruft `migrieren()`, und das
   arbeitet in den Listen. Deshalb wird der Serverstand zweimal geparst — einmal als Basis,
   einmal für `state`. Teilen sich beide dieselben Objekte, ist der Drei-Wege-Abgleich wertlos.
