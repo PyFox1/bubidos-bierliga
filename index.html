@@ -147,6 +147,13 @@ input,select{font:inherit}
 .abschnitt{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
   color:#98A0AA;margin:26px 2px 6px;padding-top:16px;border-top:1px solid var(--linie)}
 .abschnitt.oben{border-top:none;padding-top:0;margin-top:18px}
+/* Sieht aus wie ein .abschnitt, lässt sich aber antippen. Kein <details>: zeichnen()
+   baut die Seite bei jedem Abgleich neu auf und klappte es wieder zu. */
+.aufklapp{display:block;width:100%;text-align:left;font-family:var(--mono);font-size:10px;
+  letter-spacing:.16em;text-transform:uppercase;color:#98A0AA;
+  margin:26px 2px 6px;padding-top:16px;border-top:1px solid var(--linie)}
+.aufklapp::before{content:'+ ';color:var(--malz)}
+.aufklapp.auf::before{content:'– '}
 .notiz{margin:12px 2px 0}
 .notiz+.notiz{margin-top:16px;padding-top:14px;border-top:1px solid var(--linie)}
 .notiz .fkopf{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--malz)}
@@ -161,7 +168,7 @@ input,select{font:inherit}
 /* Für Reihen, in denen von Haus aus alles angehakt ist. Ohne Kästchen liest sich so eine
    Reihe wie lauter Knöpfe zum Drücken, und der erste Tipp wählt versehentlich ab –
    genau das ist im Test passiert. Nur für Mehrfachauswahl, nicht für die Chip-Reihen,
-   bei denen genau eines gilt (Gerätename, Modell). */
+   bei denen genau eines gilt (etwa der Gerätename). */
 .teiln.haken button{padding-left:36px;position:relative}
 .teiln.haken button::before{content:'';position:absolute;left:12px;top:50%;margin-top:-8px;
   width:16px;height:16px;box-sizing:border-box;border-radius:4px;border:1.5px solid #98A0AA}
@@ -509,7 +516,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-10 15:47 · G33 (GitHub)';
+const FASSUNG = '2026-09-10 16:09 · G34 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -522,6 +529,19 @@ const FASSUNG = '2026-09-10 15:47 · G33 (GitHub)';
    bis die Historie durch ist. */
 const NOTIZ_ANZAHL = 3;
 const NOTIZEN = [
+  {f:'G34', d:'10.09.2026', z:'16:09', punkte:[
+    'Die Einstellungen sind neu geordnet. Oben steht jetzt, was man wirklich sucht: die '
+    + 'Betriebsanleitung und was sich zuletzt geändert hat.',
+    'Alles, was man einmal oder nie anfasst – Leute, K-Faktor, Sichern, Verbindung – liegt '
+    + 'unter „Verwaltung" hinter einem Tipp. Vorher stand es über dem Rest und füllte die '
+    + 'halbe Rolle.',
+    'Beim ersten Öffnen auf einem Handy steht ganz oben die Frage nach dem eigenen Namen. '
+    + 'Sobald sie beantwortet ist, verschwindet sie; später steht der Name unter Verwaltung.',
+    'Unter dem K-Faktor steht ein Link, der in einem kurzen Blatt erklärt, was die Zahl '
+    + 'überhaupt bewirkt.',
+    'Der Zugangsschlüssel und die Modellwahl für das Foto-Zählen stehen nicht mehr in den '
+    + 'Einstellungen – die Zählung läuft fest auf einem Modell, und der Schlüssel liegt im '
+    + 'gemeinsamen Datenbestand.']},
   {f:'G33', d:'10.09.2026', z:'15:47', punkte:[
     'Der Zurücknehmen-Knopf bei jedem Namen zeigt jetzt ein − statt eines Pfeils – als '
     + 'klares Gegenstück zum + daneben.']},
@@ -581,6 +601,9 @@ const GH_ZWEIG    = 'main';
 const TOKEN_KEY = 'bubidos-token';
 const SPIEGEL_KEY = 'bubidos-spiegel';
 const ICH_KEY = 'bubidos-ich';
+/* Nur ein Merker, ob auf diesem Handy schon einmal nach dem Namen gefragt wurde –
+   der Name selbst steht im gemeinsamen Bestand. */
+const NAMENSFRAGE_KEY = 'bubidos-namensfrage';
 const PIN_KEY = 'bubidos-ortpin';
 const BASIS_KEY = 'bubidos-basis';
 
@@ -701,6 +724,8 @@ let sicherBlatt = null, infoZiel = null, erklaer = null;
 /* Kein <details>: zeichnen() baut die Seite bei jedem Abgleich neu auf, und ein
    offenes <details> klappte dabei wieder zu. Zählt, wie oft nachgeholt wurde. */
 let notizenStufe = 0;
+/* Aus demselben Grund kein <details> für den Verwaltungsblock der Einstellungen. */
+let verwaltungOffen = false;
 let blendeStand = null;
 let stapel = [];
 let vorwahl = null;
@@ -741,7 +766,7 @@ function migrieren(we){
 function uebernehmen(d){
   state.spieler = d.spieler || [];
   state.we = migrieren(d.we || []);
-  state.einst = Object.assign({k:40, kiSchluessel:'', kiModell:'claude-opus-5'}, d.einst || {});
+  state.einst = Object.assign({k:40, kiSchluessel:''}, d.einst || {});
   state.geraete = d.geraete || {};
   state.sortier = d.sortier || 'elo';
   state.aktivWe = d.aktivWe === undefined ? null : d.aktivWe;
@@ -1787,18 +1812,16 @@ const KI_SCHEMA = {
   required:['eintraege','sicherheit','hinweis'],
   additionalProperties:false
 };
-const KI_MODELLE = [
-  {k:'claude-opus-5',  n:'Opus 5'},
-  {k:'claude-sonnet-5', n:'Sonnet 5'}
-];
-const kiModell = () => (state.einst && state.einst.kiModell) || 'claude-opus-5';
+/* Fest verdrahtet statt als Regler: Die Wahl stand in den Einstellungen und wurde nie
+   benutzt – wer sie wirklich drehen will, ändert sie hier im Quelltext. */
+const KI_MODELL = 'claude-sonnet-5';
 const kiSchluessel = () => (state.einst && state.einst.kiSchluessel || '').trim();
 
 async function anKI(bild, anweisung, signal){
   const schluessel = kiSchluessel();
   if(!schluessel)
     throw new Error('Es ist kein Zugangsschlüssel für die Zählung hinterlegt. '
-      + 'Einer genügt für die ganze Gruppe – hinterlegt wird er hinterm Zahnrad.');
+      + 'Bis einer im gemeinsamen Datenbestand liegt, wird von Hand getippt.');
   let r;
   try{
     r = await fetch('https://api.anthropic.com/v1/messages', {
@@ -1811,7 +1834,7 @@ async function anKI(bild, anweisung, signal){
         'anthropic-dangerous-direct-browser-access':'true'
       },
       body: JSON.stringify({
-        model:kiModell(), max_tokens:2000,
+        model:KI_MODELL, max_tokens:2000,
         output_config:{format:{type:'json_schema', schema:KI_SCHEMA}},
         messages:[{role:'user', content:[
           {type:'image', source:{type:'base64', media_type:'image/jpeg', data:bild.split(',')[1]}},
@@ -1825,7 +1848,7 @@ async function anKI(bild, anweisung, signal){
   }
   if(r.status === 401 || r.status === 403)
     throw new Error('Der Zugangsschlüssel für die Zählung wird nicht angenommen. '
-      + 'Vermutlich abgelaufen oder zurückgezogen – hinterm Zahnrad neu hinterlegen.');
+      + 'Vermutlich abgelaufen oder zurückgezogen.');
   if(r.status === 429)
     throw new Error('Das Zähl-Guthaben ist aufgebraucht oder das Monatslimit erreicht. '
       + 'Die Striche lassen sich weiter von Hand eintragen.');
@@ -2269,59 +2292,75 @@ function ansichtEinst(){
     + gefahr('spielerRaus', p.id, 'entfernen', 'entfernen') + '</div>').join('')
     || '<p class="hinweis" style="margin:6px 2px">Noch niemand am Tisch.</p>';
 
-  return '<div class="abschnitt oben">Die Bubidos</div>' + spieler
-    + '<div class="feld"><input id="neuName" placeholder="Name" autocomplete="off">'
-    + '<button data-tu="spielerRein">Rein</button></div>'
-    + '<p class="hinweis">Alle sehen dieselbe Tabelle. Wer den Schlüssel hat, kann auch ändern – '
-    + 'also nur innerhalb der Bubidos weitergeben.</p>'
-    + '<div class="abschnitt">Regler</div>'
-    + '<div class="zahlfeld"><div><strong>K-Faktor</strong><p>Wie stark ein Tag die Tabelle bewegt. '
-    + '40 passt bei zwei bis drei Wochenenden im Jahr.</p></div>'
-    + '<input type="number" id="kFaktor" value="' + state.einst.k + '" min="4" max="200" step="1" inputmode="numeric"></div>'
-    + '<button class="knopf leer" data-tu="einstSichern">Regler übernehmen</button>'
-    + '<p class="hinweis">Änderungen rechnen die gesamte Historie sofort neu.</p>'
-
-    + '<div class="abschnitt">Dieses Gerät</div>'
-    + '<p class="hinweis" style="margin:6px 2px 0">Erkennt sich selbst, ohne dass du etwas '
-    + 'eintragen musst – es heißt gerade <b style="color:var(--malz)">' + esc(ichName() || '—')
-    + '</b>. Der Name steht im Verlauf an jeder Eingabe. Wenn du magst, hinterleg deinen '
-    + 'richtigen, sonst bleibt es bei der Nummer.</p>'
-    + '<div class="teiln">'
+  const namensChips = '<div class="teiln">'
     + state.spieler.map(p => '<button data-tu="ichBin" data-name="'+esc(p.name)+'" data-an="'
         + (ichName() === p.name ? 1 : 0) + '">' + esc(p.name) + '</button>').join('')
     + '<button data-tu="ichBin" data-an="' + (ichName() && ichName().indexOf('Gerät') === 0 ? 1 : 0)
-    + '">nur die Nummer</button></div>'
-    + '<div class="abschnitt">Sichern</div>'
-    + '<p class="hinweis" style="margin:6px 2px 0">Jede Änderung ist ein Commit in Git – die '
-    + 'vollständige Historie bleibt dauerhaft erhalten, jeder frühere Stand ist wiederherstellbar. '
-    + 'Zusätzlich liegt auf jedem Gerät eine stille Kopie des letzten Stands.</p>'
-    + '<button class="knopf voll" data-tu="sicherAuf">Stand exportieren</button>'
-    + '<button class="knopf leer" data-tu="verlaufOeffnen">Historie auf GitHub öffnen</button>'
-    + '<button class="knopf leer" data-tu="importAuf">Stand wiederherstellen</button>'
-    + '<div class="abschnitt">Verbindung</div>'
-    + '<p class="hinweis" style="margin:6px 2px 0">Daten in <b>' + esc(GH_BESITZER) + '/'
-    + esc(GH_REPO) + '</b>' + (ghFehler === 'netz' ? ' · <b style="color:#E09084">gerade offline</b>' : '')
-    + '. Jede Änderung wird ein Commit – gelöscht werden kann nichts.</p>'
-    + '<button class="knopf leer" data-tu="tokenLoesen">Schlüssel von diesem Gerät entfernen</button>'
+    + '">nur die Nummer</button></div>';
 
-    + '<div class="abschnitt">Foto-Zählung</div>'
-    + '<p class="hinweis" style="margin:6px 2px 0">Zum Auslesen der Striche braucht es einen '
-    + 'Zugangsschlüssel. Er liegt im gemeinsamen Datenbestand, also genügt einer für die ganze '
-    + 'Gruppe – die anderen Geräte bekommen ihn beim nächsten Laden von selbst. '
-    + (kiSchluessel() ? 'Zurzeit ist einer hinterlegt.' : 'Zurzeit ist keiner hinterlegt, '
-        + 'das Foto-Zählen meldet sich entsprechend.') + '</p>'
-    + '<div class="feld"><input id="kiSchluessel" placeholder="sk-ant-…" autocomplete="off" '
-    + 'autocapitalize="off" autocorrect="off" spellcheck="false" value="'
-    + esc(kiSchluessel()) + '"><button data-tu="kiSchluesselSichern">Merken</button></div>'
-    + '<p class="hinweis" style="margin:10px 2px 0">Welches Modell zählt. Beide können es; '
-    + 'wer vergleichen will, fotografiert denselben Deckel zweimal.</p>'
-    + '<div class="teiln">'
-    + KI_MODELLE.map(m => '<button data-tu="kiModellWahl" data-m="'+m.k+'" data-an="'
-        + (kiModell() === m.k ? 1 : 0) + '">' + esc(m.n) + '</button>').join('')
-    + '</div>'
+  /* Beim ersten Öffnen auf einem Handy ist der eigene Name das Wichtigste hier – danach
+     kommt jahrelang niemand darauf zurück. Also steht die Frage ganz oben, solange sie
+     offen ist, und verschwindet, sobald sie einmal beantwortet wurde; auch dann, wenn
+     die Antwort „nur die Nummer" lautet. Später ist der Name unter Verwaltung erreichbar. */
+  const frageOffen = !lokal.lesen(NAMENSFRAGE_KEY);
 
-    + '<div class="abschnitt">Nachschlagen</div>'
+  return (frageOffen
+      ? '<div class="abschnitt oben">Zuerst</div>'
+        + '<p class="hinweis" style="margin:6px 2px 0">Dieses Handy heißt gerade '
+        + '<b style="color:var(--malz)">' + esc(ichName() || '—') + '</b>. Tipp auf deinen Namen, '
+        + 'dann steht der im Verlauf an jeder Eingabe statt der Nummer.</p>'
+        + namensChips
+      : '')
+
+    + '<div class="abschnitt' + (frageOffen ? '' : ' oben') + '">Nachschlagen</div>'
     + '<button class="knopf leer" data-tu="geheInfo">Betriebsanleitung öffnen</button>'
+
+    /* Alles, was man ein- bis nie wieder anfasst, liegt hinter einem Tipp. Vorher war
+       es die halbe Rolle und stand über dem, was man wirklich sucht. Der Aufklapper
+       steht über den Änderungen: die sind der längste Block, und wer an den K-Faktor
+       will, soll nicht erst am ganzen Protokoll vorbeiscrollen. */
+    + '<button class="aufklapp' + (verwaltungOffen ? ' auf' : '') + '" data-tu="verwaltung" '
+    + 'aria-expanded="' + (verwaltungOffen ? 'true' : 'false') + '">Verwaltung</button>'
+    + (verwaltungOffen
+      ? '<div class="abschnitt oben">Dieses Gerät</div>'
+        + '<p class="hinweis" style="margin:6px 2px 0">Erkennt sich selbst, ohne dass du etwas '
+        + 'eintragen musst – es heißt gerade <b style="color:var(--malz)">' + esc(ichName() || '—')
+        + '</b>. Der Name steht im Verlauf an jeder Eingabe.</p>'
+        + namensChips
+
+        + '<div class="abschnitt">Regler</div>'
+        + '<div class="zahlfeld"><div><strong>K-Faktor</strong><p>Wie stark ein Tag die Tabelle '
+        + 'bewegt. 40 passt bei zwei bis drei Wochenenden im Jahr.</p></div>'
+        + '<input type="number" id="kFaktor" value="' + state.einst.k
+        + '" min="4" max="200" step="1" inputmode="numeric"></div>'
+        + '<button class="erklaerlink" data-tu="erklaerAuf" data-was="kfaktor">'
+        + 'Was ist der K-Faktor?</button>'
+        + '<button class="knopf leer" data-tu="einstSichern">Regler übernehmen</button>'
+        + '<p class="hinweis">Änderungen rechnen die gesamte Historie sofort neu.</p>'
+
+        + '<div class="abschnitt">Die Bubidos</div>' + spieler
+        + '<div class="feld"><input id="neuName" placeholder="Name" autocomplete="off">'
+        + '<button data-tu="spielerRein">Rein</button></div>'
+        + '<p class="hinweis">Alle sehen dieselbe Tabelle. Wer den Schlüssel hat, kann auch '
+        + 'ändern – also nur innerhalb der Bubidos weitergeben.</p>'
+
+        + '<div class="abschnitt">Sichern</div>'
+        + '<p class="hinweis" style="margin:6px 2px 0">Jede Änderung ist ein Commit in Git – die '
+        + 'vollständige Historie bleibt dauerhaft erhalten, jeder frühere Stand ist '
+        + 'wiederherstellbar. Zusätzlich liegt auf jedem Gerät eine stille Kopie des letzten '
+        + 'Stands.</p>'
+        + '<button class="knopf voll" data-tu="sicherAuf">Stand exportieren</button>'
+        + '<button class="knopf leer" data-tu="verlaufOeffnen">Historie auf GitHub öffnen</button>'
+        + '<button class="knopf leer" data-tu="importAuf">Stand wiederherstellen</button>'
+
+        + '<div class="abschnitt">Verbindung</div>'
+        + '<p class="hinweis" style="margin:6px 2px 0">Daten in <b>' + esc(GH_BESITZER) + '/'
+        + esc(GH_REPO) + '</b>'
+        + (ghFehler === 'netz' ? ' · <b style="color:#E09084">gerade offline</b>' : '')
+        + '. Jede Änderung wird ein Commit – gelöscht werden kann nichts.</p>'
+        + '<button class="knopf leer" data-tu="tokenLoesen">Schlüssel von diesem Gerät '
+        + 'entfernen</button>'
+      : '')
 
     + '<div class="abschnitt">Änderungen</div>'
     + notizBlock();
@@ -2527,11 +2566,10 @@ function ansichtInfo(){
     + '<p>Die gezählten Zahlen kommen mit Plus und Minus zurück. Das ist keine Höflichkeit, sondern der '
     + 'eigentliche Arbeitsschritt: Bierflecken gelten gelegentlich als Strich. Was fehlt, lässt sich über '
     + '„Weitere Sorte eintragen" ergänzen. Fotos werden nicht gespeichert.</p>'
-    + '<p>Die Zählung braucht einen Zugangsschlüssel, der hinterm Zahnrad hinterlegt wird. Er liegt '
-    + 'im gemeinsamen Datenbestand, also genügt einer für die ganze Gruppe — die übrigen Geräte '
-    + 'bekommen ihn beim nächsten Laden. Fehlt er, sagt die App das und ihr tippt von Hand. Welches '
-    + 'Modell zählt, steht ebenfalls dort; beide können es, und wer vergleichen will, fotografiert '
-    + 'denselben Deckel zweimal.</p></div>'
+    + '<p>Die Zählung braucht einen Zugangsschlüssel. Er liegt im gemeinsamen Datenbestand, also '
+    + 'genügt einer für die ganze Gruppe — die übrigen Geräte bekommen ihn beim nächsten Laden. '
+    + 'Fehlt er, sagt die App das und ihr tippt von Hand. Eingetragen wird er nicht in der App, '
+    + 'sondern im Datenbestand selbst; dasselbe gilt für die Frage, welches Modell zählt.</p></div>'
 
     + '<div class="para" id="p6"><h2><i>§ 6</i> Ordensverleihung</h2>'
     + '<table class="info">'
@@ -2600,7 +2638,8 @@ function ansichtInfo(){
     + 'Klein gewählt (10) bewegt sich die Tabelle über Jahre kaum; groß gewählt (100) wird sie nach '
     + 'jedem Wochenende neu gemischt und alte Ergebnisse zählen nichts mehr. Bei sechs bis neun '
     + 'Wertungen im Jahr braucht es ein hohes K, sonst stünden nach drei Jahren noch alle bei 1500. '
-    + 'Deshalb ab Werk 40. Der Regler steht unter <strong>Runde</strong> und rechnet die gesamte '
+    + 'Deshalb ab Werk 40. Der Regler steht hinterm Zahnrad unter <strong>Verwaltung → '
+    + 'Regler</strong> und rechnet die gesamte '
     + 'Historie sofort neu — Ausprobieren kostet nichts.</p>'
 
     + '<p>Wer unten steht, gewinnt viel: seine Erwartung ist niedrig, jeder Erfolg überrascht. Wer oben '
@@ -2661,9 +2700,9 @@ function ansichtInfo(){
     + '<tr><td class="frage">Das Foto meldet 47 Striche</td><td>Entweder galt ein Bierfleck als Strich, '
     + 'oder ihr wart fleißig. Mit Minus korrigieren. Bei 47 bitte auch § 2 nochmals lesen.</td></tr>'
     + '<tr><td class="frage">Das Foto sagt, es fehle ein Zugangsschlüssel</td>'
-    + '<td>Dann ist keiner hinterlegt oder er wurde zurückgezogen. Hinterm Zahnrad unter '
-    + '<em>Foto-Zählung</em> einen eintragen — einer genügt für alle Geräte. Bis dahin von Hand '
-    + 'tippen, das geht ja auch.</td></tr>'
+    + '<td>Dann ist keiner hinterlegt oder er wurde zurückgezogen. Ein neuer kommt in den '
+    + 'gemeinsamen Datenbestand, nicht in die App. Bis dahin von Hand tippen, das geht ja '
+    + 'auch.</td></tr>'
     + '<tr><td class="frage">Jemand hat am meisten getrunken und kaum Punkte gewonnen</td>'
     + '<td>Keine Störung. Von oben wird das erwartet — E ist hoch, also bleibt (S − E) klein. '
     + 'Rechenweg steht in § 7, das lässt sich am Tisch nachprüfen.</td></tr>'
@@ -2707,6 +2746,16 @@ const ERKLAERUNGEN = {
       + 'zählt 0,66, ein starkes 0,33er 0,92, eine Maß 2,00. Alkoholfrei zählt 0,00.',
       'Gewertet wird also nicht, wie viele Gläser jemand hatte, sondern wie viel tatsächlich drin war. '
       + 'Drei kleine Biere schlagen nicht automatisch zwei große.']},
+  kfaktor: {titel:'Was ist der K-Faktor?', para:'p7', paraName:'§ 7 Technische Daten',
+    text:['Der <b>K-Faktor</b> bestimmt, wie weit ein einzelner Tag die Tabelle verschiebt. '
+        + 'Höchstens <b>K ÷ 2 Punkte</b> je Gegner und Tag – bei K = 40 also 20.',
+      'Klein gewählt (10) bewegt sich über Jahre kaum etwas, und alle stehen nach drei Jahren '
+      + 'noch fast bei 1500. Groß gewählt (100) wird die Tabelle nach jedem Wochenende neu '
+      + 'gemischt, und was vorher war, zählt nichts mehr.',
+      'Bei zwei bis drei Wochenenden im Jahr kommen sechs bis neun Wertungen zusammen – zu '
+      + 'wenig für ein kleines K. Deshalb steht er ab Werk auf <b>40</b>.',
+      'Wer ihn ändert, ändert die gesamte Historie mit: Die Punkte sind nirgends gespeichert, '
+      + 'sondern werden bei jedem Laden neu aus den Getränkelisten gerechnet.']},
   orden: {titel:'Die fünf Orden', para:'p6', paraName:'§ 6 Ordensverleihung',
     text:['<b>Deckelkönig</b> — die meisten Biereinheiten über das ganze Wochenende. Belohnt die '
         + 'Menge, und damit auch, wer am längsten dabei war.',
@@ -3376,11 +3425,10 @@ const tu = {
     const k = sicherBlatt.kandidat;
     /* Ein Export führt den Zugangsschlüssel absichtlich nicht mit – der hier
        hinterlegte bleibt deshalb stehen, statt beim Wiederherstellen zu verschwinden. */
-    const kiAlt = {kiSchluessel:state.einst.kiSchluessel || '',
-                   kiModell:state.einst.kiModell || 'claude-opus-5'};
+    const kiAlt = state.einst.kiSchluessel || '';
     state.spieler = k.spieler || [];
     state.we = migrieren(k.we || []);
-    state.einst = Object.assign({k:40}, kiAlt, k.einst || {}, {kiSchluessel:kiAlt.kiSchluessel});
+    state.einst = Object.assign({k:40}, k.einst || {}, {kiSchluessel:kiAlt});
     state.geraete = k.geraete || {};
     state.aktivWe = null; state.aktivTag = null; state.aktivOrt = null;
     sicherBlatt = null; ansicht = 'archiv'; stapel = [];
@@ -3392,7 +3440,12 @@ const tu = {
     zeichnen();
     toast('Stand wiederhergestellt');
   },
-  ichBin(el){ ichSetzen(el.dataset.name || null); zeichnen(); },
+  ichBin(el){
+    /* Egal welche Antwort – gefragt wurde, und das genügt, damit der Block oben
+       verschwindet. Sonst stünde er auch dann noch da, wenn jemand die Nummer will. */
+    lokal.schreiben(NAMENSFRAGE_KEY, '1');
+    ichSetzen(el.dataset.name || null); zeichnen(); },
+  verwaltung(){ verwaltungOffen = !verwaltungOffen; zeichnen(); },
   personAuf(el){ tu.merken(); personId = +el.dataset.id; ansicht = 'person'; window.scrollTo(0,0); zeichnen(); },
   punkteInfo(){ punkteOffen = true; zeichnen(); },
   punkteZu(){ punkteOffen = false; zeichnen(); },
@@ -3790,17 +3843,6 @@ const tu = {
   blattZu(){ blatt = null; zeichnen(); },
   blattHintergrund(){},
 
-  kiSchluesselSichern(){
-    const f = document.getElementById('kiSchluessel');
-    if(!f) return;
-    state.einst.kiSchluessel = (f.value || '').trim();
-    sichern({sofort:true}); zeichnen();
-    toast(state.einst.kiSchluessel ? 'Schlüssel gemerkt' : 'Schlüssel entfernt');
-  },
-  kiModellWahl(el){
-    state.einst.kiModell = el.dataset.m;
-    sichern(); zeichnen();
-  },
   fotoStart(){
     foto = {phase:'start', bild:null, treffer:[], benannt:[], ohne:leereZaehlung(),
             jeder:leereZaehlung(), ohneZiel:null, sicherheit:'mittel', hinweis:'',

@@ -36,7 +36,7 @@ Die Variable `ansicht` überschreibt das für Unteransichten. Werte: `null` (aut
 | `ansichtZwischen` | Zwischenstand Tag für Tag | Balkensymbol im Zählkopf |
 | `ansichtPerson` | Kacheln, Orden, Wochenenden | Tipp auf einen Namen in der Tabelle |
 | `ansichtWeDetail` | Fazit eines Wochenendes | Tipp auf eine Wochenendzeile |
-| `ansichtEinst` | Leute, Regler, Sichern, Verbindung | Zahnrad |
+| `ansichtEinst` | Nachschlagen, Verwaltung, Änderungen | Zahnrad |
 | `ansichtInfo` | Betriebsanleitung, §1–§11 | aus den Einstellungen oder Erklär-Blättern |
 
 Überlagerungen (`.blende`), gezeichnet in dieser Rangfolge: `foto`, `rechnung`, `erklaer`,
@@ -266,6 +266,25 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   Die Frage darf **nichts anfassen, bevor sie beantwortet ist**. `strich()` hat `letzteRunde`
   ganz oben genullt; mit der Rückfrage davor wäre damit das „Runde zurücknehmen“ verschwunden,
   ohne dass irgendetwas passiert ist.
+- **Die Einstellungen sind nach Gebrauch geordnet, nicht nach Datenmodell.** Sie begannen mit
+  den Bubidos und dem Regler und endeten mit der Anleitung — also genau falsch herum: Leute
+  entfernt man so gut wie nie, nachgeschlagen wird dauernd. Jetzt gilt:
+  - **Zuerst** — nur beim ersten Öffnen auf einem Handy: die Frage nach dem eigenen Namen.
+    Sie verschwindet, sobald sie *einmal beantwortet* wurde, auch bei „nur die Nummer" —
+    dafür der lokale Merker `NAMENSFRAGE_KEY`. Ohne ihn ließe sich „ich will die Nummer"
+    nicht von „noch nicht gefragt" unterscheiden, und der Block stünde jemandem dauerhaft
+    im Weg, der sich bewusst dagegen entschieden hat.
+  - **Nachschlagen** und **Änderungen** stehen offen da.
+  - **Verwaltung** klappt alles Seltene auf: Dieses Gerät, Regler, Die Bubidos, Sichern,
+    Verbindung. Zustand in `verwaltungOffen` — kein `<details>`, aus demselben Grund wie bei
+    den Notizen.
+  - Der Aufklapper steht **über** den Änderungen: die sind der längste Block, und wer an den
+    K-Faktor will, soll nicht am ganzen Protokoll vorbeiscrollen.
+- **Modell und Schlüssel des Foto-Zählens stehen nicht in der Oberfläche.** Das Modell ist
+  `KI_MODELL`, eine Konstante im Quelltext; die Wahl stand als Chip-Reihe in den Einstellungen
+  und wurde nie benutzt. Der Zugangsschlüssel wird weiter aus `state.einst.kiSchluessel`
+  gelesen, aber nicht mehr dort eingetragen — er kommt in den Datenbestand. Ein `kiModell` in
+  alten Beständen wird nicht mehr gelesen, wie schon der `deckel`.
 - **Erklärungen sitzen im Kontext, nicht in der Anleitung.** Tipp auf eine Zahl öffnet ein kurzes
   Blatt mit Verweis in den passenden Paragrafen. Die Betriebsanleitung ist Nachschlagewerk,
   kein Einstieg. Jeder Paragraf hat einen Anker `p1` bis `p11`.
