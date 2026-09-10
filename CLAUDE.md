@@ -334,9 +334,10 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   hoch. Die Uhrzeit hilft beim Unterscheiden, wenn wegen Cache/CDN-Verzögerung kurzzeitig zwei
   Fassungen im Umlauf sind.
 - **Mit der Fassung eine Notiz in `NOTIZEN` anlegen**, neueste zuerst, `{f, d, z, punkte}`. Die
-  Einstellungen zeigen unter *Änderungen* die neuesten `NOTIZ_ANZAHL` (3) offen; „Ältere
-  Fassungen" holt mit jedem Tipp drei weitere dazu, bis die Historie durch ist, dann
-  verschwindet der Knopf. „Wieder einklappen" steht erst da, wenn wirklich etwas ausgeklappt
+  Einstellungen zeigen unter *Änderungen* die neuesten `NOTIZ_START` (1) offen — die laufende
+  Fassung genügt, alles darunter hat man beim letzten Öffnen schon gelesen. „Ältere
+  Fassungen" holt mit jedem Tipp `NOTIZ_ANZAHL` (3) weitere dazu, bis die Historie durch ist,
+  dann verschwindet der Knopf. „Wieder einklappen" steht erst da, wenn wirklich etwas ausgeklappt
   ist. Nur die oberste ist farbig abgesetzt, alles darunter trägt `.alt` — sie ist die
   laufende Fassung, nicht bloß die erste Zeile einer Liste.
   Geschrieben wird **für den, der die App bedient**: was er jetzt anders vorfindet oder neu

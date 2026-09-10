@@ -516,7 +516,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-10 16:09 · G34 (GitHub)';
+const FASSUNG = '2026-09-10 16:30 · G35 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -525,10 +525,15 @@ const FASSUNG = '2026-09-10 16:09 · G34 (GitHub)';
    Uhrzeit gehört dazu, weil an einem Tag mehrere Fassungen herauskommen können.
    Der oberste Eintrag ist die laufende Fassung und ersetzt die frühere Fußzeile –
    f/d/z müssen deshalb zu FASSUNG passen, notizen.mjs prüft das.
-   NOTIZ_ANZAHL steht von Haus aus offen, jeder Tipp holt ebenso viele nach,
-   bis die Historie durch ist. */
+   Von Haus aus steht NOTIZ_START offen – die laufende Fassung genügt, alles darunter
+   hat man beim letzten Mal schon gelesen. Jeder Tipp holt NOTIZ_ANZAHL nach, bis die
+   Historie durch ist. */
+const NOTIZ_START  = 1;
 const NOTIZ_ANZAHL = 3;
 const NOTIZEN = [
+  {f:'G35', d:'10.09.2026', z:'16:30', punkte:[
+    'Unter „Änderungen" steht jetzt nur noch die laufende Fassung offen da statt der '
+    + 'letzten drei. „Ältere Fassungen" holt weiter je drei dazu.']},
   {f:'G34', d:'10.09.2026', z:'16:09', punkte:[
     'Die Einstellungen sind neu geordnet. Oben steht jetzt, was man wirklich sucht: die '
     + 'Betriebsanleitung und was sich zuletzt geändert hat.',
@@ -2366,13 +2371,14 @@ function ansichtEinst(){
     + notizBlock();
 }
 
-/* Die letzten drei Notizen stehen offen da, jeder Tipp holt drei ältere nach, bis
-   die Historie durch ist. Wer wissen will, was sich zuletzt geändert hat, soll nicht
-   erst tippen müssen. Die oberste trägt zugleich die laufende Fassungskennung – eine
-   eigene Fußzeile dafür stünde direkt darunter und sagte dasselbe noch einmal. */
+/* Die laufende Fassung steht offen da, jeder Tipp holt drei ältere nach, bis die
+   Historie durch ist. Wer wissen will, was sich zuletzt geändert hat, soll nicht erst
+   tippen müssen – alles darunter hat man beim letzten Öffnen schon gelesen. Die oberste
+   trägt zugleich die laufende Fassungskennung – eine eigene Fußzeile dafür stünde direkt
+   darunter und sagte dasselbe noch einmal. */
 function notizBlock(){
   if(!NOTIZEN.length) return '';
-  const zeigt = Math.min(NOTIZ_ANZAHL * (notizenStufe + 1), NOTIZEN.length);
+  const zeigt = Math.min(NOTIZ_START + NOTIZ_ANZAHL * notizenStufe, NOTIZEN.length);
   const eine = (n, alt) => '<div class="notiz' + (alt ? ' alt' : '') + '">'
     + '<div class="fkopf">' + esc(n.f) + ' · ' + esc(n.d) + ' · ' + esc(n.z) + '</div><ul>'
     + n.punkte.map(t => '<li>' + esc(t) + '</li>').join('') + '</ul></div>';
@@ -2716,7 +2722,7 @@ function ansichtInfo(){
     + '<tr><td class="frage">Wo ist die Tabelle während des Abends?</td><td>Oben rechts das '
     + 'Balkensymbol. Von dort führt ein Knopf zurück zum laufenden Wochenende.</td></tr>'
     + '<tr><td class="frage">Etwas verhält sich anders als beim letzten Mal</td>'
-    + '<td>Hinterm Zahnrad stehen unter <em>Änderungen</em> die letzten drei Fassungen offen da; '
+    + '<td>Hinterm Zahnrad steht unter <em>Änderungen</em> die laufende Fassung offen da; '
     + '<em>Ältere Fassungen</em> holt je drei weitere dazu, so weit zurück, wie es welche gibt. '
     + 'Die oberste, farbig abgesetzte '
     + 'Zeile ist die, die auf diesem Gerät läuft — steht auf einem anderen Handy eine ältere, '
@@ -3386,7 +3392,9 @@ const tu = {
     if(!infoZiel) window.scrollTo(0,0);
     zeichnen();
   },
-  notizenMehr(){ if(NOTIZ_ANZAHL * (notizenStufe + 1) < NOTIZEN.length) notizenStufe++; zeichnen(); },
+  notizenMehr(){
+    if(NOTIZ_START + NOTIZ_ANZAHL * notizenStufe < NOTIZEN.length) notizenStufe++;
+    zeichnen(); },
   notizenZu(){ notizenStufe = 0; zeichnen(); },
   weNeu(){ vorwahl = null; ansicht = 'neu'; window.scrollTo(0,0); zeichnen(); },
   weDetail(el){ tu.merken(); detailId = +el.dataset.id; ansicht = 'wedetail'; window.scrollTo(0,0); zeichnen(); },
