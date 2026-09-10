@@ -273,6 +273,9 @@ input,select{font:inherit}
 .pmeta .pbe{color:var(--malz)}
 .pzeile .plus{width:48px;height:48px;font-size:24px}
 .pzeile .zurueck{width:34px;height:34px;font-size:15px;border-color:rgba(185,172,140,.55);color:#8A929C}
+/* Immer nur zusammengesetzt: .warnung2 allein trüge sonst in die Runde hinein. */
+.plus.warnung2{background:rgba(184,117,19,.16);border:1px solid var(--malz);color:var(--malz)}
+.pmeta .warnung2{color:var(--malz);font-weight:700}
 .weiter{display:flex;gap:8px;margin-top:14px}
 .weiter button{flex:1;padding:12px 6px;border-radius:5px;border:1px dashed var(--malz);
   color:var(--malz);font-size:13px;font-weight:700}
@@ -506,7 +509,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-10 14:49 · G31 (GitHub)';
+const FASSUNG = '2026-09-10 15:09 · G32 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -519,6 +522,17 @@ const FASSUNG = '2026-09-10 14:49 · G31 (GitHub)';
    bis die Historie durch ist. */
 const NOTIZ_ANZAHL = 3;
 const NOTIZEN = [
+  {f:'G32', d:'10.09.2026', z:'15:09', punkte:[
+    'Das + bei einem einzelnen Namen fragt jetzt genauso nach wie „Runde für alle“: Stand '
+    + 'bei dem Namen vor weniger als drei Minuten schon ein Getränk, erscheint in seiner '
+    + 'Zeile „nochmal tippen“, und erst der zweite Tipp trägt ein.',
+    'Damit fällt auch der häufigste Doppeleintrag auf – einer tippt die Runde, der andere '
+    + 'sieht es nicht und geht die Namen einzeln durch. Ein Bier aus einer Runde zählt dafür '
+    + 'mit.',
+    'Wer mit ↶ zurücknimmt oder über den Namen von Hand setzt, wird nicht gefragt: Da '
+    + 'korrigiert jemand und hat den Stand vor Augen.',
+    'Die Rückfrage sagt jetzt „Gerade eben“ statt „Vor 1 Min“, wenn es erst Sekunden her '
+    + 'ist – genau dann, wenn zwei gleichzeitig zum Handy greifen.']},
   {f:'G31', d:'10.09.2026', z:'14:49', punkte:[
     'Unter „Änderungen" hinterm Zahnrad stehen jetzt die letzten drei Fassungen offen '
     + 'da, nicht mehr nur die neueste.',
@@ -676,7 +690,10 @@ let fazitOffen = null, frage = null, foto = null, blatt = null;
 let fotoLauf = null;
 let wechsler = false, detailId = null, personId = null;
 let rechnung = null, punkteOffen = false, letzteRunde = null;
-let rundeFrage = false, benennen = false, entsperrt = null;
+/* Eine offene Rückfrage vor dem Eintragen: 'runde' für den Knopf, sonst die
+   Kennung der Person, deren + gefragt hat. Immer nur eine, ein Tipp woanders
+   entkräftet sie. */
+let nachfrage = null, benennen = false, entsperrt = null;
 let sicherBlatt = null, infoZiel = null, erklaer = null;
 /* Kein <details>: zeichnen() baut die Seite bei jedem Abgleich neu auf, und ein
    offenes <details> klappte dabei wieder zu. Zählt, wie oft nachgeholt wurde. */
@@ -887,14 +904,36 @@ function vorWie(t){
   const h = Math.floor(m/60);
   return 'vor ' + h + ' Std ' + (m%60 ? (m%60) + ' Min' : '');
 }
+/* „Vor 1 Min“ war gelogen, wenn es vier Sekunden her ist – und so kurz hintereinander
+   entstehen Doppeleintragungen nun einmal. Deshalb dieselbe Zeitangabe wie darüber. */
+const vorWieGross = t => { const s = vorWie(t); return s.charAt(0).toUpperCase() + s.slice(1); };
 function tagebuch(ort, eintrag){
   if(!ort.log) ort.log = [];
   ort.log.push(Object.assign({t:Date.now(), gid:gid || null}, eintrag));
   if(ort.log.length > 40) ort.log = ort.log.slice(-40);
 }
+/* So lange gilt eine Eintragung als frisch genug, um vor der nächsten zu fragen,
+   und so lange bleibt die Frage stehen, bevor sie von selbst verschwindet. */
+const FRAGE_FENSTER = 180000;
+const FRAGE_DAUER   = 6000;
 const letzteRundeIm = ort => {
   const l = (ort.log || []).filter(x => x.art === 'runde');
   return l.length ? l[l.length-1] : null;
+};
+/* Die letzte Eintragung, die diesen Namen betrifft – rückwärts gesucht und nur
+   dann eine Gabe, wenn sie ihm auch etwas gegeben hat. Ein Zurücknehmen oder eine
+   Sammel-Eingabe entkräftet die Frage: wer gerade korrigiert, hat den Stand vor
+   Augen und soll das nächste Getränk ohne Rückfrage setzen. */
+const letzteGabeFuer = (ort, pid) => {
+  const l = ort.log || [];
+  for(let i = l.length-1; i >= 0; i--){
+    const x = l[i];
+    if(x.pid !== undefined && String(x.pid) !== String(pid)) continue;
+    if(x.art === 'einzel') return x;
+    if(x.art === 'runde')  return x.weg ? null : x;
+    return null;
+  }
+  return null;
 };
 
 /* ---------- Speicher: GitHub ---------- */
@@ -1318,7 +1357,7 @@ function gruppenOrt(){
 function zieheZu(tagId, ortId){
   if(tagId === state.aktivTag && ortId === state.aktivOrt) pinLoeschen();
   else pinSetzen(tagId, ortId);
-  letzteRunde = null; rundeFrage = false; entsperrt = null;
+  letzteRunde = null; nachfrage = null; entsperrt = null;
   zeichnen();
 }
 
@@ -1514,10 +1553,9 @@ function ansichtZaehlen(){
         ? '<div class="rueckband"><span>Rückblick · ' + esc(tg.label) + ', '
           + esc(ort.name || 'Location ' + (pos+1)) + '</span>'
           + '<button data-tu="entsperren">Hier weiterzählen</button></div>'
-        : rundeFrage && vorigeRunde
-        ? '<button class="rundeknopf warnung2" data-tu="runde">Vor '
-          + Math.max(1,Math.floor((Date.now()-vorigeRunde.t)/60000))
-          + ' Min gab es schon eine – nochmal tippen</button>'
+        : nachfrage === 'runde' && vorigeRunde
+        ? '<button class="rundeknopf warnung2" data-tu="runde">'
+          + vorWieGross(vorigeRunde.t) + ' gab es schon eine – nochmal tippen</button>'
         : '<button class="rundeknopf" data-tu="runde"' + (hier.length ? '' : ' disabled') + '>'
           + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
           + 'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
@@ -1542,20 +1580,28 @@ function ansichtZaehlen(){
     if(!p) return '';
     const gs = ort.getraenke[id] || [];
     const mix = mischung(gs);
+    /* Steht die Frage bei diesem Namen, tritt sie an die Stelle der Mischung und
+       färbt den + ein. Der Knopf bleibt, wo der Daumen schon liegt – gelesen wird
+       daneben, warum überhaupt gefragt wird. */
+    const vorigeGabe = !rueck && String(nachfrage) === String(id) ? letzteGabeFuer(ort, id) : null;
     return '<div class="pzeile"><div class="pinfo">'
       + (rueck
           ? '<div class="pname nurlesen">' + esc(p.name) + '</div>'
           : '<button class="pname" data-tu="blattAuf" data-id="'+id+'">' + esc(p.name) + '</button>')
       + '<div class="pmeta"><span class="pbe">'
       + zahl(gs.reduce((s,k) => s + beVon(k), 0),2) + ' BE</span>'
-      + (mix ? '<span>' + mix + '</span>' : '<span>noch nichts</span>')
+      + (vorigeGabe
+          ? '<span class="warnung2">' + vorWieGross(vorigeGabe.t)
+            + ' gab es schon eins – nochmal tippen</span>'
+          : mix ? '<span>' + mix + '</span>' : '<span>noch nichts</span>')
       + deltaChip(erg[id] ? erg[id].delta : null,
           erg[id] ? ' data-tu="rechnungTag" data-id="'+id+'"' : '') + '</div></div>'
       + (rueck ? ''
           : '<button class="zurueck" data-tu="minus" data-id="'+id+'" ' + (gs.length?'':'disabled')
             + ' aria-label="Zurücknehmen bei '+esc(p.name)+'">↶</button>'
-            + '<button class="plus" data-tu="strich" data-id="'+id+'" aria-label="Getränk für '
-            + esc(p.name)+'">+</button>')
+            + '<button class="plus' + (vorigeGabe ? ' warnung2' : '') + '" data-tu="strich" data-id="'
+            + id + '" aria-label="Getränk für ' + esc(p.name)
+            + (vorigeGabe ? ', nochmal tippen zum Bestätigen' : '') + '">+</button>')
       + '</div>';
   }).join('');
 
@@ -2344,9 +2390,15 @@ function ansichtInfo(){
     + 'falls es doch nicht für alle war — wer nichts wollte, kann auch einzeln mit ↶ abgezogen '
     + 'werden.</li>'
     + '<li><strong>Schon eingetragen?</strong> Unter dem Runde-Knopf steht immer die letzte Eingabe '
-    + 'mit Uhrzeit und Namen. Kam die letzte Runde vor weniger als drei Minuten, fragt das Gerät '
-    + 'einmal nach, bevor es eine zweite einträgt — das fängt den Fall ab, dass zwei gleichzeitig '
-    + 'zum Handy greifen. Der ganze Abend steht unter <strong>Verlauf an dieser Location</strong>.</li>'
+    + 'mit Uhrzeit und Namen. Lag die vorige Eintragung weniger als drei Minuten zurück, fragt das '
+    + 'Gerät einmal nach, bevor es die nächste einträgt — das fängt den Fall ab, dass zwei '
+    + 'gleichzeitig zum Handy greifen. Das gilt für <strong>Runde für alle</strong> ebenso wie für '
+    + 'das <strong>+</strong> bei einem einzelnen Namen; dort steht die Frage in dessen Zeile, und '
+    + 'derselbe <strong>+</strong> bestätigt sie. Eine Runde zählt dabei mit: Wer gerade aus einer '
+    + 'Runde ein Bier bekommen hat, löst die Frage aus. Wer stattdessen ↶ drückt oder über den '
+    + 'Namen von Hand setzt, wird nicht gefragt — er korrigiert ja gerade. Unbeantwortet verfällt '
+    + 'die Frage nach sechs Sekunden. '
+    + 'Der ganze Abend steht unter <strong>Verlauf an dieser Location</strong>.</li>'
     + '<li>Jedes Gerät gibt sich beim ersten Öffnen selbst eine Kennung und heißt dann '
     + '<strong>Gerät 1, 2, 3</strong> — ohne dass jemand etwas eintragen muss. Damit steht im '
     + 'Verlauf, von welchem Handy eine Eingabe kam. Wer will, hinterlegt hinterm Zahnrad seinen '
@@ -3194,7 +3246,7 @@ function zeichnen(){
     console.error('Zeichnen fehlgeschlagen:', err);
     document.querySelectorAll('.blende').forEach(x => x.remove());
     foto = null; blatt = null; rechnung = null; wechsler = false;
-    punkteOffen = false; benennen = false; rundeFrage = false; sicherBlatt = null;
+    punkteOffen = false; benennen = false; nachfrage = null; sicherBlatt = null;
     erklaer = null; blendeStand = null;
     const app = document.getElementById('app');
     if(app) app.innerHTML = '<div class="leerzustand"><h2>Da ist was schiefgelaufen</h2>'
@@ -3294,7 +3346,7 @@ const tu = {
     if(neu2 < 0 || neu2 >= k.length) return;
     zieheZu(k[neu2].tagId, k[neu2].ortId);
   },
-  zurGruppe(){ pinLoeschen(); letzteRunde = null; rundeFrage = false; entsperrt = null; zeichnen(); },
+  zurGruppe(){ pinLoeschen(); letzteRunde = null; nachfrage = null; entsperrt = null; zeichnen(); },
   zurueckOrt(){ tu.bewege(-1); },
   vorOrt(){ tu.bewege(1); },
   entsperren(){ const {ort} = aktuell(); if(ort) entsperrt = ort.id; zeichnen(); },
@@ -3525,7 +3577,7 @@ const tu = {
     /* Ein neuer Tag gilt für alle – hier zieht der Zeiger der Gruppe immer mit. */
     state.aktivTag = tg.id; state.aktivOrt = ort.id;
     pinLoeschen();
-    letzteRunde = null; rundeFrage = false; entsperrt = null;
+    letzteRunde = null; nachfrage = null; entsperrt = null;
     benennen = {ortId:ort.id};
     sichern(); zeichnen();
   },
@@ -3541,7 +3593,7 @@ const tu = {
     const tg = we.tage[we.tage.length-1];
     state.aktivTag = tg.id;
     state.aktivOrt = tg.orte.length ? tg.orte[tg.orte.length-1].id : null;
-    letzteRunde = null; rundeFrage = false; entsperrt = null;
+    letzteRunde = null; nachfrage = null; entsperrt = null;
     sichern(); zeichnen();
   },
   ortWahl(el){ const {tg} = aktuell(); if(tg) zieheZu(tg.id, +el.dataset.id); },
@@ -3561,7 +3613,7 @@ const tu = {
        weiterzieht oder sich aufteilt, entscheidet sich erst im Blatt. */
     pinSetzen(tg.id, neu.id);
     benennen = {ortId:neu.id, mit:Object.keys(g)};
-    letzteRunde = null; rundeFrage = false; entsperrt = null;
+    letzteRunde = null; nachfrage = null; entsperrt = null;
     sichern(); zeichnen();
   },
   mitAn(el){
@@ -3617,7 +3669,7 @@ const tu = {
     } else {
       state.aktivOrt = tg.orte[tg.orte.length-1].id;
     }
-    letzteRunde = null; rundeFrage = false; entsperrt = null;
+    letzteRunde = null; nachfrage = null; entsperrt = null;
     sichern(); zeichnen();
   },
   ortRein(el){
@@ -3656,12 +3708,24 @@ const tu = {
   wahlG(el){ state.wahlG = el.dataset.k; zeichnen(); },
   nkS(el){ neuKombi.s = el.dataset.k; zeichnen(); },
   nkG(el){ neuKombi.g = el.dataset.k; zeichnen(); },
-  strich(el){ letzteRunde = null; rundeFrage = false;
+  strich(el){
     const {ort} = aktuell();
-    ort.getraenke[el.dataset.id].push(wahlKey());
-    tagebuch(ort, {art:'einzel', key:wahlKey(), pid:el.dataset.id});
+    const pid = el.dataset.id;
+    /* Dieselbe Falle wie bei der Runde: zwei Leute tragen dasselbe Bier ein. Erst
+       fragen, dann eintragen – und dabei nichts anfassen, sonst verschwindet das
+       „Runde zurücknehmen“, obwohl noch gar nichts passiert ist. */
+    const vorige = letzteGabeFuer(ort, pid);
+    if(vorige && Date.now()-vorige.t < FRAGE_FENSTER && String(nachfrage) !== String(pid)){
+      nachfrage = String(pid); zeichnen();
+      setTimeout(() => { if(String(nachfrage) === String(pid)){ nachfrage = null; zeichnen(); } },
+        FRAGE_DAUER);
+      return;
+    }
+    letzteRunde = null; nachfrage = null;
+    ort.getraenke[pid].push(wahlKey());
+    tagebuch(ort, {art:'einzel', key:wahlKey(), pid});
     sichern(); zeichnen(); },
-  minus(el){ letzteRunde = null; rundeFrage = false;
+  minus(el){ letzteRunde = null; nachfrage = null;
     const {ort} = aktuell();
     const weg = ort.getraenke[el.dataset.id].pop();
     tagebuch(ort, {art:'minus', key:weg, pid:el.dataset.id});
@@ -3671,12 +3735,12 @@ const tu = {
     const ids = Object.keys(ort.getraenke);
     if(!ids.length) return;
     const vorige = letzteRundeIm(ort);
-    if(vorige && Date.now()-vorige.t < 180000 && !rundeFrage){
-      rundeFrage = true; zeichnen();
-      setTimeout(() => { if(rundeFrage){ rundeFrage = false; zeichnen(); } }, 6000);
+    if(vorige && Date.now()-vorige.t < FRAGE_FENSTER && nachfrage !== 'runde'){
+      nachfrage = 'runde'; zeichnen();
+      setTimeout(() => { if(nachfrage === 'runde'){ nachfrage = null; zeichnen(); } }, FRAGE_DAUER);
       return;
     }
-    rundeFrage = false;
+    nachfrage = null;
     const key = wahlKey();
     ids.forEach(id => ort.getraenke[id].push(key));
     tagebuch(ort, {art:'runde', key, n:ids.length});

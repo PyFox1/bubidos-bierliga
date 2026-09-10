@@ -249,6 +249,23 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   ganzen Wochenende nirgends mehr einen Schlüssel hat: Wer nach einer Aufteilung an einer
   späteren Station sitzt, flöge sonst aus dem Wochenende, bloß weil er an der ersten Location
   nicht mehr steht.
+- **Vor dem Eintragen wird nachgefragt, wenn es gerade erst etwas gab.** Lag die vorige
+  Eintragung weniger als `FRAGE_FENSTER` (3 min) zurück, trägt der Tipp nichts ein, sondern
+  stellt eine Frage, die der nächste Tipp bestätigt; unbeantwortet verfällt sie nach
+  `FRAGE_DAUER` (6 s). Das galt lange nur für „Runde für alle“ und fing damit den halben Fall
+  ab: Tippt einer die Runde und geht der andere die Namen einzeln durch, warnte nichts. Deshalb
+  fragt das **`+` je Person** genauso, und eine Runde zählt als Eintragung für jeden, der aus
+  ihr ein Bier bekommen hat.
+  `nachfrage` hält den Zustand — **eine** Variable für beide Fälle (`'runde'` oder die Kennung
+  der Person), weil immer nur eine Frage offen sein kann und sie an neun Stellen zurückgesetzt
+  wird; zwei Variablen nebeneinander wären eine davon irgendwann vergessen worden.
+  Was die Frage entkräftet, steht in `letzteGabeFuer()`: gesucht wird rückwärts die letzte
+  Eintragung, die diesen Namen betrifft, und gefragt nur, wenn sie ihm etwas *gegeben* hat.
+  Ein ↶ oder eine Sammel-Eingabe davor heißt: Da korrigiert jemand mit dem Stand vor Augen —
+  den auszubremsen wäre der falsche Fall.
+  Die Frage darf **nichts anfassen, bevor sie beantwortet ist**. `strich()` hat `letzteRunde`
+  ganz oben genullt; mit der Rückfrage davor wäre damit das „Runde zurücknehmen“ verschwunden,
+  ohne dass irgendetwas passiert ist.
 - **Erklärungen sitzen im Kontext, nicht in der Anleitung.** Tipp auf eine Zahl öffnet ein kurzes
   Blatt mit Verweis in den passenden Paragrafen. Die Betriebsanleitung ist Nachschlagewerk,
   kein Einstieg. Jeder Paragraf hat einen Anker `p1` bis `p11`.
