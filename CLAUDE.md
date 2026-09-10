@@ -31,7 +31,7 @@ Die Variable `ansicht` überschreibt das für Unteransichten. Werte: `null` (aut
 |---|---|---|
 | `ansichtToken` | Verbinden, Token eingeben | automatisch ohne gültigen Token |
 | `ansichtArchiv` | Tabelle + Wochenendliste | Startseite ohne laufendes Wochenende |
-| `ansichtNeuesWe` | Wochenende eröffnen | Knopf im Archiv |
+| `ansichtNeuesWe` | Wochenende eröffnen **oder** nachbessern | Knopf im Archiv, ‹ an der ersten Location |
 | `ansichtZaehlen` | Getränke zählen | Startseite bei laufendem Wochenende |
 | `ansichtZwischen` | Zwischenstand Tag für Tag | Balkensymbol im Zählkopf |
 | `ansichtPerson` | Kacheln, Orden, Wochenenden | Tipp auf einen Namen in der Tabelle |
@@ -237,6 +237,18 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   hat (`runde()` trägt bei jedem Schlüssel der Location ein, unabhängig von echter Anwesenheit),
   und ein ganzer verschlafener Tag kostet ihn spürbar Punkte (~20 in einer Dreierrunde,
   nachgestellt in `tagneu.mjs` im Scratchpad).
+- **Das Deckblatt ist dieselbe Ansicht wie das Eröffnen.** `ansichtNeuesWe()` läuft in zwei Rollen:
+  ohne `vorwahl.weId` legt „Los geht’s“ ein Wochenende an, mit `weId` schreibt „Passt“ in das
+  laufende zurück (`weKopf` / `weKopfPasst` / `weKopfZu`). Erreichbar über den linken Pfeil der
+  Kettennavi an Position 0, der vorher `disabled` war — vom Zählbildschirm führte sonst überhaupt
+  kein Weg zurück, und wer den vertippten Wochenendnamen bemerkt, sucht ihn dort, wo er ihn
+  eingetippt hat. Deshalb steht die Navi jetzt auch bei einer einzigen Location: sonst fehlte der
+  Weg zurück ausgerechnet in der Minute nach dem Start.
+  Zwei Fallen beim Zurückschreiben. Abgewählte verlieren ihre Striche an dieser Location — das
+  gehört **vor** den Knopf, nicht in eine Meldung danach. Und `we.dabei` verliert nur, wer im
+  ganzen Wochenende nirgends mehr einen Schlüssel hat: Wer nach einer Aufteilung an einer
+  späteren Station sitzt, flöge sonst aus dem Wochenende, bloß weil er an der ersten Location
+  nicht mehr steht.
 - **Erklärungen sitzen im Kontext, nicht in der Anleitung.** Tipp auf eine Zahl öffnet ein kurzes
   Blatt mit Verweis in den passenden Paragrafen. Die Betriebsanleitung ist Nachschlagewerk,
   kein Einstieg. Jeder Paragraf hat einen Anker `p1` bis `p11`.

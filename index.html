@@ -494,7 +494,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-10 13:22 · G28 (GitHub)';
+const FASSUNG = '2026-09-10 14:10 · G29 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -505,6 +505,11 @@ const FASSUNG = '2026-09-10 13:22 · G28 (GitHub)';
    f/d/z müssen deshalb zu FASSUNG passen, notizen.mjs prüft das. */
 const NOTIZ_ANZAHL = 3;
 const NOTIZEN = [
+  {f:'G29', d:'10.09.2026', z:'14:10', punkte:[
+    'Der Pfeil links neben den Punkten führt an der ersten Location jetzt zurück auf '
+    + 'das Wochenende – dorthin, wo Name, Datum und die erste Runde eingetragen wurden.',
+    'Dort lässt sich beides nachbessern: der vertippte Wochenendname, das falsche Datum, '
+    + 'der Name der ersten Location und wer dort dabei war.']},
   {f:'G28', d:'10.09.2026', z:'13:22', punkte:[
     'Hinterm Zahnrad steht jetzt unter „Änderungen", was die letzten Fassungen '
     + 'gebracht haben.']},
@@ -1348,10 +1353,16 @@ function ansichtToken(){
         : '');
 }
 
+/* Dasselbe Blatt in zwei Rollen: ohne vorwahl.weId eröffnet es ein Wochenende, mit
+   weId zeigt es das laufende noch einmal – erreichbar über ‹ an der ersten Location.
+   Ein zweites Blatt fürs Nachbessern wäre dieselbe Maske mit anderen Knöpfen gewesen,
+   und wer den Titel korrigiert, sucht ihn dort, wo er ihn eingetippt hat. */
 function ansichtNeuesWe(){
   if(!vorwahl) vorwahl = {ids:state.spieler.map(p => p.id), titel:'', ort:'',
                           datum:new Date().toISOString().slice(0,10), offen:false};
-  if(state.spieler.length < 2){
+  const bearb = vorwahl.weId ? state.we.find(w => w.id === vorwahl.weId) : null;
+  const ersterOrt = bearb && bearb.tage[0] ? bearb.tage[0].orte[0] : null;
+  if(state.spieler.length < 2 && !bearb){
     return '<div class="leerzustand"><h2>Zu zweit geht’s los</h2>'
       + '<p>Elo vergleicht paarweise. Leg mindestens zwei Namen an.</p>'
       + '<div class="feld" style="max-width:360px;margin:18px auto 0">'
@@ -1361,7 +1372,12 @@ function ansichtNeuesWe(){
   const an = id => vorwahl.ids.some(x => String(x) === String(id));
   const dabei = vorwahl.ids.length;
   const alle = state.spieler.length;
-  return '<div class="deckel"><div class="name" style="font-size:20px">Neues Wochenende</div>'
+  const striche = id => ersterOrt && ersterOrt.getraenke[id] ? ersterOrt.getraenke[id].length : 0;
+  /* Wer abgewählt bleibt, verliert seine Striche an dieser Location. Das gehört vor
+     den Knopf, nicht in einen Hinweis danach. */
+  const verlust = bearb ? state.spieler.filter(p => !an(p.id) && striche(p.id)) : [];
+  return '<div class="deckel"><div class="name" style="font-size:20px">'
+    + (bearb ? 'Das Wochenende' : 'Neues Wochenende') + '</div>'
     + '<div class="feld"><input id="weTitel" placeholder="Name des Wochenendes" autocomplete="off" '
     + 'value="' + esc(vorwahl.titel) + '"></div>'
     + '<div class="feld"><input type="date" id="weDatum" value="'+esc(vorwahl.datum)+'"></div>'
@@ -1376,7 +1392,9 @@ function ansichtNeuesWe(){
       + '<p class="mini" style="margin:8px 0 0">Antippen schaltet aus und wieder ein.</p>'
       + '<div class="teiln" id="vorauswahl">'
       + state.spieler.map(p => '<button data-tu="vorAn" data-id="'+p.id+'" data-an="'
-          + (an(p.id)?1:0) + '">' + esc(p.name) + '</button>').join('')
+          + (an(p.id)?1:0) + '">' + esc(p.name)
+          + (striche(p.id) ? '<span class="neuzugang">' + striche(p.id) + '×</span>' : '')
+          + '</button>').join('')
       + '</div>'
       + '<div class="feld"><input id="weNeuName" placeholder="Neuer Name" autocomplete="off">'
       + '<button data-tu="weNeuSpieler">Anlegen</button></div>'
@@ -1384,11 +1402,18 @@ function ansichtNeuesWe(){
       + (dabei===1?'Person':'Personen') + '. Wer später dazustößt, kommt dort über '
       + '„Wer ist noch dazugestoßen?“ dazu.</p>'
       + '</div>' : '')
-    + (dabei < 2 ? '<p class="hinweis" style="margin:14px 2px 0">Zum Start braucht es zwei — '
-        + 'Elo vergleicht paarweise. Wer noch am Parkplatz steht, kommt später dazu.</p>' : '')
-    + '<button class="knopf voll" data-tu="weStart"' + (dabei < 2 ? ' disabled' : '')
-    + '>Los geht’s</button></div>'
-    + '<button class="knopf leer" data-tu="geheArchiv">Abbrechen</button>';
+    + (dabei < 2 ? '<p class="hinweis" style="margin:14px 2px 0">'
+        + (bearb ? 'Unter zwei geht es nicht — Elo vergleicht paarweise.'
+                 : 'Zum Start braucht es zwei — Elo vergleicht paarweise. Wer noch am '
+                   + 'Parkplatz steht, kommt später dazu.') + '</p>' : '')
+    + (verlust.length ? '<div class="warnung"><p>'
+        + verlust.map(p => esc(p.name) + ' hat hier ' + striche(p.id) + ' '
+            + (striche(p.id) === 1 ? 'Getränk' : 'Getränke')).join(', ')
+        + ' stehen. Wer abgewählt bleibt, verliert sie.</p></div>' : '')
+    + '<button class="knopf voll" data-tu="' + (bearb ? 'weKopfPasst' : 'weStart') + '"'
+    + (dabei < 2 ? ' disabled' : '') + '>' + (bearb ? 'Passt' : 'Los geht’s') + '</button></div>'
+    + '<button class="knopf leer" data-tu="' + (bearb ? 'weKopfZu' : 'geheArchiv') + '">'
+    + 'Abbrechen</button>';
 }
 
 function ansichtZaehlen(){
@@ -1527,13 +1552,19 @@ function ansichtZaehlen(){
 
   const punkte = k.map((x,i) => '<span class="kpunkt' + (i === pos ? ' an' : '')
     + (x.tagId !== (k[i-1] && k[i-1].tagId) && i > 0 ? ' neuertag' : '') + '"></span>').join('');
-  const navi = k.length > 1
-    ? '<div class="kettennavi">'
-      + '<button data-tu="zurueckOrt"' + (pos === 0 ? ' disabled' : '') + ' aria-label="Vorherige Location">‹</button>'
-      + '<div class="kpunkte">' + punkte + '</div>'
-      + '<button data-tu="vorOrt"' + (pos === k.length-1 ? ' disabled' : '') + ' aria-label="Nächste Location">›</button>'
-      + '</div>'
-    : '';
+  /* Am Anfang der Kette zeigt ‹ nicht ins Leere, sondern auf das Deckblatt des
+     Wochenendes – dorthin, wo Titel, Datum und die erste Runde eingetragen wurden.
+     Deshalb steht die Navi auch bei einer einzigen Location schon da: sonst fehlte
+     der Weg zurück ausgerechnet in der Minute nach dem Start, in der man den
+     vertippten Titel bemerkt. */
+  const amAnfang = pos === 0;
+  const navi = '<div class="kettennavi">'
+    + '<button data-tu="' + (amAnfang ? 'weKopf' : 'zurueckOrt') + '" aria-label="'
+    + (amAnfang ? 'Zum Wochenende' : 'Vorherige Location') + '">‹</button>'
+    + '<div class="kpunkte">' + punkte + '</div>'
+    + '<button data-tu="vorOrt"' + (pos === k.length-1 ? ' disabled' : '')
+    + ' aria-label="Nächste Location">›</button>'
+    + '</div>';
 
   return pille + navi + zeilen + (rueck ? '' : dazu) + verlauf
     + '<p class="hinweis" style="margin:14px 2px 0">' + hier.length + ' hier · '
@@ -2319,6 +2350,13 @@ function ansichtInfo(){
     + 'lieber tippt, nimmt die Pfeile über den Namen; die Punkte dazwischen zeigen, wo man steckt, '
     + 'mit einem Strich an jedem Tageswechsel. Blättern bewegt nur das eigene Gerät — die anderen '
     + 'bleiben stehen, wo die Runde steht.</li>'
+    + '<li><strong>Zurück zum Wochenende:</strong> An der ersten Location führt der linke Pfeil '
+    + 'nicht ins Leere, sondern auf das Blatt, mit dem das Wochenende eröffnet wurde. Dort stehen '
+    + 'Name, Datum, die erste Location und wer dort dabei war — alles vier auch nachträglich noch '
+    + 'zu ändern, für den vertippten Namen und das falsche Datum. <strong>Passt</strong> übernimmt, '
+    + '<strong>Abbrechen</strong> lässt alles, wie es war. Wer dabei jemanden abwählt, der an dieser '
+    + 'Location schon Striche stehen hat, wird vorher darauf hingewiesen — die Striche gehen mit ihm. '
+    + 'Wer inzwischen an einer späteren Station sitzt, bleibt davon unberührt.</li>'
     + '<li><strong>Zurückliegende Stationen sind gesperrt.</strong> Man sieht den Stand, kann aber '
     + 'nichts ändern — sonst landet nach einem versehentlichen Wisch das nächste Bier am falschen '
     + 'Abend. Oben erscheint „Rückblick“ mit dem Knopf <strong>Hier weiterzählen</strong>, falls '
@@ -3063,13 +3101,19 @@ function kopfBauen(m){
       + '</svg></button></div></div>';
   }
 
+  /* Das Deckblatt eines laufenden Wochenendes ist eine Unteransicht des Zählens und
+     trägt deshalb denselben Kopf mit Zurück-Pfeil – nur führt der hier zurück aufs
+     Zählen und wirft die Vorauswahl weg, statt sie liegenzulassen. */
+  const weBearb = m === 'neu' && vorwahl && vorwahl.weId;
   const zurueck = (m === 'einst' || m === 'info' || m === 'wedetail' || m === 'person' || m === 'zwischen')
-    ? '<button class="kopf-zurueck" data-tu="zurueckNavi">‹ zurück</button>' : '';
+    ? '<button class="kopf-zurueck" data-tu="zurueckNavi">‹ zurück</button>'
+    : weBearb ? '<button class="kopf-zurueck" data-tu="weKopfZu">‹ zurück</button>' : '';
   const titel = m === 'einst' ? 'Einstellungen'
               : m === 'info' ? 'Betriebsanleitung'
               : m === 'wedetail' ? 'Wochenende'
               : m === 'person' ? 'Spieler'
               : m === 'zwischen' ? 'Zwischenstand'
+              : weBearb ? 'Wochenende'
               : null;
 
   if(titel){
@@ -3392,6 +3436,50 @@ const tu = {
     state.we.push(we);
     state.aktivWe = we.id; state.aktivTag = tg.id; state.aktivOrt = ort.id;
     ansicht = null; vorwahl = null; sichern(); zeichnen();
+  },
+  /* Das Deckblatt des laufenden Wochenendes: dieselbe Maske wie beim Eröffnen, nur
+     mit den Werten, die schon dastehen. Es hängt an ‹ der ersten Location. */
+  weKopf(){
+    const we = state.we.find(w => w.id === state.aktivWe);
+    if(!we) return;
+    const o = we.tage[0] ? we.tage[0].orte[0] : null;
+    const drin = id => o ? Object.keys(o.getraenke).some(k => String(k) === String(id))
+                         : we.dabei.some(x => String(x) === String(id));
+    tu.merken();
+    /* Die Kennungen aus state.spieler nehmen, nicht die Schlüssel des Objekts: die sind
+       Strings, und vorAn vergleicht streng gegen Zahlen. */
+    vorwahl = {weId:we.id, ids:state.spieler.filter(p => drin(p.id)).map(p => p.id),
+      titel:we.titel || '', ort:(o && o.name) || '',
+      datum:we.datum || new Date().toISOString().slice(0,10), offen:false};
+    ansicht = 'neu'; frage = null; window.scrollTo(0,0); zeichnen();
+  },
+  weKopfZu(){ vorwahl = null; tu.zurueckNavi(); },
+  weKopfPasst(){
+    tu.merkeNeu();
+    const we = state.we.find(w => w.id === vorwahl.weId);
+    if(!we){ vorwahl = null; tu.geheZaehlen(); return; }
+    const ids = vorwahl.ids.slice();
+    if(ids.length < 2){ toast('Mindestens zwei an der ersten Location'); return; }
+    we.titel = (vorwahl.titel || '').trim() || we.titel;
+    we.datum = vorwahl.datum || we.datum;
+    const o = we.tage[0] ? we.tage[0].orte[0] : null;
+    if(o){
+      o.name = (vorwahl.ort || '').trim() || o.name;
+      Object.keys(o.getraenke).forEach(k => {
+        if(!ids.some(x => String(x) === String(k))) delete o.getraenke[k];
+      });
+      /* Ein leeres Array heißt „war da, hat nichts getrunken“ – das ist der Eintrag,
+         den ein Dazugewählter bekommt. */
+      ids.forEach(id => { if(!o.getraenke[id]) o.getraenke[id] = []; });
+    }
+    /* we.dabei verliert nur, wer im ganzen Wochenende nirgends mehr steht: wer an einer
+       späteren Station sitzt, darf hier nicht mit abgewählt werden. */
+    const drin = new Set(ids.map(String));
+    we.tage.forEach(t => t.orte.forEach(x =>
+      Object.keys(x.getraenke).forEach(k => drin.add(String(k)))));
+    we.dabei = we.dabei.filter(id => drin.has(String(id)))
+      .concat(ids.filter(id => !we.dabei.some(x => String(x) === String(id))));
+    vorwahl = null; sichern(); tu.geheZaehlen();
   },
   tagWahl(el){
     const we = state.we.find(w => w.id === state.aktivWe);
@@ -3840,7 +3928,8 @@ document.addEventListener('keydown', ev => {
   if(ev.key === 'Enter' && ev.target.id === 'neuName'){ ev.preventDefault(); tu.spielerRein(); }
   if(ev.key === 'Enter' && ev.target.id === 'gastName'){ ev.preventDefault(); tu.gastRein(); }
   if(ev.key === 'Enter' && ev.target.id === 'weNeuName'){ ev.preventDefault(); tu.weNeuSpieler(); }
-  if(ev.key === 'Enter' && ev.target.id === 'weOrt'){ ev.preventDefault(); tu.weStart(); }
+  if(ev.key === 'Enter' && ev.target.id === 'weOrt'){ ev.preventDefault();
+    if(vorwahl && vorwahl.weId) tu.weKopfPasst(); else tu.weStart(); }
   if(ev.key === 'Enter' && ev.target.id === 'ortNameNeu'){ ev.preventDefault(); tu.benennenFertig(); }
   if(modus() === 'zaehlen' && !document.querySelector('.blende')
      && !/INPUT|SELECT|TEXTAREA/.test(ev.target.tagName)){
