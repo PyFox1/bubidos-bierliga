@@ -532,7 +532,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-10 19:31 · G39 (GitHub)';
+const FASSUNG = '2026-09-10 19:42 · G40 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -547,6 +547,10 @@ const FASSUNG = '2026-09-10 19:31 · G39 (GitHub)';
 const NOTIZ_START  = 1;
 const NOTIZ_ANZAHL = 3;
 const NOTIZEN = [
+  {f:'G40', d:'10.09.2026', z:'19:42', punkte:[
+    'Wer erst nach einer Runde dazustößt, bekommt sein erstes Bier wieder ohne Rückfrage '
+    + 'eingetragen. Vorher stand bei ihm „vor 1 Min gab es schon eins“, obwohl die Runde '
+    + 'gelaufen war, bevor er überhaupt am Tisch saß.']},
   {f:'G39', d:'10.09.2026', z:'19:31', punkte:[
     'Solange dieses Handy noch keinen Namen hat, steht am Zahnrad ein kleiner Punkt, und '
     + 'im Archiv steht darüber eine Zeile, die direkt zu den Einstellungen führt. Vorher '
@@ -990,14 +994,21 @@ const letzteRundeIm = ort => {
 /* Die letzte Eintragung, die diesen Namen betrifft – rückwärts gesucht und nur
    dann eine Gabe, wenn sie ihm auch etwas gegeben hat. Ein Zurücknehmen oder eine
    Sammel-Eingabe entkräftet die Frage: wer gerade korrigiert, hat den Stand vor
-   Augen und soll das nächste Getränk ohne Rückfrage setzen. */
+   Augen und soll das nächste Getränk ohne Rückfrage setzen.
+   Eine Runde zählt nur für die, die damals dabeistanden: Wer erst danach dazustößt,
+   hat aus ihr nichts bekommen, und sein erstes Bier wurde trotzdem ausgebremst.
+   Entscheidend ist `ids` im Eintrag – ohne die Liste (Runde von einem Gerät mit
+   älterer Fassung) bleibt es beim alten Verhalten. */
 const letzteGabeFuer = (ort, pid) => {
   const l = ort.log || [];
   for(let i = l.length-1; i >= 0; i--){
     const x = l[i];
     if(x.pid !== undefined && String(x.pid) !== String(pid)) continue;
     if(x.art === 'einzel') return x;
-    if(x.art === 'runde')  return x.weg ? null : x;
+    if(x.art === 'runde'){
+      if(x.ids && !x.ids.some(y => String(y) === String(pid))) continue;
+      return x.weg ? null : x;
+    }
     return null;
   }
   return null;
@@ -3855,7 +3866,7 @@ const tu = {
     nachfrage = null;
     const key = wahlKey();
     ids.forEach(id => ort.getraenke[id].push(key));
-    tagebuch(ort, {art:'runde', key, n:ids.length});
+    tagebuch(ort, {art:'runde', key, n:ids.length, ids:ids.slice()});
     letzteRunde = {ortId:ort.id, ids:ids.slice(), key};
     sichern(); zeichnen();
     toast(ids.length + '× ' + nameVon(key) + ' eingetragen');

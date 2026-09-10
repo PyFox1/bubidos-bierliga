@@ -271,6 +271,12 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   Eintragung, die diesen Namen betrifft, und gefragt nur, wenn sie ihm etwas *gegeben* hat.
   Ein ↶ oder eine Sammel-Eingabe davor heißt: Da korrigiert jemand mit dem Stand vor Augen —
   den auszubremsen wäre der falsche Fall.
+  „Betrifft diesen Namen“ heißt bei einer Runde: Er stand dabei. Deshalb trägt der
+  Tagebuch-Eintrag die Beteiligten in `ids`, nicht nur ihre Anzahl. Ohne das galt jede Runde
+  für jeden, der an der Location steht — auch für den, der erst danach über „Wer ist noch
+  dazugestoßen?“ dazukam: Sein allererstes Bier lief in „vor 1 Min gab es schon eins“, obwohl
+  die Runde gelaufen war, bevor er am Tisch saß. Fehlt `ids` (Runde von einem Gerät mit
+  älterer Fassung, das per Abgleich hereinkommt), bleibt es beim alten Verhalten.
   Die Frage darf **nichts anfassen, bevor sie beantwortet ist**. `strich()` hat `letzteRunde`
   ganz oben genullt; mit der Rückfrage davor wäre damit das „Runde zurücknehmen“ verschwunden,
   ohne dass irgendetwas passiert ist.
