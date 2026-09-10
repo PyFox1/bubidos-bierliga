@@ -494,28 +494,33 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-10 12:20 · G28 (GitHub)';
+const FASSUNG = '2026-09-10 13:22 · G28 (GitHub)';
 
-/* Was sich je Fassung geändert hat, in der Sprache der Runde und nicht in der des
-   Quelltextes. Neueste zuerst. Die Einstellungen zeigen die oberste offen, die
-   übrigen hinter „Frühere Fassungen"; angezeigt werden NOTIZ_ANZAHL Stück. */
+/* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
+   auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
+   keine Floskeln wie „diverse Verbesserungen". Wer die Zeile liest, soll wissen, was
+   er jetzt anders vorfindet.
+   Uhrzeit gehört dazu, weil an einem Tag mehrere Fassungen herauskommen können.
+   Der oberste Eintrag ist die laufende Fassung und ersetzt die frühere Fußzeile –
+   f/d/z müssen deshalb zu FASSUNG passen, notizen.mjs prüft das. */
 const NOTIZ_ANZAHL = 3;
 const NOTIZEN = [
-  {f:'G28', d:'10.09.2026', punkte:[
-    'Die Einstellungen führen jetzt, was sich in den letzten Fassungen geändert hat.']},
-  {f:'G27', d:'10.09.2026', punkte:[
-    'Im Fazit fehlte der Aufsteiger in der Ordens-Erklärung – dort stand ein Orden '
-    + 'weniger, als daneben vergeben war.',
-    'Das Gleichmaß weist jetzt die Schwankung zwischen den Tagen aus, für die es '
-    + 'vergeben wird, statt des Tagesschnitts.']},
-  {f:'G26', d:'10.09.2026', punkte:[
-    'Eingetragene Biere erscheinen auf den anderen Geräten wieder binnen weniger '
-    + 'Sekunden, auch wenn die Runde vorher lange still saß.',
-    'Hängt das Netz, bricht der Abruf nach zehn Sekunden ab, statt den Abgleich '
-    + 'anzuhalten.']},
-  {f:'G25', d:'10.09.2026', punkte:[
-    'Nach dem ersten eingetragenen Bier kam von den anderen nichts mehr an, bis die '
-    + 'Seite neu geladen wurde.']}
+  {f:'G28', d:'10.09.2026', z:'13:22', punkte:[
+    'Hinterm Zahnrad steht jetzt unter „Änderungen", was die letzten Fassungen '
+    + 'gebracht haben.']},
+  {f:'G27', d:'10.09.2026', z:'11:45', punkte:[
+    'Tippt man im Fazit auf einen Orden, fehlte in der Erklärung der Aufsteiger – '
+    + 'dort standen vier Orden, vergeben werden fünf.',
+    'Beim Gleichmaß stand der Tagesschnitt, obwohl es für die geringste Schwankung '
+    + 'zwischen den Tagen vergeben wird. Jetzt steht dort die Schwankung.']},
+  {f:'G26', d:'10.09.2026', z:'09:36', punkte:[
+    'Biere von den anderen Handys kommen wieder nach wenigen Sekunden an – auch dann, '
+    + 'wenn vorher eine halbe Stunde nichts eingetragen wurde.',
+    'Bei schlechtem Empfang bleibt die App nicht mehr stehen, sondern versucht es '
+    + 'kurz darauf noch einmal.']},
+  {f:'G25', d:'10.09.2026', z:'09:07', punkte:[
+    'Nach dem ersten eingetragenen Bier kam von den anderen Handys nichts mehr an, '
+    + 'bis man die Seite neu geladen hat.']}
 ];
 
 /* ====== EINSTELLUNGEN – hier anpassen, falls sich Namen ändern ====== */
@@ -2213,18 +2218,18 @@ function ansichtEinst(){
     + '<button class="knopf leer" data-tu="geheInfo">Betriebsanleitung öffnen</button>'
 
     + '<div class="abschnitt">Änderungen</div>'
-    + notizBlock()
-    + '<p class="hinweis" style="text-align:center;margin-top:14px">Fassung <b '
-    + 'style="color:var(--malz)">' + FASSUNG + '</b></p>';
+    + notizBlock();
 }
 
 /* Die neueste Notiz steht offen da, die älteren liegen hinter einem Knopf. Wer
-   wissen will, was sich zuletzt geändert hat, soll nicht erst tippen müssen. */
+   wissen will, was sich zuletzt geändert hat, soll nicht erst tippen müssen.
+   Sie trägt zugleich die laufende Fassungskennung – eine eigene Fußzeile dafür
+   stünde direkt darunter und sagte dasselbe noch einmal. */
 function notizBlock(){
   const liste = NOTIZEN.slice(0, NOTIZ_ANZAHL);
   if(!liste.length) return '';
   const eine = (n, alt) => '<div class="notiz' + (alt ? ' alt' : '') + '">'
-    + '<div class="fkopf">' + esc(n.f) + ' · ' + esc(n.d) + '</div><ul>'
+    + '<div class="fkopf">' + esc(n.f) + ' · ' + esc(n.d) + ' · ' + esc(n.z) + '</div><ul>'
     + n.punkte.map(t => '<li>' + esc(t) + '</li>').join('') + '</ul></div>';
   const rest = liste.slice(1);
   return eine(liste[0], false)
@@ -2553,9 +2558,10 @@ function ansichtInfo(){
     + 'Balkensymbol. Von dort führt ein Knopf zurück zum laufenden Wochenende.</td></tr>'
     + '<tr><td class="frage">Etwas verhält sich anders als beim letzten Mal</td>'
     + '<td>Hinterm Zahnrad steht unter <em>Änderungen</em>, was die letzten Fassungen gebracht '
-    + 'haben; <em>Frühere Fassungen</em> klappt die davor auf. Darunter steht die eigene '
-    + 'Fassungskennung — weicht sie von der eines anderen Geräts ab, hängt dort noch die alte '
-    + 'im Zwischenspeicher, und ein Neuladen der Seite holt sie nach.</td></tr></table></div>'
+    + 'haben; <em>Frühere Fassungen</em> klappt die davor auf. Die oberste, farbig abgesetzte '
+    + 'Zeile ist die, die auf diesem Gerät läuft — steht auf einem anderen Handy eine ältere, '
+    + 'hängt dort noch die alte Fassung im Zwischenspeicher, und ein Neuladen der Seite holt '
+    + 'sie nach.</td></tr></table></div>'
 
     + '<div class="para" id="p11"><h2><i>§ 11</i> Gewährleistung</h2>'
     + '<p>Garantiert wird die korrekte Anwendung der Elo-Formel. Nicht garantiert werden der Hausfrieden, '

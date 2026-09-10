@@ -278,13 +278,25 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   `JJJJ-MM-TT HH:MM · G<n> (GitHub)`, Uhrzeit lokal (Europa/Berlin), `<n>` bei jeder Änderung eins
   hoch. Die Uhrzeit hilft beim Unterscheiden, wenn wegen Cache/CDN-Verzögerung kurzzeitig zwei
   Fassungen im Umlauf sind.
-- **Mit der Fassung eine Notiz in `NOTIZEN` anlegen**, neueste zuerst, `{f, d, punkte}`. Die
+- **Mit der Fassung eine Notiz in `NOTIZEN` anlegen**, neueste zuerst, `{f, d, z, punkte}`. Die
   Einstellungen zeigen unter *Änderungen* die oberste offen und die beiden darunter hinter
-  „Frühere Fassungen" (`NOTIZ_ANZAHL`, derzeit 3). Geschrieben wird in der Sprache der Runde,
-  nicht in der des Quelltextes: was am Tisch auffiel, nicht welche Funktion angefasst wurde.
-  Der Eintrag ganz oben **muss** zur laufenden `FASSUNG` gehören — `notizen.mjs` prüft das.
+  „Frühere Fassungen" (`NOTIZ_ANZAHL`, derzeit 3).
+  Geschrieben wird **für den, der die App bedient**: was er jetzt anders vorfindet oder neu
+  kann. Keine Funktions- und Klassennamen, kein `sha`/`ETag`/`Timer`, und vor allem keine
+  Floskeln — „diverse Verbesserungen", „Stabilität erhöht" sagen niemandem etwas. Statt
+  „`schreibTimer` wird zurückgesetzt" also „Nach dem ersten eingetragenen Bier kam von den
+  anderen Handys nichts mehr an". `notizen.mjs` hat dafür eine Wortliste und schlägt an.
+  Die oberste Notiz **ist** die Fassungsanzeige: eine eigene Fußzeile mit `FASSUNG` gab es
+  darunter mal, sie sagte dasselbe ein zweites Mal und ist raus. Deshalb müssen `f`, `d` und
+  `z` exakt zu `FASSUNG` passen — sonst zeigt die App eine falsche Fassung an, und das fällt
+  keinem auf; `notizen.mjs` rechnet beides gegeneinander.
+  **Die Uhrzeit gehört dazu**, nicht nur das Datum: an einem Tag gehen durchaus mehrere
+  Fassungen raus, und dann sind zwei Zeilen mit demselben Datum nicht auseinanderzuhalten.
   Kein `<details>` dafür: `zeichnen()` baut die Seite bei jedem Abgleich neu auf, ein offenes
   `<details>` klappte dabei wieder zu. Deshalb hält `notizenOffen` den Zustand.
+  `FASSUNG` bleibt ein **wörtliches** `const FASSUNG = '…'` — die Prüfung auf eine neuere
+  Fassung liest den Quelltext der ausgelieferten Datei mit einem regulären Ausdruck und
+  findet einen berechneten Wert nicht.
 - **Die Betriebsanleitung mitpflegen.** Sie ist Teil der Datei (`ansichtInfo`), im Ton einer
   augenzwinkernden DIN-Norm. Wer eine Funktion ändert, ändert den Paragrafen mit.
 - **Das Fangnetz nicht entfernen.** `zeichnen()` fängt Ausnahmen ab und zeigt einen
