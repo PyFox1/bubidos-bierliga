@@ -249,6 +249,14 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   ganzen Wochenende nirgends mehr einen Schlüssel hat: Wer nach einer Aufteilung an einer
   späteren Station sitzt, flöge sonst aus dem Wochenende, bloß weil er an der ersten Location
   nicht mehr steht.
+  Beim Anlegen braucht das Wochenende einen Namen, die erste Location nicht: Ohne Namen bleibt
+  „Los geht’s“ `disabled`, `weStart()` legt ohne Namen gar nichts an. Die Location fällt dagegen
+  weiterhin auf „Location 1“ zurück, weil sie sich jederzeit über ‹ umbenennen lässt — der
+  Wochenendname dagegen prägt die ganze Archivzeile und stünde sonst dauerhaft als
+  „Wochenende 3“ da. Das Freischalten läuft über den globalen `input`-Listener, nicht über ein
+  Neuzeichnen bei jedem Tastendruck — sonst spränge der Cursor beim Tippen aus dem Feld.
+  Gilt nur für `weStart` (neu anlegen); `weKopfPasst` (Nachbessern) behält seinen alten Titel,
+  wenn das Feld leergetippt wird, und ist deshalb nie an das Feld gekoppelt.
 - **Vor dem Eintragen wird nachgefragt, wenn es gerade erst etwas gab.** Lag die vorige
   Eintragung weniger als `FRAGE_FENSTER` (3 min) zurück, trägt der Tipp nichts ein, sondern
   stellt eine Frage, die der nächste Tipp bestätigt; unbeantwortet verfällt sie nach

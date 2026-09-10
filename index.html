@@ -516,7 +516,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-10 16:30 · G35 (GitHub)';
+const FASSUNG = '2026-09-10 17:05 · G36 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -531,6 +531,10 @@ const FASSUNG = '2026-09-10 16:30 · G35 (GitHub)';
 const NOTIZ_START  = 1;
 const NOTIZ_ANZAHL = 3;
 const NOTIZEN = [
+  {f:'G36', d:'10.09.2026', z:'17:05', punkte:[
+    '„Los geht’s“ beim neuen Wochenende lässt sich erst antippen, wenn oben ein Name '
+    + 'steht. Vorher landete ohne Namen einfach „Wochenende 3“ in der Liste. Die erste '
+    + 'Location braucht weiterhin keinen Namen – ohne einen heißt sie „Location 1“.']},
   {f:'G35', d:'10.09.2026', z:'16:30', punkte:[
     'Unter „Änderungen" steht jetzt nur noch die laufende Fassung offen da statt der '
     + 'letzten drei. „Ältere Fassungen" holt weiter je drei dazu.']},
@@ -1474,6 +1478,7 @@ function ansichtNeuesWe(){
   /* Wer abgewählt bleibt, verliert seine Striche an dieser Location. Das gehört vor
      den Knopf, nicht in einen Hinweis danach. */
   const verlust = bearb ? state.spieler.filter(p => !an(p.id) && striche(p.id)) : [];
+  const titelLeer = !bearb && !(vorwahl.titel || '').trim();
   return '<div class="deckel"><div class="name" style="font-size:20px">'
     + (bearb ? 'Das Wochenende' : 'Neues Wochenende') + '</div>'
     + '<div class="feld"><input id="weTitel" placeholder="Name des Wochenendes" autocomplete="off" '
@@ -1504,12 +1509,14 @@ function ansichtNeuesWe(){
         + (bearb ? 'Unter zwei geht es nicht — Elo vergleicht paarweise.'
                  : 'Zum Start braucht es zwei — Elo vergleicht paarweise. Wer noch am '
                    + 'Parkplatz steht, kommt später dazu.') + '</p>' : '')
+    + (titelLeer ? '<p class="hinweis" id="weTitelHinweis" style="margin:14px 2px 0">'
+        + 'Ohne Namen kein Start — trag oben ein, wie das Wochenende heißen soll.</p>' : '')
     + (verlust.length ? '<div class="warnung"><p>'
         + verlust.map(p => esc(p.name) + ' hat hier ' + striche(p.id) + ' '
             + (striche(p.id) === 1 ? 'Getränk' : 'Getränke')).join(', ')
         + ' stehen. Wer abgewählt bleibt, verliert sie.</p></div>' : '')
     + '<button class="knopf voll" data-tu="' + (bearb ? 'weKopfPasst' : 'weStart') + '"'
-    + (dabei < 2 ? ' disabled' : '') + '>' + (bearb ? 'Passt' : 'Los geht’s') + '</button></div>'
+    + (dabei < 2 || titelLeer ? ' disabled' : '') + '>' + (bearb ? 'Passt' : 'Los geht’s') + '</button></div>'
     + '<button class="knopf leer" data-tu="' + (bearb ? 'weKopfZu' : 'geheArchiv') + '">'
     + 'Abbrechen</button>';
 }
@@ -3573,7 +3580,8 @@ const tu = {
     tu.merkeNeu();
     const dabei = vorwahl.ids.slice();
     if(dabei.length < 2){ toast('Mindestens zwei am ersten Tag'); return; }
-    const titel = (vorwahl.titel || '').trim() || 'Wochenende ' + (state.we.length + 1);
+    const titel = (vorwahl.titel || '').trim();
+    if(!titel){ toast('Ein Name für das Wochenende muss her'); return; }
     const datum = vorwahl.datum || new Date().toISOString().slice(0,10);
     const g = {}; dabei.forEach(id => g[id] = []);
     const ort = {id:neueId(), name:(vorwahl.ort || '').trim() || 'Location 1', getraenke:g};
@@ -4044,6 +4052,16 @@ document.addEventListener('input', ev => {
     const {ort} = aktuell();
     if(ort){ ort.name = ev.target.value; clearTimeout(window.__ot);
       window.__ot = setTimeout(sichern, 700); }
+  }
+  /* Ohne Namen kein Start – der Knopf schaltet sich beim Tippen frei, ohne dass ein
+     Neuzeichnen den Cursor aus dem Feld wirft. */
+  if(ev.target.id === 'weTitel' && vorwahl && !vorwahl.weId){
+    vorwahl.titel = ev.target.value;
+    const leer = !ev.target.value.trim();
+    const k = document.querySelector('[data-tu="weStart"]');
+    if(k) k.disabled = leer || vorwahl.ids.length < 2;
+    const h = document.getElementById('weTitelHinweis');
+    if(h) h.hidden = !leer;
   }
 });
 let wischStart = null;
