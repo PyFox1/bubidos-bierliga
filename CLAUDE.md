@@ -164,8 +164,9 @@ Größen: `033`, `05`, `10`.
 Array heißt „war da, hat nichts getrunken" — das ist etwas völlig anderes als „war nicht da".
 
 Am Tag hängt außerdem `tag.marken`: die ausgestellten Urkunden, je eine
-`{id, pid, stufe, t, be, text, kopf?, quelle}`. Die `id` ist fest aus `tagId:pid:stufe` gebaut
-und nicht gewürfelt — siehe Tagesmarken weiter unten.
+`{id, stufe, pids, be, t, ort, ortNr, text, kopf?, quelle}`. Die `id` ist fest aus `tagId:stufe`
+gebaut und nicht gewürfelt, `pids` sind die, die die Stufe **gemeinsam zuerst** gerissen haben —
+siehe Tagesmarken weiter unten.
 
 ## Die Wertung
 
@@ -323,33 +324,55 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   kein Einstieg. Jeder Paragraf hat einen Anker `p1` bis `p12`. Wer einen Paragrafen einschiebt,
   muss die `para`-Verweise in `ERKLAERUNGEN` mitziehen — dort stehen Anker *und* Klartextname
   (`§ 7 Technische Daten`), und beide laufen sonst auseinander.
-- **Tagesmarken: 10, 18 und 25 BE je Person und Tag.** Wer eine Stufe reißt, bekommt eine
-  Urkunde. Die Entscheidungen dahinter:
+- **Tagesmarken: 10, 18 und 25 BE, je Stufe und Tag genau eine.** Die Entscheidungen dahinter:
+  - **Sie gehört dem, der zuerst dort war.** Wer später nachzieht, bekommt nichts mehr — sonst
+    wäre es kein Rennen, sondern eine Teilnahmebestätigung. Deshalb heißt die Kennung
+    `tagId:stufe` und trägt die Person *nicht*: Steht sie einmal, ist die Stufe für den Tag
+    vergeben. Jeder Tag fängt wieder bei null an.
+  - **Mehrere gleichzeitig stehen zusammen auf einer Urkunde.** „Runde für alle“ schiebt die
+    halbe Tischrunde im selben Moment über die Marke; die kommen alle in `pids`. Dafür gibt es
+    je Stufe zwei Sätze Ersatztexte (`ein` / `viele`) — „Korbi und Fifu hat“ wäre sonst nicht zu
+    erklären, und der Prompt sagt der API ausdrücklich, sie zusammen anzusprechen.
   - **Die Marke liegt im Datenbestand, nicht in einer Variablen.** Sonst ginge sie bei jedem
     Neuzeichnen wieder auf, sähe sie nur das Handy, das das Bier getippt hat, und jedes Gerät
     bekäme einen anderen Text. So verteilt der Abgleich sie wie alles andere.
   - **Abgehakt wird lokal** (`URKUNDEN_KEY`), nicht im Bestand. Stünde es dort, tippte der Erste
     sie für alle weg — und genau das soll nicht sein: Wer sein Handy in der Tasche hatte, soll
     sie beim nächsten Öffnen noch vorfinden, notfalls am Morgen danach.
-  - **Die Kennung ist `tagId:pid:stufe`**, nicht gewürfelt. Legen zwei Geräte dieselbe Marke
-    gleichzeitig an, führt `markenVereinen()` sie über die Kennung zusammen statt sie zu
-    verdoppeln. Aus demselben Grund wird auch der Ersatztext aus der Kennung gewählt und nicht
-    zufällig: Dann steht auf beiden Geräten derselbe.
+  - **Beim Zusammenführen gewinnt die frühere Marke**, nicht die zuletzt geschriebene. Haben
+    zwei Geräte nebeneinander gezählt und beide die Stufe vergeben, entscheidet der Zeitstempel
+    und nicht, wessen Schreibvorgang zufällig durchkam — sonst hinge „wer war zuerst“ am Netz.
+    Bei gleicher Zeit gewinnt `quelle:'ki'` gegen `quelle:'ersatz'`.
   - **Der Ersatztext steht sofort drin, der API-Text ersetzt ihn später.** Andersherum hinge am
-    Bierabend eine leere Urkunde im Netz, und ohne hinterlegten Schlüssel gäbe es nie eine. Beim
-    Zusammenführen gewinnt deshalb `quelle:'ki'` gegen `quelle:'ersatz'`.
+    Bierabend eine leere Urkunde im Netz, und ohne hinterlegten Schlüssel gäbe es nie eine.
     Nach dem `await` wird die Marke über `markeFinden()` neu gesucht: Ein Abgleich dazwischen
     kann `state.we` ausgetauscht haben, und der Text landete sonst in einem Objekt, das
     niemand mehr sieht.
   - **Gestaffelt wird die Fläche, nicht nur der Text.** 10 ist ein Blatt von unten, 18 eine Karte
     in der Mitte, 25 nimmt den ganzen Bildschirm. Das erkennt man auch in fortgeschrittener
     Stunde noch, und darum ging es. Die 25 trägt bewusst kein `data-tu` auf der Blende — wer so
-    weit gekommen ist, drückt den Knopf, statt sie aus Versehen wegzuwischen.
+    weit gekommen ist, drückt den Knopf. Die anderen beiden tragen `urkundeHintergrund`, nicht
+    `urkundeWeg`: Das Muster `…Hintergrund` lässt der globale Klick-Empfänger nur durch, wenn
+    wirklich *daneben* getippt wurde. Sonst verschwände die Urkunde beim Lesen.
   - **Der Text nimmt Bezug auf eine echte Nachricht.** Dafür läuft der API-Aufruf mit dem
-    Websuche-Werkzeug; das Modell weiß von sich aus nicht, was heute in der Zeitung stand. Die
-    Suche läuft serverseitig, ein Aufruf genügt also — keine Werkzeugschleife. Im Prompt steht
-    ausdrücklich: nichts Trauriges, und weder Quelle noch Schlagzeile nennen, der Bezug muss
+    Websuche-Werkzeug; das Modell weiß von sich aus nicht, was in der Zeitung stand. Die Suche
+    läuft serverseitig, ein Aufruf genügt also — keine Werkzeugschleife. Sie muss **nicht von
+    heute** sein: Der Prompt lässt die letzten Tage zu, ein guter Bezug schlägt einen frischen.
+    Außerdem darin: nichts Trauriges, und weder Quelle noch Schlagzeile nennen — der Bezug muss
     sich aus dem Satz ergeben.
+  - **Das Bild zum Aufheben wird auf ein Canvas gezeichnet** (`urkundeBild()`), nicht aus der
+    Seite geschnitten. Ein Bildschirmfoto hätte den Zählbildschirm dahinter, die Blende darüber
+    und die Maße des jeweiligen Handys. Darauf stehen Datum, Uhrzeit, Wochenende, Tag und
+    „*n*. Location: Name“ — dafür merkt sich die Marke `ort` und `ortNr` beim Anlegen; später
+    ließe sich das nicht mehr rekonstruieren, weil die Runde weiterzieht.
+    **Je Person ein eigenes Blatt**, auch wenn mehrere die Marke gemeinsam gerissen haben: Wer
+    sich das aufhängt, will seinen Namen groß sehen; die anderen stehen als Zeile darunter.
+    Weitergereicht wird über `navigator.share`, weil ein Download-Link auf dem iPhone im Nichts
+    endet — von dort führt der Weg in die Fotos. Herunterladen ist nur der Rückfall.
+    **Falle:** Ein Canvas löst kein Nachladen einer Schrift aus. Ohne das ausdrückliche
+    `document.fonts.load()` steht auf dem Bildschirm Anton und im gesicherten Bild die
+    Systemschrift. `document.fonts.check()` taugt nicht zum Prüfen — es antwortet auch dann mit
+    ja, wenn nur eine Systemschrift einspringt; `urkunde.mjs` misst deshalb Textbreiten.
 - **`SLANG` ist der Wortschatz der Runde** und geht sowohl in die Anweisung an die API als auch
   in die Ersatztexte — sonst klängen die beiden verschieden. Erweitern heißt: eine Zeile dazu.
   **Die Beispiele sind wichtiger als die Bedeutung.** „Peter" ist keine Anrede und kein Füllwort,
@@ -419,7 +442,12 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   dann verschwindet der Knopf. „Wieder einklappen" steht erst da, wenn wirklich etwas ausgeklappt
   ist. Nur die oberste ist farbig abgesetzt, alles darunter trägt `.alt` — sie ist die
   laufende Fassung, nicht bloß die erste Zeile einer Liste.
-  Geschrieben wird **für den, der die App bedient**: was er jetzt anders vorfindet oder neu
+  **Ausnahme G41:** Die Tagesmarken stehen bewusst *nicht* in den Änderungen — sie sollen die
+  Runde am Abend überraschen, und wer nachschaut was neu ist, hätte den Witz vorher gelesen.
+  Die Notiz sagt, dass etwas da ist, und nicht was. Nachzulesen sind sie in § 8: Wer die
+  Betriebsanleitung aufschlägt, will es wissen. `urkunde.mjs` prüft, dass die Notiz nicht
+  doch verrät. Das ist die einzige Stelle, an der eine Notiz absichtlich schweigt.
+  Geschrieben wird sonst **für den, der die App bedient**: was er jetzt anders vorfindet oder neu
   kann. Keine Funktions- und Klassennamen, kein `sha`/`ETag`/`Timer`, und vor allem keine
   Floskeln — „diverse Verbesserungen", „Stabilität erhöht" sagen niemandem etwas. Statt
   „`schreibTimer` wird zurückgesetzt" also „Nach dem ersten eingetragenen Bier kam von den

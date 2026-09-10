@@ -488,6 +488,11 @@ table.rechnung td.schlecht{color:#E09084}
 .u-blende{position:fixed;inset:0;background:rgba(20,23,27,.88);z-index:55;display:grid}
 .u-hinweis{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;
   text-transform:uppercase;opacity:.55;margin:12px 0 0}
+.u-andenken{margin-top:16px;padding-top:14px;border-top:1px dashed #8B8577;text-align:center}
+.u-andenken p{margin:0 0 10px;font-size:13px;opacity:.72;line-height:1.4}
+.u-sicherreihe{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.u-sichern{padding:9px 16px;border-radius:5px;border:1px solid #8B8577;color:inherit;
+  font-size:14px;font-weight:600}
 .u-text{font-size:14.5px;line-height:1.5;margin:0}
 .u-knopf{display:block;width:100%;margin-top:14px;padding:13px;border-radius:5px;
   border:1px solid var(--linie);color:var(--deckel);font-size:15px}
@@ -603,7 +608,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-10 20:20 · G41 (GitHub)';
+const FASSUNG = '2026-09-10 20:47 · G41 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -618,15 +623,12 @@ const FASSUNG = '2026-09-10 20:20 · G41 (GitHub)';
 const NOTIZ_START  = 1;
 const NOTIZ_ANZAHL = 3;
 const NOTIZEN = [
-  {f:'G41', d:'10.09.2026', z:'20:20', punkte:[
-    'Neu: Wer an einem Tag zehn Biereinheiten schafft, bekommt eine Urkunde auf den '
-    + 'Bildschirm. Bei achtzehn und bei fünfundzwanzig noch einmal, und jede Stufe fällt '
-    + 'größer aus als die vorige.',
-    'Die Urkunde geht auf allen Handys auf, die gerade offen sind, und wartet auf den '
-    + 'anderen, bis sie dort einmal weggetippt wurde — wer sein Handy in der Tasche hatte, '
-    + 'findet sie beim nächsten Öffnen vor. Wegtippen gilt nur für das eigene Gerät.',
-    'Der Text wird eigens geschrieben und nimmt Bezug auf das, was an dem Tag in den '
-    + 'Nachrichten stand. Ohne Empfang steht ein vorgefertigter da.']},
+  /* Absichtlich ohne Inhalt: Die Tagesmarken sollen die Runde am Abend überraschen und
+     nicht vorher in den Änderungen stehen. Nachzulesen sind sie in § 8 – wer die
+     Betriebsanleitung aufschlägt, will es wissen. */
+  {f:'G41', d:'10.09.2026', z:'20:47', punkte:[
+    'Diese Fassung bringt eine Sache mit, die hier absichtlich nicht steht. '
+    + 'Sie meldet sich von selbst.']},
   {f:'G40', d:'10.09.2026', z:'19:42', punkte:[
     'Wer erst nach einer Runde dazustößt, bekommt sein erstes Bier wieder ohne Rückfrage '
     + 'eingetragen. Vorher stand bei ihm „vor 1 Min gab es schon eins“, obwohl die Runde '
@@ -956,15 +958,20 @@ function logVereinen(mein, fremd){
   return [...nach.values()].sort((a,b) => (a.t || 0) - (b.t || 0)).slice(-40);
 }
 /* Urkunden werden über ihre Kennung vereint, nicht gezählt: Legen zwei Geräte dieselbe
-   Marke gleichzeitig an, ist es dieselbe Urkunde und nicht zwei. Kommt eine davon schon
-   mit dem Text von der API, gewinnt sie – der Ersatztext war nur der Platzhalter, bis
-   die Antwort da war. */
+   Stufe gleichzeitig an, ist es dieselbe Urkunde und nicht zwei.
+   Wer gewinnt: die **frühere**. Die Marke gehört dem, der zuerst dort war, und wenn zwei
+   Geräte nebeneinander gezählt haben, entscheidet der Zeitstempel und nicht, wessen
+   Schreibvorgang zufällig durchkam. Bei gleicher Zeit – dieselbe Marke, einmal schon mit
+   dem Text von der API – gewinnt die von der API; der Ersatztext war nur der Platzhalter. */
 function markenVereinen(mein, fremd){
   if(!fremd || !fremd.length) return mein || [];
   const nach = new Map();
   [...(mein || []), ...fremd].forEach(m => {
     const da = nach.get(m.id);
-    if(!da || (m.quelle === 'ki' && da.quelle !== 'ki')) nach.set(m.id, m);
+    if(!da) { nach.set(m.id, m); return; }
+    const frueher = (m.t || 0) < (da.t || 0);
+    const gleich  = (m.t || 0) === (da.t || 0);
+    if(frueher || (gleich && m.quelle === 'ki' && da.quelle !== 'ki')) nach.set(m.id, m);
   });
   return [...nach.values()].sort((a,b) => (a.t || 0) - (b.t || 0));
 }
@@ -1123,23 +1130,38 @@ const letzteGabeFuer = (ort, pid) => {
 };
 
 /* ---------- Tagesmarken und Urkunden ----------
-   Reißt jemand an einem Tag 10, 18 oder 25 Biereinheiten, stellt die App eine Urkunde
-   aus. Drei Entscheidungen dahinter:
+   Wer an einem Tag 10, 18 oder 25 Biereinheiten reißt, bekommt eine Urkunde. Vier
+   Entscheidungen dahinter:
 
-   1. Die Marke liegt im Tag (`tag.marken`), nicht in einer Variablen. Sonst ginge sie
+   1. **Je Stufe und Tag gibt es genau eine.** Sie gehört dem, der zuerst dort war –
+      wer später nachzieht, bekommt nichts mehr. Deshalb ist die Kennung `tagId:stufe`
+      und trägt nicht die Person: Steht sie einmal, ist die Stufe für den Tag vergeben.
+      Kommen mehrere im selben Moment über die Marke (eine Runde für alle schiebt die
+      halbe Tischrunde gleichzeitig darüber), stehen sie zusammen auf einer Urkunde.
+   2. Die Marke liegt im Tag (`tag.marken`), nicht in einer Variablen. Sonst ginge sie
       bei jedem Neuzeichnen wieder auf, sähe sie nur das Handy, das das Bier getippt
       hat, und jedes Gerät bekäme einen anderen Text. So verteilt der Abgleich sie.
-   2. Die Kennung ist fest aus Tag, Person und Stufe gebaut. Legen zwei Geräte
-      gleichzeitig dieselbe Marke an, führt der Abgleich sie über die Kennung zusammen
-      statt sie zu verdoppeln.
    3. Der Ersatztext steht **sofort** drin. Erst danach wird versucht, über die API
       einen besseren zu holen. Wäre es andersherum, hinge am Bierabend eine leere
       Urkunde im Netz – und ohne Schlüssel gäbe es nie eine.
+   4. Die Marke merkt sich Ort und Zeit (`ort`, `ortNr`, `t`). Nicht für die Anzeige,
+      sondern für das Bild zum Aufheben: Da gehört hin, wann und wo das war.
 
    Gestaffelt wird auch die Form, nicht nur der Text: 10 kommt als Blatt von unten,
    18 als Karte in der Mitte, 25 nimmt den ganzen Bildschirm. Das erkennt man auch
    in fortgeschrittener Stunde noch. */
 const MARKEN = [10, 18, 25];
+
+/* „Korbi“, „Korbi und Fifu“, „Korbi, Fifu und Sperry“. */
+function namenListe(pids){
+  const n = (pids || []).map(id => {
+    const p = state.spieler.find(x => String(x.id) === String(id));
+    return p ? p.name : null;
+  }).filter(Boolean);
+  if(!n.length) return 'Unbekannt';
+  if(n.length === 1) return n[0];
+  return n.slice(0,-1).join(', ') + ' und ' + n[n.length-1];
+}
 
 /* Der Wortschatz der Runde. Er geht in die Anweisung an die API und in die
    Ersatztexte, damit beide gleich klingen. Erweitern heißt: eine Zeile dazu.
@@ -1155,43 +1177,55 @@ const SLANG = [
 ];
 
 /* Ohne Netz, ohne Schlüssel oder wenn die API zickt, steht einer davon da. Sie müssen
-   für sich alleine tragen: Am Bierabend ist ein Wartekringel das schlechteste Ergebnis. */
+   für sich alleine tragen: Am Bierabend ist ein Wartekringel das schlechteste Ergebnis.
+   Je Stufe zwei Sätze Texte, weil eine Marke auch mehreren gleichzeitig gehören kann und
+   „Korbi und Fifu hat" niemandem zu erklären wäre. */
 const URKUNDE_ERSATZ = {
-  10: [
+  10: {ein:[
     {kopf:'{name} zappt sich zweistellig',
-     text:'Zehn Bierpetereinheiten an einem Tag. Ab hier ist das keine Verkostung mehr, '
-        + 'sondern eine Haltung.'},
+     text:'Zehn Bierpetereinheiten an einem Tag, und keiner war schneller. Ab hier ist das '
+        + 'keine Verkostung mehr, sondern eine Haltung.'},
     {kopf:'Die Zehn ist gefallen',
-     text:'{name} hat zehn Biereinheiten ordnungspetergemäß hinterlegt. Die Tabelle nimmt '
-        + 'es zur Kenntnis, der Kreislauf noch nicht.'},
-    {kopf:'Zweistellig, und es ist nicht einmal spät',
-     text:'Zehn Biereinheiten für {name}. Was als Feierabendbier begann, ist inzwischen '
-        + 'ein Vorhaben.'},
-    {kopf:'{name} überschreitet die Zehn',
-     text:'Zehn Biereinheiten, sauber erfasst. Der Rest der Runde zappt weiter, aber ab '
-        + 'jetzt hinterher.'}
-  ],
-  18: [
-    {text:'Achtzehn Biereinheiten an einem einzigen Tag, ordnungspetergemäß erfasst und '
-        + 'gegen jede Nachprüfung gefeit. {name} zappt in einer Taktung, die andernorts '
+     text:'{name} hat zehn Biereinheiten ordnungspetergemäß hinterlegt und die Marke als '
+        + 'Erster besetzt. Die Tabelle nimmt es zur Kenntnis, der Kreislauf noch nicht.'},
+    {kopf:'Zweistellig, und nicht einmal spät',
+     text:'Zehn Biereinheiten für {name}. Was als Feierabendbier begann, ist inzwischen ein '
+        + 'Vorhaben — und der Rest der Runde zappt ab jetzt hinterher.'}
+  ], viele:[
+    {kopf:'{name} reißen die Zehn gemeinsam',
+     text:'Zehn Bierpetereinheiten, im Gleichschritt erreicht. Wer zuerst dort war, ließ sich '
+        + 'nicht mehr feststellen, und das ist vermutlich auch besser so.'},
+    {kopf:'Die Zehn fällt im Rudel',
+     text:'{name} stehen zeitgleich bei zehn Biereinheiten. Ordnungspetergemäß erfasst, '
+        + 'sportlich bedenklich, protokollarisch einwandfrei.'}
+  ]},
+  18: {ein:[
+    {text:'Achtzehn Biereinheiten an einem einzigen Tag, ordnungspetergemäß erfasst und gegen '
+        + 'jede Nachprüfung gefeit. {name} zappt in einer Taktung, die andernorts '
         + 'genehmigungspflichtig wäre.'},
-    {text:'Achtzehn. {name} hat die Grenze zwischen Abend und Vorhaben endgültig hinter '
-        + 'sich gelassen. Wer jetzt noch mithalten will, tut das auf eigene Rechnung.'},
-    {text:'Achtzehn Biereinheiten. Die Bierpeterliga führt das ab hier nicht mehr als '
-        + 'Teilnahme, sondern als Dauerbetrieb. {name} hat sich das redlich erzappt.'},
-    {text:'Achtzehn Biereinheiten, erfasst, geprüft, nicht wegzudiskutieren. {name} zappt '
-        + 'seit Stunden so gleichmäßig durch, dass andere Leute Training dazu sagen würden.'}
-  ],
-  25: [
-    {text:'Ab hier hört die Statistik auf und die Legendenpeterbildung fängt an. '
-        + 'Fünfundzwanzig Biereinheiten an einem Tag, und {name} steht, Stand jetzt, immer noch.'},
-    {text:'Fünfundzwanzig Biereinheiten. Es gibt keine Stufe darüber, weil beim Festlegen '
-        + 'niemand ernsthaft damit gerechnet hat. {name} hat sie trotzdem gefunden.'},
-    {text:'Fünfundzwanzig. Was {name} heute weggezappt hat, wird in dieser Runde noch in '
-        + 'Jahren als Maßeinheit herhalten müssen. Die Urkunde ist das Mindeste.'},
-    {text:'Fünfundzwanzig Biereinheiten an einem Tag, ordnungspetergemäß erfasst. {name} '
-        + 'hat damit die Grenze des Erfassbaren erreicht und sich dort häuslich eingerichtet.'}
-  ]
+    {text:'Achtzehn. {name} hat die Grenze zwischen Abend und Vorhaben als Erster überschritten. '
+        + 'Wer jetzt noch mithalten will, tut das auf eigene Rechnung.'},
+    {text:'Achtzehn Biereinheiten, erfasst, geprüft, nicht wegzudiskutieren. {name} zappt seit '
+        + 'Stunden so gleichmäßig durch, dass andere Leute Training dazu sagen würden.'}
+  ], viele:[
+    {text:'Achtzehn Biereinheiten, und zwar gleichzeitig: {name} haben sich gegenseitig so lange '
+        + 'hochgeschaukelt, bis die Marke fiel. Ordnungspetergemäß erfasst, verantwortlich niemand.'},
+    {text:'Achtzehn. {name} stehen zusammen an einer Marke, an der sonst niemand steht. Wer jetzt '
+        + 'noch mitzappt, tut das auf eigene Rechnung.'}
+  ]},
+  25: {ein:[
+    {text:'Ab hier hört die Statistik auf und die Legendenpeterbildung fängt an. Fünfundzwanzig '
+        + 'Biereinheiten an einem Tag, und {name} steht, Stand jetzt, immer noch.'},
+    {text:'Fünfundzwanzig Biereinheiten. Es gibt keine Stufe darüber, weil beim Festlegen niemand '
+        + 'ernsthaft damit gerechnet hat. {name} hat sie trotzdem gefunden.'},
+    {text:'Fünfundzwanzig. Was {name} heute weggezappt hat, wird in dieser Runde noch in Jahren '
+        + 'als Maßeinheit herhalten müssen. Die Urkunde ist das Mindeste.'}
+  ], viele:[
+    {text:'Fünfundzwanzig Biereinheiten, gemeinsam und am selben Abend. {name} haben damit die '
+        + 'Grenze des Erfassbaren erreicht und sich dort häuslich eingerichtet.'},
+    {text:'Fünfundzwanzig. Dass diese Marke überhaupt jemand reißt, war eine Annahme; dass '
+        + '{name} sie zusammen reißen, war keine. Die Legendenpeterbildung übernimmt ab hier.'}
+  ]}
 };
 
 /* Aus der Kennung gewürfelt statt zufällig: Legen zwei Geräte dieselbe Marke gleichzeitig
@@ -1204,28 +1238,33 @@ function ersatzWahl(liste, saat){
 const beAmTag = (tg, pid) => (tg.orte || []).reduce((s,o) =>
   s + (((o.getraenke || {})[pid]) || []).reduce((x,k) => x + beVon(k), 0), 0);
 
-/* Wird nach jeder Eintragung aufgerufen. Mehrfaches Aufrufen schadet nicht: Was schon
-   in `tag.marken` steht, wird nicht noch einmal angelegt. */
+/* Wird nach jeder Eintragung aufgerufen. Mehrfaches Aufrufen schadet nicht: Steht die
+   Stufe für den Tag schon, passiert nichts mehr – auch dann nicht, wenn später jemand
+   anderes darüber kommt. Die Marke gehört dem, der zuerst da war. */
 function markenPruefen(){
-  const {we, tg} = aktuell();
+  const {we, tg, ort} = aktuell();
   if(!we || !tg || we.zu) return;
   if(!tg.marken) tg.marken = [];
   const frisch = [];
-  [...new Set((tg.orte || []).flatMap(o => Object.keys(o.getraenke || {})))].forEach(pid => {
-    const be = beAmTag(tg, pid);
-    const p = state.spieler.find(x => String(x.id) === String(pid));
-    if(!p) return;
-    MARKEN.forEach(stufe => {
-      if(be + 1e-9 < stufe) return;
-      const id = tg.id + ':' + pid + ':' + stufe;
-      if(tg.marken.some(m => m.id === id)) return;
-      const v = ersatzWahl(URKUNDE_ERSATZ[stufe], id);
-      const m = {id, pid:String(pid), stufe, t:Date.now(), be:Math.round(be*100)/100,
-                 text:v.text.replace(/\{name\}/g, p.name), quelle:'ersatz'};
-      if(v.kopf) m.kopf = v.kopf.replace(/\{name\}/g, p.name);
-      tg.marken.push(m);
-      frisch.push(m);
-    });
+  MARKEN.forEach(stufe => {
+    const id = tg.id + ':' + stufe;
+    if(tg.marken.some(m => m.id === id)) return;
+    const treffer = [...new Set((tg.orte || []).flatMap(o => Object.keys(o.getraenke || {})))]
+      .filter(pid => state.spieler.some(x => String(x.id) === String(pid)))
+      .filter(pid => beAmTag(tg, pid) + 1e-9 >= stufe);
+    if(!treffer.length) return;
+    const pids = treffer.map(String);
+    const namen = namenListe(pids);
+    const satz = URKUNDE_ERSATZ[stufe][pids.length > 1 ? 'viele' : 'ein'];
+    const v = ersatzWahl(satz, id + ':' + pids.length);
+    const be = {}; pids.forEach(pid => be[pid] = Math.round(beAmTag(tg, pid)*100)/100);
+    const m = {id, stufe, pids, be, t:Date.now(), quelle:'ersatz',
+               ort: ort ? ort.name : '',
+               ortNr: ort ? (tg.orte || []).findIndex(o => o.id === ort.id) + 1 : 0,
+               text: v.text.replace(/\{name\}/g, namen)};
+    if(v.kopf) m.kopf = v.kopf.replace(/\{name\}/g, namen);
+    tg.marken.push(m);
+    frisch.push(m);
   });
   frisch.forEach(m => urkundeHolen(tg, m));
 }
@@ -2199,9 +2238,14 @@ function markeFinden(id){
 }
 function urkundeAnweisung(tg, m){
   const we = state.we.find(w => (w.tage || []).some(t => t.id === tg.id));
-  const p = state.spieler.find(x => String(x.id) === String(m.pid));
+  const pids = m.pids || [];
+  const mehrere = pids.length > 1;
+  const wer = pids.map(id => {
+    const q = state.spieler.find(x => String(x.id) === String(id));
+    return q ? q.name + ' (' + zahl((m.be || {})[id] || 0, 1) + ')' : null;
+  }).filter(Boolean).join(', ');
   const andere = [...new Set((tg.orte || []).flatMap(o => Object.keys(o.getraenke || {})))]
-    .filter(id => String(id) !== String(m.pid))
+    .filter(id => pids.indexOf(String(id)) < 0)
     .map(id => {
       const q = state.spieler.find(x => String(x.id) === String(id));
       return q ? q.name + ' ' + zahl(beAmTag(tg, id), 1) : null;
@@ -2217,18 +2261,24 @@ function urkundeAnweisung(tg, m){
   return [
     'Du schreibst eine Urkunde für eine private Bier-Rangliste unter fünf Freunden.',
     '',
-    'Anlass: ' + (p ? p.name : 'Jemand') + ' hat heute ' + zahl(m.be, 1)
-      + ' Biereinheiten getrunken und damit die Marke von ' + m.stufe
-      + ' gerissen. Eine Biereinheit ist eine Halbe Helles.',
-    'Wochenende: ' + ((we && we.titel) || 'ohne Titel') + ', ' + (tg.label || 'Tag') + '.'
+    'Anlass: ' + wer + ' ' + (mehrere ? 'haben' : 'hat') + ' heute die Marke von '
+      + m.stufe + ' Biereinheiten gerissen, und zwar als '
+      + (mehrere ? 'Erste an diesem Tag — gemeinsam, im selben Moment. Sprich sie zusammen '
+                 + 'an und nicht nacheinander.'
+                 : 'Erster an diesem Tag.')
+      + ' In Klammern steht der aktuelle Stand. Eine Biereinheit ist eine Halbe Helles.',
+    'Wochenende: ' + ((we && we.titel) || 'ohne Titel') + ', ' + (tg.label || 'Tag')
+      + (m.ort ? ', gerade in: ' + m.ort : '') + '.'
       + (andere.length ? ' Die anderen heute: ' + andere.join(', ') + ' Biereinheiten.' : ''),
     '',
     auftrag,
     '',
-    'Such dir eine echte Nachricht von heute oder aus dieser Woche und verweb sie so in '
-      + 'den Text, dass Trinkleistung und Nachricht sich gegenseitig kommentieren. Nenn '
-      + 'weder Quelle noch Schlagzeile, der Bezug muss sich aus dem Satz selbst ergeben. '
-      + 'Nimm nichts Trauriges: keine Unglücke, keine Toten, keine Kriege, keine Krankheiten.',
+    'Verweb eine echte Nachricht so in den Text, dass Trinkleistung und Nachricht sich '
+      + 'gegenseitig kommentieren. Sie muss nicht von heute sein: Nimm aus den letzten '
+      + 'paar Tagen die, die am besten passt — ein guter Bezug schlägt einen frischen. '
+      + 'Nenn weder Quelle noch Schlagzeile, der Bezug muss sich aus dem Satz selbst '
+      + 'ergeben. Nimm nichts Trauriges: keine Unglücke, keine Toten, keine Kriege, '
+      + 'keine Krankheiten.',
     '',
     'Sprache: Deutsch. Ton: knapp und trocken, wie eine augenzwinkernde technische Norm. '
       + 'Keine Ausrufezeichen, keine Emojis, kein Werbesprech, nicht gönnerhaft. '
@@ -3062,10 +3112,14 @@ function ansichtInfo(){
     + 'Wertung dieses Tages schlicht nicht vor.</p></div>'
 
     + '<div class="para" id="p8"><h2><i>§ 8</i> Tagesmarken</h2>'
-    + '<p>Wer an einem Tag <strong>zehn Biereinheiten</strong> erreicht, erhält eine Urkunde. '
-    + 'Bei <strong>achtzehn</strong> und bei <strong>fünfundzwanzig</strong> noch einmal, '
-    + 'jeweils in gesteigerter Ausführung. Maßgeblich ist der Tag und nicht das Wochenende — '
-    + 'wer erst am Samstag anreist, kann am Sonntag noch alle drei holen.</p>'
+    + '<p>Wer an einem Tag als <strong>Erster zehn Biereinheiten</strong> erreicht, erhält eine '
+    + 'Urkunde. Bei <strong>achtzehn</strong> und bei <strong>fünfundzwanzig</strong> noch '
+    + 'einmal, jeweils in gesteigerter Ausführung. Je Stufe und Tag wird <strong>genau eine</strong> '
+    + 'ausgestellt: Wer später nachzieht, geht leer aus. Maßgeblich ist der Tag und nicht das '
+    + 'Wochenende — am nächsten Morgen sind alle drei wieder zu haben.</p>'
+    + '<p>Überschreiten mehrere die Marke im selben Augenblick, was bei einer Runde für alle '
+    + 'regelmäßig vorkommt, stehen sie <strong>gemeinsam</strong> auf der Urkunde. Ein '
+    + 'Nachweis, wer von ihnen die Hand zuerst am Glas hatte, wird nicht geführt.</p>'
     + '<p>Die Urkunde erscheint auf <strong>jedem Gerät</strong>, das die App geöffnet hat, und '
     + 'bleibt dort liegen, bis sie einmal bestätigt wurde. Wer sein Handy derweil in der Tasche '
     + 'hatte, findet sie beim nächsten Öffnen vor, notfalls am Morgen danach. Das Bestätigen gilt '
@@ -3073,8 +3127,13 @@ function ansichtInfo(){
     + '<p>Der Wortlaut wird zum Anlass verfasst und nimmt <strong>Bezug auf das Tagesgeschehen</strong>. '
     + 'Steht dafür keine Verbindung zur Verfügung, tritt eine vorgefertigte Ausfertigung an ihre '
     + 'Stelle. Ein Anspruch auf Originalität besteht in diesem Fall nicht.</p>'
+    + '<p>Die Urkunde lässt sich als <strong>Bild sichern</strong>. Darauf vermerkt sind Datum, '
+    + 'Uhrzeit, Wochenende, Tag sowie Nummer und Name der Location, an der die Marke fiel. '
+    + 'Wurde sie gemeinsam erreicht, erhält jeder ein eigenes Blatt mit seinem Namen; die '
+    + 'übrigen Beteiligten sind darauf aufgeführt.</p>'
     + '<p>Mit dem Abschluss des Wochenendes wird der Wortlaut vernichtet. Die Marke selbst — wer, '
-    + 'wann, welche Stufe — bleibt aktenkundig.</p></div>'
+    + 'wann, welche Stufe — bleibt aktenkundig. Gesicherte Bilder sind davon nicht betroffen; '
+    + 'das ist der Sinn des Sicherns.</p></div>'
 
     + '<div class="para" id="p9"><h2><i>§ 9</i> Datenschutz</h2>'
     + '<p>App und Daten liegen getrennt. Die App selbst steht öffentlich auf GitHub Pages — '
@@ -3738,19 +3797,217 @@ function zeichnen(){
       + '<p class="hinweis">' + esc(String(err && err.message || err)) + '</p>';
   }
 }
+/* ---------- Die Urkunde zum Aufheben ----------
+   Gezeichnet auf ein Canvas und nicht aus der Seite geschnitten: Ein Bildschirmfoto hätte
+   den Zählbildschirm dahinter, die Blende darüber und die Maße des jeweiligen Handys. So
+   kommt auf jedem Gerät dasselbe Blatt heraus.
+   Weitergereicht wird über die Teilen-Funktion, weil ein Download-Link auf dem iPhone im
+   Nichts endet – von dort führt der Weg in die Fotos. Erst wenn es die nicht gibt, wird
+   heruntergeladen.
+   Je Person ein eigenes Blatt, auch wenn mehrere die Marke gemeinsam gerissen haben: Wer
+   sich das aufhängt, will seinen Namen groß sehen und nicht in einer Aufzählung. Die
+   anderen stehen als Zeile darunter. */
+const BILD_B = 1080, BILD_H = 1440;
+
+function bildRaute(ctx, y, h){
+  ctx.fillStyle = '#EDF2F7'; ctx.fillRect(0, y, BILD_B, h);
+  ctx.fillStyle = '#1C5FA8';
+  for(let x = -h; x < BILD_B + h; x += h){
+    ctx.beginPath();
+    ctx.moveTo(x + h/2, y); ctx.lineTo(x + h, y + h/2);
+    ctx.lineTo(x + h/2, y + h); ctx.lineTo(x, y + h/2);
+    ctx.closePath(); ctx.fill();
+  }
+}
+function bildZeilen(ctx, text, maxB){
+  const raus = [];
+  let zeile = '';
+  String(text).split(/\s+/).forEach(w => {
+    const test = zeile ? zeile + ' ' + w : w;
+    if(ctx.measureText(test).width > maxB && zeile){ raus.push(zeile); zeile = w; }
+    else zeile = test;
+  });
+  if(zeile) raus.push(zeile);
+  return raus;
+}
+async function urkundeBild(m, tg, pid){
+  /* `document.fonts.ready` allein genügt nicht: Ein Canvas löst kein Nachladen einer
+     Schrift aus, und ohne diese Zeile fällt das Blatt still auf die Systemschrift
+     zurück – auf dem Bildschirm steht Anton, im gesicherten Bild nicht. */
+  try{
+    await document.fonts.ready;
+    await Promise.all([
+      document.fonts.load('120px Anton'),
+      document.fonts.load('37px Karla'),
+      document.fonts.load('italic 30px Karla'),
+      document.fonts.load('500 25px "DM Mono"')
+    ]);
+  }catch(e){}
+  const we = state.we.find(w => (w.tage || []).some(t => t.id === tg.id));
+  const p = state.spieler.find(x => String(x.id) === String(pid));
+  const mit = (m.pids || []).filter(id => String(id) !== String(pid));
+  const ehre = m.stufe === 25;
+  const gold = '#B87513', tinte = '#22262B', weich = '#6C6659', rot = '#9E3226';
+  const mitte = BILD_B/2, rand = 120, maxB = BILD_B - 2*rand;
+
+  const c = document.createElement('canvas');
+  c.width = BILD_B; c.height = BILD_H;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#E9E1CD'; ctx.fillRect(0, 0, BILD_B, BILD_H);
+  bildRaute(ctx, 0, 34); bildRaute(ctx, BILD_H - 34, 34);
+  if(ehre){
+    ctx.strokeStyle = gold;
+    ctx.lineWidth = 6; ctx.strokeRect(52, 80, BILD_B-104, BILD_H-160);
+    ctx.lineWidth = 2; ctx.strokeRect(68, 96, BILD_B-136, BILD_H-192);
+  }
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+
+  const sperr = v => { try{ ctx.letterSpacing = v; }catch(e){} };
+
+  let y = 208;
+  sperr('7px');
+  ctx.fillStyle = ehre ? gold : weich;
+  ctx.font = '500 25px "DM Mono", ui-monospace, monospace';
+  ctx.fillText(ehre ? 'EHRENURKUNDE · HÖCHSTE STUFE' : 'BUBIDOS BIERLIGA · URKUNDE', mitte, y);
+
+  sperr('0px');
+  y += ehre ? 210 : 195;
+  ctx.fillStyle = gold;
+  ctx.font = (ehre ? '215px' : '190px') + ' Anton, Impact, sans-serif';
+  ctx.fillText(String(m.stufe), mitte, y);
+
+  y += 62;
+  sperr('6px');
+  ctx.fillStyle = weich;
+  ctx.font = '500 23px "DM Mono", ui-monospace, monospace';
+  ctx.fillText('BIEREINHEITEN AN EINEM TAG', mitte, y);
+
+  sperr('1px');
+  y += 108;
+  ctx.fillStyle = tinte;
+  let nGr = 84;
+  ctx.font = nGr + 'px Anton, Impact, sans-serif';
+  const name = (p ? p.name : 'Unbekannt').toUpperCase();
+  while(ctx.measureText(name).width > maxB && nGr > 40){
+    nGr -= 6; ctx.font = nGr + 'px Anton, Impact, sans-serif';
+  }
+  ctx.fillText(name, mitte, y);
+
+  sperr('0px');
+  if(mit.length){
+    y += 46;
+    ctx.fillStyle = weich;
+    ctx.font = 'italic 30px Karla, system-ui, sans-serif';
+    ctx.fillText('gemeinsam mit ' + namenListe(mit), mitte, y);
+  }
+
+  y += 46;
+  ctx.fillStyle = gold;
+  ctx.fillRect(mitte - 46, y, 92, 4);
+
+  /* Der Text ist mal zwei, mal fünf Zeilen lang. Lieber die Schrift kleiner als das
+     Blatt sprengen – der Fuß steht fest unten. */
+  y += 78;
+  ctx.textAlign = 'left';
+  ctx.fillStyle = tinte;
+  let gr = 37, zeilen;
+  do {
+    ctx.font = gr + 'px Karla, system-ui, sans-serif';
+    zeilen = bildZeilen(ctx, m.text || '', maxB);
+    if(zeilen.length <= 6) break;
+    gr -= 3;
+  } while(gr >= 26);
+  zeilen.forEach(z => { ctx.fillText(z, rand, y); y += Math.round(gr*1.45); });
+
+  if(ehre){
+    const sx = BILD_B - 218, sy = BILD_H - 330;
+    ctx.save();
+    ctx.translate(sx, sy); ctx.rotate(-13*Math.PI/180);
+    ctx.fillStyle = rot;
+    ctx.beginPath(); ctx.arc(0, 0, 78, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(0, 0, 66, 0, Math.PI*2); ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
+    sperr('2px');
+    ctx.font = '500 18px "DM Mono", ui-monospace, monospace';
+    ctx.fillText('BUBIDOS', 0, -14);
+    ctx.fillText('EHRENSACHE', 0, 10);
+    ctx.fillText(String(new Date(m.t || Date.now()).getFullYear()), 0, 34);
+    ctx.restore();
+  }
+
+  const d = new Date(m.t || Date.now());
+  const zwei = n => String(n).padStart(2, '0');
+  const wo = [(we && we.titel) || '', tg.label || '',
+              m.ortNr ? m.ortNr + '. Location: ' + m.ort : m.ort].filter(Boolean).join(' · ');
+  ctx.textAlign = 'center';
+  ctx.fillStyle = gold;
+  ctx.fillRect(mitte - 200, BILD_H - 232, 400, 2);
+  sperr('4px');
+  ctx.fillStyle = tinte;
+  ctx.font = '500 27px "DM Mono", ui-monospace, monospace';
+  ctx.fillText(zwei(d.getDate()) + '.' + zwei(d.getMonth()+1) + '.' + d.getFullYear()
+    + ' · ' + zwei(d.getHours()) + ':' + zwei(d.getMinutes()), mitte, BILD_H - 178);
+  ctx.fillStyle = weich;
+  ctx.font = '500 22px "DM Mono", ui-monospace, monospace';
+  let woGr = 22;
+  while(ctx.measureText(wo).width > maxB && woGr > 14){
+    woGr -= 2; ctx.font = '500 ' + woGr + 'px "DM Mono", ui-monospace, monospace';
+  }
+  ctx.fillText(wo, mitte, BILD_H - 136);
+  sperr('0px');
+  return c;
+}
+async function urkundeBildTeilen(m, tg, pid){
+  try{
+    const c = await urkundeBild(m, tg, pid);
+    const blob = await new Promise(r => c.toBlob(r, 'image/png'));
+    if(!blob) throw new Error('kein Bild');
+    const p = state.spieler.find(x => String(x.id) === String(pid));
+    const kurz = (p ? p.name : 'urkunde').toLowerCase()
+      .replace(/[äöüß]/g, s => ({'ä':'ae','ö':'oe','ü':'ue','ß':'ss'}[s]))
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'urkunde';
+    const dateiname = 'urkunde-' + kurz + '-' + m.stufe + 'be.png';
+    const datei = new File([blob], dateiname, {type:'image/png'});
+    if(navigator.canShare && navigator.canShare({files:[datei]})){
+      await navigator.share({files:[datei], title:'Urkunde'});
+      return;
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = dateiname;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  }catch(e){
+    if(e && (e.name === 'AbortError' || e.name === 'NotAllowedError')) return;
+    toast('Das Bild ließ sich nicht erzeugen');
+  }
+}
+
 /* Drei Stufen, drei Formen. Die 25 lässt sich bewusst nicht durch einen Tipp daneben
    wegwischen – wer so weit gekommen ist, darf den Knopf drücken. */
 function ansichtUrkunde(x){
   const {m, tg} = x;
-  const p = state.spieler.find(y => String(y.id) === String(m.pid));
-  const name = p ? p.name : 'Unbekannt';
+  const pids = (m.pids || []).map(String);
+  const name = namenListe(pids);
   const uhr = new Date(m.t || Date.now());
   const zwei = n => ('0' + n).slice(-2);
   const hinweis = urkundeLaeuft.has(m.id)
     ? '<p class="u-hinweis">Der Text wird noch geschärft</p>' : '';
+  /* Je Person ein Knopf, wenn es mehrere waren – jeder bekommt sein eigenes Blatt. */
+  const andenken = '<div class="u-andenken"><p>' + esc(name)
+    + (pids.length > 1 ? ', sichert euch das als Andenken.' : ', sichere dir das als Andenken.')
+    + '</p><div class="u-sicherreihe">'
+    + (pids.length > 1
+        ? pids.map(id => '<button class="u-sichern" data-tu="urkundeSichern" data-pid="'
+            + esc(id) + '">' + esc(namenListe([id])) + '</button>').join('')
+        : '<button class="u-sichern" data-tu="urkundeSichern" data-pid="'
+          + esc(pids[0] || '') + '">Urkunde sichern</button>')
+    + '</div></div>';
 
   if(m.stufe === 10) return ''
-    + '<div class="blende u-blende s1" data-tu="urkundeWeg"><div class="u-meld">'
+    + '<div class="blende u-blende s1" data-tu="urkundeHintergrund"><div class="u-meld">'
     + '<div class="u-meld-karte" role="dialog" aria-label="Tagesmarke">'
     + '<div class="u-band"><span>Eilmeldung</span><span>'
       + zwei(uhr.getHours()) + ':' + zwei(uhr.getMinutes()) + ' · '
@@ -3760,11 +4017,12 @@ function ansichtUrkunde(x){
     + '<h3>' + esc(m.kopf || (name + ' zappt sich zweistellig')) + '</h3>'
     + '<p class="u-text">' + esc(m.text) + '</p>'
     + hinweis
+    + andenken
     + '<button class="u-knopf" data-tu="urkundeWeg">Passt</button>'
     + '</div></div></div></div>';
 
   if(m.stufe === 18) return ''
-    + '<div class="blende u-blende s2" data-tu="urkundeWeg">'
+    + '<div class="blende u-blende s2" data-tu="urkundeHintergrund">'
     + '<div class="u-karte" role="dialog" aria-label="Urkunde">'
     + '<div class="raute"></div><div class="u-karte-in">'
     + '<p class="u-kopf">Bubidos Bierliga · Urkunde</p>'
@@ -3773,6 +4031,7 @@ function ansichtUrkunde(x){
     + '<h2 class="u-name">' + esc(name) + '</h2>'
     + '<p class="u-text">' + esc(m.text) + '</p>'
     + hinweis
+    + andenken
     + '<button class="u-knopf" data-tu="urkundeWeg">Zur Kenntnis genommen</button>'
     + '</div><div class="raute"></div></div></div>';
 
@@ -3791,6 +4050,7 @@ function ansichtUrkunde(x){
     + hinweis
     + '<div class="u-siegel"><span>Bubidos<br>Ehrensache<br>'
       + uhr.getFullYear() + '</span></div>'
+    + andenken
     + '</div>'
     + '<button class="u-knopf" data-tu="urkundeWeg">Zur Kenntnis genommen</button>'
     + '</div><div class="raute"></div></div></div>';
@@ -4449,6 +4709,14 @@ const tu = {
     if(u) urkundeAbhaken(u.m.id);
     zeichnen();
   },
+  urkundeSichern(el){
+    const u = offeneUrkunde();
+    if(u) urkundeBildTeilen(u.m, u.tg, el.dataset.pid);
+  },
+  /* Nur ein Tipp auf die Blende selbst hakt ab – der globale Klick-Empfänger lässt
+     alles auf `Hintergrund` Endende nur durch, wenn daneben getippt wurde. Sonst
+     verschwände die Urkunde beim Lesen, noch bevor jemand sie sichern konnte. */
+  urkundeHintergrund(){ tu.urkundeWeg(); },
   einstSichern(){
     const k = parseFloat(document.getElementById('kFaktor').value);
     if(!(k > 0)){ toast('K muss größer als null sein'); return; }
