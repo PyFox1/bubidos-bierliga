@@ -506,7 +506,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-10 14:21 · G30 (GitHub)';
+const FASSUNG = '2026-09-10 14:38 · G31 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -514,9 +514,17 @@ const FASSUNG = '2026-09-10 14:21 · G30 (GitHub)';
    er jetzt anders vorfindet.
    Uhrzeit gehört dazu, weil an einem Tag mehrere Fassungen herauskommen können.
    Der oberste Eintrag ist die laufende Fassung und ersetzt die frühere Fußzeile –
-   f/d/z müssen deshalb zu FASSUNG passen, notizen.mjs prüft das. */
+   f/d/z müssen deshalb zu FASSUNG passen, notizen.mjs prüft das.
+   NOTIZ_ANZAHL steht von Haus aus offen, NOTIZ_SCHRITTE mal lassen sich weitere
+   NOTIZ_ANZAHL nachholen – zusammen also höchstens neun. */
 const NOTIZ_ANZAHL = 3;
+const NOTIZ_SCHRITTE = 2;
 const NOTIZEN = [
+  {f:'G31', d:'10.09.2026', z:'14:38', punkte:[
+    'Unter „Änderungen" hinterm Zahnrad stehen jetzt die letzten drei Fassungen offen '
+    + 'da, nicht mehr nur die neueste.',
+    'Wer weiter zurückschauen will, holt mit einem Tipp drei ältere dazu und noch einmal '
+    + 'drei – bis zu neun also. „Wieder einklappen" räumt sie wieder weg.']},
   {f:'G30', d:'10.09.2026', z:'14:21', punkte:[
     'Wo Namen zum Anhaken stehen – beim Eröffnen eines Wochenendes und bei „Wer geht '
     + 'mit?“ – hat jetzt jeder ein Kästchen vor sich, angehaktes gefüllt, abgewähltes leer '
@@ -672,8 +680,8 @@ let rechnung = null, punkteOffen = false, letzteRunde = null;
 let rundeFrage = false, benennen = false, entsperrt = null;
 let sicherBlatt = null, infoZiel = null, erklaer = null;
 /* Kein <details>: zeichnen() baut die Seite bei jedem Abgleich neu auf, und ein
-   offenes <details> klappte dabei wieder zu. */
-let notizenOffen = false;
+   offenes <details> klappte dabei wieder zu. Zählt, wie oft nachgeholt wurde. */
+let notizenStufe = 0;
 let blendeStand = null;
 let stapel = [];
 let vorwahl = null;
@@ -2271,23 +2279,28 @@ function ansichtEinst(){
     + notizBlock();
 }
 
-/* Die neueste Notiz steht offen da, die älteren liegen hinter einem Knopf. Wer
-   wissen will, was sich zuletzt geändert hat, soll nicht erst tippen müssen.
-   Sie trägt zugleich die laufende Fassungskennung – eine eigene Fußzeile dafür
-   stünde direkt darunter und sagte dasselbe noch einmal. */
+/* Die letzten drei Notizen stehen offen da, ältere holt man in Dreierschritten dazu.
+   Wer wissen will, was sich zuletzt geändert hat, soll nicht erst tippen müssen.
+   Die oberste trägt zugleich die laufende Fassungskennung – eine eigene Fußzeile
+   dafür stünde direkt darunter und sagte dasselbe noch einmal. */
+const ZAHLWORT = ['', 'Eine', 'Zwei', 'Drei', 'Vier', 'Fünf'];
 function notizBlock(){
-  const liste = NOTIZEN.slice(0, NOTIZ_ANZAHL);
-  if(!liste.length) return '';
+  if(!NOTIZEN.length) return '';
+  const zeigt = Math.min(NOTIZ_ANZAHL * (notizenStufe + 1), NOTIZEN.length);
   const eine = (n, alt) => '<div class="notiz' + (alt ? ' alt' : '') + '">'
     + '<div class="fkopf">' + esc(n.f) + ' · ' + esc(n.d) + ' · ' + esc(n.z) + '</div><ul>'
     + n.punkte.map(t => '<li>' + esc(t) + '</li>').join('') + '</ul></div>';
-  const rest = liste.slice(1);
-  return eine(liste[0], false)
-    + (rest.length
-        ? (notizenOffen ? rest.map(n => eine(n, true)).join('') : '')
-          + '<button class="knopf leer" style="margin-top:14px" data-tu="notizenAuf">'
-          + (notizenOffen ? 'Frühere Fassungen ausblenden' : 'Frühere Fassungen')
-          + '</button>'
+  const offen = NOTIZEN.length - zeigt;
+  const holt = notizenStufe < NOTIZ_SCHRITTE ? Math.min(NOTIZ_ANZAHL, offen) : 0;
+  return NOTIZEN.slice(0, zeigt).map((n, i) => eine(n, i > 0)).join('')
+    + (holt
+        ? '<button class="knopf leer" style="margin-top:14px" data-tu="notizenMehr">'
+          + (holt === 1 ? 'Eine ältere Fassung'
+                        : (ZAHLWORT[holt] || holt) + ' ältere Fassungen') + '</button>'
+        : '')
+    + (notizenStufe
+        ? '<button class="knopf leer" style="margin-top:8px" data-tu="notizenZu">'
+          + 'Wieder einklappen</button>'
         : '');
 }
 
@@ -2614,8 +2627,8 @@ function ansichtInfo(){
     + '<tr><td class="frage">Wo ist die Tabelle während des Abends?</td><td>Oben rechts das '
     + 'Balkensymbol. Von dort führt ein Knopf zurück zum laufenden Wochenende.</td></tr>'
     + '<tr><td class="frage">Etwas verhält sich anders als beim letzten Mal</td>'
-    + '<td>Hinterm Zahnrad steht unter <em>Änderungen</em>, was die letzten Fassungen gebracht '
-    + 'haben; <em>Frühere Fassungen</em> klappt die davor auf. Die oberste, farbig abgesetzte '
+    + '<td>Hinterm Zahnrad stehen unter <em>Änderungen</em> die letzten drei Fassungen offen da; '
+    + '<em>Drei ältere Fassungen</em> holt zweimal je drei weitere dazu. Die oberste, farbig abgesetzte '
     + 'Zeile ist die, die auf diesem Gerät läuft — steht auf einem anderen Handy eine ältere, '
     + 'hängt dort noch die alte Fassung im Zwischenspeicher, und ein Neuladen der Seite holt '
     + 'sie nach.</td></tr></table></div>'
@@ -3273,7 +3286,8 @@ const tu = {
     if(!infoZiel) window.scrollTo(0,0);
     zeichnen();
   },
-  notizenAuf(){ notizenOffen = !notizenOffen; zeichnen(); },
+  notizenMehr(){ if(notizenStufe < NOTIZ_SCHRITTE) notizenStufe++; zeichnen(); },
+  notizenZu(){ notizenStufe = 0; zeichnen(); },
   weNeu(){ vorwahl = null; ansicht = 'neu'; window.scrollTo(0,0); zeichnen(); },
   weDetail(el){ tu.merken(); detailId = +el.dataset.id; ansicht = 'wedetail'; window.scrollTo(0,0); zeichnen(); },
   wahlAuf(){ state.wahlOffen = !state.wahlOffen; zeichnen(); },

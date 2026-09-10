@@ -298,8 +298,12 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   hoch. Die Uhrzeit hilft beim Unterscheiden, wenn wegen Cache/CDN-Verzögerung kurzzeitig zwei
   Fassungen im Umlauf sind.
 - **Mit der Fassung eine Notiz in `NOTIZEN` anlegen**, neueste zuerst, `{f, d, z, punkte}`. Die
-  Einstellungen zeigen unter *Änderungen* die oberste offen und die beiden darunter hinter
-  „Frühere Fassungen" (`NOTIZ_ANZAHL`, derzeit 3).
+  Einstellungen zeigen unter *Änderungen* die neuesten `NOTIZ_ANZAHL` (3) offen; „Drei ältere
+  Fassungen" holt `NOTIZ_SCHRITTE` mal (2) je drei weitere dazu, macht höchstens neun. Der
+  Hol-Knopf beschriftet sich nach dem, was noch übrig ist, und verschwindet am Ende; „Wieder
+  einklappen" steht erst da, wenn wirklich etwas ausgeklappt ist. Nur die oberste ist farbig
+  abgesetzt, alles darunter trägt `.alt` — sie ist die laufende Fassung, nicht bloß die erste
+  Zeile einer Liste.
   Geschrieben wird **für den, der die App bedient**: was er jetzt anders vorfindet oder neu
   kann. Keine Funktions- und Klassennamen, kein `sha`/`ETag`/`Timer`, und vor allem keine
   Floskeln — „diverse Verbesserungen", „Stabilität erhöht" sagen niemandem etwas. Statt
@@ -312,7 +316,8 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   **Die Uhrzeit gehört dazu**, nicht nur das Datum: an einem Tag gehen durchaus mehrere
   Fassungen raus, und dann sind zwei Zeilen mit demselben Datum nicht auseinanderzuhalten.
   Kein `<details>` dafür: `zeichnen()` baut die Seite bei jedem Abgleich neu auf, ein offenes
-  `<details>` klappte dabei wieder zu. Deshalb hält `notizenOffen` den Zustand.
+  `<details>` klappte dabei wieder zu. Deshalb hält `notizenStufe` den Zustand — eine Zahl,
+  kein Schalter, weil in Schritten nachgeholt wird.
   `FASSUNG` bleibt ein **wörtliches** `const FASSUNG = '…'` — die Prüfung auf eine neuere
   Fassung liest den Quelltext der ausgelieferten Datei mit einem regulären Ausdruck und
   findet einen berechneten Wert nicht.
