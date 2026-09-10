@@ -1,0 +1,11 @@
+{
+  "name": "bubidos-bierliga-tests",
+  "private": true,
+  "description": "Prüfungen für index.html. Gehören nicht zur App: Die bleibt eine einzige Datei ohne Abhängigkeiten und ohne Build-Schritt. Was hier steht, braucht nur, wer die Tests laufen lässt. Einrichten mit `npm install` in diesem Ordner, dann `node alle.mjs`.",
+  "scripts": {
+    "test": "node alle.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.63.0"
+  }
+}

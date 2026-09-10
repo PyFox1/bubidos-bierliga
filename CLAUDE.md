@@ -17,6 +17,38 @@ Build-Schritte, keine Abhängigkeiten außer drei Google Fonts (Anton, Karla, DM
 
 Die Konfiguration steht ganz oben in der Datei zwischen den `======`-Kommentaren.
 
+## Die Tests
+
+Sie liegen in **`tests/`** und steuern einen echten Browser (Playwright) gegen die Datei —
+es gibt nichts zu bauen, sie laden `index.html` direkt.
+
+```
+cd tests && npm install     # einmalig, holt playwright-core
+node tests/alle.mjs         # alles, rund zehn Minuten
+node tests/alle.mjs urkunde # nur, was so heißt
+```
+
+Sie laufen **nacheinander**: Jeder macht seinen eigenen kleinen Webserver auf einem festen
+Port auf, parallel kämen sie sich in die Quere.
+
+Die Tests sind die einzige Ausnahme von „keine Abhängigkeiten" — die gilt der **App**, und die
+bleibt eine Datei. Deshalb steht die `package.json` in `tests/` und nicht im Wurzelverzeichnis.
+
+Zwei Dinge, die man wissen muss, sonst sucht man lange:
+
+- **`zeichnen()` hat ein Fangnetz**, das Ausnahmen schluckt und einen Fehlerbildschirm zeigt.
+  Als `pageerror` taucht davon **nichts** auf — ein kaputtes `ansichtUrkunde()` sieht dann aus
+  wie „die Blende ist halt nicht da". Deshalb hört jeder Test zusätzlich auf
+  `console.error` und schlägt bei `Zeichnen fehlgeschlagen` an. Das war kein hypothetischer
+  Fall: Genau so ist ein echter Fehler zunächst durchgerutscht.
+- **`tests/echt-ki.mjs` läuft nicht mit.** Er geht wirklich an die Anthropic-API, kostet Geld
+  und braucht einen Schlüssel (`ANTHROPIC_API_KEY=… node tests/echt-ki.mjs`). Alle anderen
+  fälschen die Antwort. Er beantwortet, was ein Mock nicht kann: ob die API den Aufruf direkt
+  aus dem Browser durchlässt, ob die Websuche auf diesem Weg funktioniert und wie ein echter
+  Nachrichtenbezug aussieht.
+
+Bilder aus den Tests landen in `tests/bilder/` und stehen in `.gitignore`.
+
 ## Aufbau der Oberfläche
 
 Es gibt **keine Reiterleiste**. Die App hat zwei Grundzustände, `modus()` entscheidet:
@@ -37,7 +69,7 @@ Die Variable `ansicht` überschreibt das für Unteransichten. Werte: `null` (aut
 | `ansichtPerson` | Kacheln, Orden, Wochenenden | Tipp auf einen Namen in der Tabelle |
 | `ansichtWeDetail` | Fazit eines Wochenendes | Tipp auf eine Wochenendzeile |
 | `ansichtEinst` | Nachschlagen, Verwaltung, Änderungen | Zahnrad |
-| `ansichtInfo` | Betriebsanleitung, §1–§11 | aus den Einstellungen oder Erklär-Blättern |
+| `ansichtInfo` | Betriebsanleitung, §1–§12 | aus den Einstellungen oder Erklär-Blättern |
 
 Überlagerungen (`.blende`), gezeichnet in dieser Rangfolge: `foto`, `rechnung`, `punkteOffen`,
 `erklaer`, `blatt` (Sammel-Eingabe), `sicherBlatt`, `benennen`, `wechsler`, `fazitOffen`, zuletzt
@@ -185,7 +217,7 @@ an **drei Stellen**, die auseinanderlaufen können: vergeben werden sie in `fazi
 Blatt `ERKLAERUNGEN.orden`, nachgeschlagen in **§ 6**. Genau das war schon auseinander: das Blatt
 hieß „Die vier Orden" und ließ den *Aufsteiger* aus, während das Fazit ihn vergab — wer im Fazit auf
 die Erklärung tippte, fand einen Orden weniger, als vor ihm stand. Wer einen Orden anfasst, fasst
-alle drei Stellen an; `orden.mjs` im Scratchpad prüft sie gegeneinander.
+alle drei Stellen an; `tests/orden.mjs` prüft sie gegeneinander.
 
 Jeder Orden wird von einem Wert begleitet, und der muss **begründen, warum gerade dieser gewonnen
 hat**. Das *Gleichmaß* zeigte lange den Schnitt („Ø 2,00 BE je Tag") statt der Streuung, auf die es
@@ -246,7 +278,7 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   bevor eine Runde läuft — sonst trägt „Runde für alle" ihm ein Bier ein, das er nie getrunken
   hat (`runde()` trägt bei jedem Schlüssel der Location ein, unabhängig von echter Anwesenheit),
   und ein ganzer verschlafener Tag kostet ihn spürbar Punkte (~20 in einer Dreierrunde,
-  nachgestellt in `tagneu.mjs` im Scratchpad).
+  nachgestellt in `tests/tagneu.mjs`).
 - **Das Deckblatt ist dieselbe Ansicht wie das Eröffnen.** `ansichtNeuesWe()` läuft in zwei Rollen:
   ohne `vorwahl.weId` legt „Los geht’s“ ein Wochenende an, mit `weId` schreibt „Passt“ in das
   laufende zurück (`weKopf` / `weKopfPasst` / `weKopfZu`). Erreichbar über den linken Pfeil der
@@ -414,7 +446,7 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   deshalb `.teiln.haken`: Kästchen vor jedem Namen, abgewähltes leer und durchgestrichen, dazu
   ein Satz darüber, der den Ausgangszustand nennt („Alle sind angehakt“). Reihen, bei denen
   genau eines gilt (`ichBin`, `kiModellWahl`), bleiben ohne — ein Kästchen verspräche dort
-  Mehrfachauswahl. `haken.mjs` im Scratchpad hält beide Seiten fest.
+  Mehrfachauswahl. `tests/haken.mjs` hält beide Seiten fest.
 - **Escaping.** Namen kommen von Nutzern. Alles, was in HTML landet, muss durch `esc()`.
 - **Das Foto-Zählen funktioniert auf GitHub Pages nicht.** Es ruft die Anthropic-API auf, was nur
   innerhalb eines Claude-Artefakts geht. Der Code ist noch da und meldet das ehrlich. Soll
@@ -468,8 +500,12 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   augenzwinkernden DIN-Norm. Wer eine Funktion ändert, ändert den Paragrafen mit.
 - **Das Fangnetz nicht entfernen.** `zeichnen()` fängt Ausnahmen ab und zeigt einen
   Fehlerbildschirm statt einzufrieren. Eine App, die am Bierabend hängenbleibt, ist wertlos.
+- **Nach Änderungen `node tests/alle.mjs` laufen lassen.** Dauert rund zehn Minuten und hat
+  schon mehr gefunden, als beim Schreiben absehbar war. Wer etwas Neues baut, legt eine
+  Testdatei dazu — sie ist der einzige Ort, an dem eine Entscheidung nachprüfbar festgehalten
+  wird, statt nur beschrieben zu sein.
 - **Nach Änderungen prüfen**, dass alle `data-tu`-Aktionen einen Handler im `tu`-Objekt haben —
-  das war mehrfach die Fehlerquelle.
+  das war mehrfach die Fehlerquelle. Jede Testdatei tut das am Ende von sich aus.
 - **Nicht pushen ohne ausdrückliches Go.** Committen ist in Ordnung, `git push` erst nach
   expliziter Freigabe durch den Nutzer in diesem Gespräch.
 
