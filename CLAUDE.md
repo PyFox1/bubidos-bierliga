@@ -104,10 +104,16 @@ hinweg festhält.
    überschriebe alles, was in der Zwischenzeit an anderen Tischen eingetragen wurde. Rest:
    Wer von einer Fassung vor G18 kommt, hat beim ersten Start noch keine Basis — einmalig
    greift dort das alte Verhalten, danach heilt es sich mit dem ersten erfolgreichen Abgleich.
-3. `abgleichen()` vergleicht den `sha` und lädt bei Änderung neu. Den Takt setzt
-   `abgleichPlanen()`: **3 Sekunden**, solange in den letzten zwei Minuten etwas passiert ist
-   (`letzteBewegung` — eigene Eingabe, fremde Änderung oder das Nachvornkommen der App),
-   sonst **20 Sekunden**. Einen Knopf zum Holen gibt es nicht, der Stand ist beim Öffnen da.
+3. `abgleichen()` vergleicht den `sha` und lädt bei Änderung neu. Den Takt setzt `taktMs()`:
+   **3 Sekunden**, solange `state.aktivWe` gesetzt ist — läuft ein Abend und liegt die App
+   vorn, schaut jemand auf den Zählbildschirm und will Zahlen in Echtzeit. Sonst **20
+   Sekunden**; im Hintergrund gleicht `abgleichen()` ohnehin nicht ab.
+   Maßgeblich ist bewusst die Lage, **nicht** „vor kurzem war Bewegung". Eine solche
+   Heuristik stand hier schon und war falsch: Sitzt die Runde zwanzig Minuten und redet,
+   fällt jedes Gerät auf den ruhigen Takt, und das nächste Bier braucht dann bis zu 20
+   Sekunden — nachgemessen in `zweigeraete.mjs` (19,4 s), genau der Fall, über den sich am
+   Tisch jeder ärgert.
+   Einen Knopf zum Holen gibt es nicht, der Stand ist beim Öffnen da.
    Gefragt wird zweistufig: `fernSha()` ruft über `GH_ORDNER()` das **Verzeichnis** ab. Die
    Contents-API liefert dafür die Einträge mit `sha`, aber ohne `content` — ein paar hundert
    Byte statt der ganzen Datei. Erst wenn dieser `sha` von `ghSha` abweicht, wird die Datei
@@ -116,12 +122,19 @@ hinweg festhält.
    `null` für „nicht feststellbar" zurück, dann bleibt es beim bisherigen Stand.
    Dazu der **ETag** des letzten Abrufs als `If-None-Match`. Hat sich nichts getan, antwortet
    GitHub mit 304 ohne Rumpf, und solche Antworten zählen nicht gegen das Stundenkontingent —
-   erst das macht den 3-Sekunden-Takt bei fünf Geräten am selben Token bezahlbar. Reicht ein
-   Browser den Header nicht durch (er ist cross-origin nur lesbar, wenn GitHub ihn über
-   `Access-Control-Expose-Headers` freigibt), bleibt `ordnerEtag` leer und es läuft wie
-   vorher, nur auf Kosten des Kontingents. Als Auffangnetz liest `fernSha()` zusätzlich
-   `X-RateLimit-Remaining`; unter 1000 setzt `kontingentKnapp` den Takt dauerhaft auf ruhig,
-   damit die App am Abend nicht in ein hartes Limit läuft.
+   erst das macht den 3-Sekunden-Takt bei fünf Geräten am selben Token bezahlbar (sonst
+   5 × 1200 = 6.000 Abrufe je Stunde gegen ein Limit von 5.000).
+   Ist der Header cross-origin nicht lesbar — GitHub muss ihn über
+   `Access-Control-Expose-Headers` freigeben —, bleibt `ordnerEtag` leer, und `taktMs()`
+   geht auf `TAKT_SPARSAM` (8 s, macht 2.250/h bei fünf Geräten) statt weiter teuer zu
+   fragen. Vor dem allerersten Abruf ist das noch unbekannt (`etagGeprueft`); bis dahin wird
+   flink getaktet, sonst wäre ausgerechnet das erste Bier des Abends das langsamste.
+   Als Auffangnetz liest `fernSha()` zusätzlich `X-RateLimit-Remaining`; unter 1000 setzt
+   `kontingentKnapp` den Takt dauerhaft auf ruhig.
+   Jeder GitHub-Abruf läuft über `ghHolen()` mit einer Frist von 10 Sekunden. Ohne Abbruch
+   wartet `fetch` im schlechten Netz praktisch endlos — und weil der nächste Abgleich erst
+   nach dem vorigen geplant wird, stünde damit der ganze Takt. `gleichtGerade` verhindert,
+   dass Timer und Sichtbarkeitswechsel gleichzeitig abgleichen.
    Ein ausstehender `schreibTimer` blockiert den Abgleich **nicht** — wer gerade selbst tippt,
    will erst recht sehen, was drüben eingetragen wird. Nur `schreibtGerade` hält ihn auf
    (Race mit dem 409-Pfad). Dafür gilt beim Übernehmen: Steht ein eigener Strich aus

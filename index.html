@@ -487,7 +487,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-10 09:07 · G25 (GitHub)';
+const FASSUNG = '2026-09-10 09:36 · G26 (GitHub)';
 
 /* ====== EINSTELLUNGEN – hier anpassen, falls sich Namen ändern ====== */
 const GH_BESITZER = 'PyFox1';
@@ -546,6 +546,18 @@ const GH_VERLAUF = () => 'https://github.com/' + GH_BESITZER + '/' + GH_REPO
 function ghKopf(){
   return {'Authorization':'Bearer ' + token, 'Accept':'application/vnd.github+json',
           'X-GitHub-Api-Version':'2022-11-28'};
+}
+
+/* Ein Abruf, der im Wirtshaus-Netz hängenbleibt, wartet ohne Abbruch praktisch
+   endlos. Für den Abgleich hieße das: Der Takt friert ein, weil der nächste erst
+   nach dem vorigen geplant wird – und fürs Schreiben, dass schreibtGerade alles
+   Weitere blockiert. Deshalb bekommt jeder GitHub-Abruf eine Frist. */
+const NETZ_FRIST = 10000;
+async function ghHolen(url, opt){
+  const ab = new AbortController();
+  const t = setTimeout(() => ab.abort(), NETZ_FRIST);
+  try{ return await fetch(url, Object.assign({signal:ab.signal}, opt || {})); }
+  finally{ clearTimeout(t); }
 }
 
 const STAERKE = [
@@ -828,7 +840,7 @@ function spiegelLesen(){
 async function laden(){
   if(!token) return false;
   try{
-    const r = await fetch(GH_URL(), {headers:ghKopf(), cache:'no-store'});
+    const r = await ghHolen(GH_URL(), {headers:ghKopf(), cache:'no-store'});
     if(r.status === 404){ ghSha = null; ghFehler = null; basisSetzen(null); return 'leer'; }
     if(r.status === 401 || r.status === 403){ ghFehler = 'token'; return false; }
     if(!r.ok){ ghFehler = 'netz'; return false; }
@@ -845,7 +857,7 @@ async function laden(){
 }
 
 let schreibTimer = null, schreibtGerade = false, nochmalSchreiben = false;
-let letztesSchreiben = 0, letzteBewegung = 0;
+let letztesSchreiben = 0;
 
 /* Am Tisch tippen mehrere gleichzeitig, und ein Bier soll drüben auftauchen,
    solange das Glas noch in der Hand ist. Der erste Tipp nach einer Ruhephase
@@ -866,7 +878,7 @@ async function schreiben(){
       branch: GH_ZWEIG
     };
     if(ghSha) koerper.sha = ghSha;
-    let r = await fetch(GH_SCHREIB(), {method:'PUT', headers:ghKopf(), body:JSON.stringify(koerper)});
+    let r = await ghHolen(GH_SCHREIB(), {method:'PUT', headers:ghKopf(), body:JSON.stringify(koerper)});
     if(r.status === 409 || r.status === 422){
       // Jemand anderes war schneller – dessen Änderungen werden hier eingearbeitet
       const basis = basisDaten;
@@ -876,7 +888,7 @@ async function schreiben(){
       state.stand = Date.now();
       koerper.content = b64enc(JSON.stringify(standDaten(), null, 1));
       koerper.sha = ghSha;
-      r = await fetch(GH_SCHREIB(), {method:'PUT', headers:ghKopf(), body:JSON.stringify(koerper)});
+      r = await ghHolen(GH_SCHREIB(), {method:'PUT', headers:ghKopf(), body:JSON.stringify(koerper)});
       toast('Gleichzeitig geändert – beides zusammengeführt');
     }
     if(r.status === 401 || r.status === 403){ ghFehler = 'token'; zeichnen(); return; }
@@ -896,9 +908,10 @@ async function schreiben(){
 
 async function sichern(opt){
   state.stand = Date.now();
-  letzteBewegung = Date.now();
   spiegelAblegen();
   if(!token) return;
+  /* Neu planen, damit ein frisch eröffnetes Wochenende sofort den flinken Takt
+     bekommt und nicht erst beim nächsten Feuern. */
   abgleichPlanen();
   if(opt && opt.sofort){
     clearTimeout(schreibTimer); schreibTimer = null;
@@ -921,19 +934,20 @@ async function sichern(opt){
    „nicht feststellbar", dann bleibt es beim bisherigen Stand.
    Dazu der ETag des letzten Abrufs: hat sich nichts getan, antwortet GitHub mit 304
    ohne Rumpf, und solche Antworten zählen nicht gegen das Stundenkontingent. Erst
-   das macht den schnellen Takt bezahlbar. Reicht ein Browser den ETag nicht durch,
-   bleibt ordnerEtag leer und es läuft wie vorher, nur eben auf Kosten des
-   Kontingents – deshalb der Blick auf X-RateLimit-Remaining. */
-let ordnerEtag = null, kontingentKnapp = false;
+   das macht den schnellen Takt bezahlbar. Kommt der ETag nicht durch, bleibt
+   ordnerEtag leer, und taktMs() geht auf den sparsamen Takt zurück. Der Blick auf
+   X-RateLimit-Remaining ist das Auffangnetz darunter. */
+let ordnerEtag = null, kontingentKnapp = false, etagGeprueft = false;
 
 async function fernSha(){
   const kopf = ghKopf();
   if(ordnerEtag) kopf['If-None-Match'] = ordnerEtag;
-  const r = await fetch(GH_ORDNER(), {headers:kopf, cache:'no-store'});
+  const r = await ghHolen(GH_ORDNER(), {headers:kopf, cache:'no-store'});
   if(r.status === 304) return ghSha;
   if(!r.ok) return null;
   const et = r.headers.get('ETag');
   if(et) ordnerEtag = et;
+  etagGeprueft = true;
   const rest = r.headers.get('X-RateLimit-Remaining');
   if(rest !== null && rest !== '') kontingentKnapp = Number(rest) < 1000;
   const liste = await r.json();
@@ -946,20 +960,21 @@ async function fernSha(){
    kommt. Damit ist der Stand beim Öffnen da, ohne dass jemand ihn holen muss.
    Ein ausstehender Schreibtimer hält den Abgleich bewusst nicht mehr auf: Wer gerade
    selbst tippt, will erst recht sehen, was drüben eingetragen wird. */
+let gleichtGerade = false;
 async function abgleichen(){
-  if(document.hidden || !token || foto || blatt || schreibtGerade) return;
+  if(document.hidden || !token || foto || blatt || schreibtGerade || gleichtGerade) return;
   /* TEXTAREA gehört dazu: im Wiederherstellen-Blatt steht dort ein eingefügter
      Stand, den ein Neuzeichnen wegwerfen würde. */
   if(document.activeElement && /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) return;
+  gleichtGerade = true;
   try{
     const fern = await fernSha();
     if(fern === null || fern === ghSha) return;
-    const r = await fetch(GH_URL(), {headers:ghKopf(), cache:'no-store'});
+    const r = await ghHolen(GH_URL(), {headers:ghKopf(), cache:'no-store'});
     if(!r.ok) return;
     const j = await r.json();
     if(j.sha === ghSha) return;
     ghSha = j.sha;
-    letzteBewegung = Date.now();
     const roh = b64dec(j.content);
     const d = JSON.parse(roh);
     const basis = basisDaten;
@@ -975,24 +990,40 @@ async function abgleichen(){
     else uebernehmen(zusammenfuehren(basis, JSON.parse(JSON.stringify(standDaten())), d));
     spiegelAblegen(); zeichnen();
   }catch(e){}
+  finally{ gleichtGerade = false; }
 }
 
-/* Der Takt richtet sich danach, ob gerade etwas läuft. Am Bierabend wird ständig
-   eingetragen, da fragt jedes Gerät alle drei Sekunden – dank ETag kostet das
-   nichts, solange sich nichts ändert. Liegt die Runde still, reicht der ruhige
-   Takt und schont den Akku. Wird das Stundenkontingent knapp, bleibt es ruhig. */
-const TAKT_FLINK  = 3000;
-const TAKT_RUHIG  = 20000;
-const FLINK_DAUER = 120000;
+/* Wie oft gefragt wird, hängt nicht daran, ob zuletzt etwas passiert ist – die Runde
+   sitzt auch mal zwanzig Minuten und redet, und das nächste Bier soll trotzdem sofort
+   auf den anderen Geräten stehen. Maßgeblich ist die Lage: Läuft ein Wochenende und
+   ist die App vorn, schaut jemand auf den Zählbildschirm und will Zahlen in Echtzeit.
+   Im Hintergrund gleicht abgleichen() ohnehin nicht ab, im Archiv reicht der ruhige
+   Takt.
+   Der flinke Takt lebt vom ETag: unveränderte Abrufe werden mit 304 beantwortet und
+   zählen nicht gegen das Stundenkontingent. Kommt der Header nicht durch – er ist
+   cross-origin nur lesbar, wenn GitHub ihn freigibt –, bliebe jede Abfrage teuer.
+   Deshalb dann der sparsame Mittelweg statt drei Sekunden: bei fünf Geräten am selben
+   Token wäre das Kontingent sonst vor dem zweiten Bier aufgebraucht. */
+const TAKT_FLINK   = 3000;
+const TAKT_SPARSAM = 8000;
+const TAKT_RUHIG   = 20000;
 let abgleichTimer = null;
+
+function taktMs(){
+  if(kontingentKnapp || !state.aktivWe) return TAKT_RUHIG;
+  /* Vor dem ersten Abruf ist noch nicht bekannt, ob der ETag durchkommt. Bis dahin
+     flink: ein einzelner Abruf fällt nicht ins Gewicht, und das erste Bier des
+     Abends soll nicht ausgerechnet das langsamste sein. */
+  if(!etagGeprueft) return TAKT_FLINK;
+  return ordnerEtag ? TAKT_FLINK : TAKT_SPARSAM;
+}
 
 function abgleichPlanen(){
   clearTimeout(abgleichTimer);
-  const flink = !kontingentKnapp && Date.now() - letzteBewegung < FLINK_DAUER;
   abgleichTimer = setTimeout(async () => {
     await abgleichen();
     abgleichPlanen();
-  }, flink ? TAKT_FLINK : TAKT_RUHIG);
+  }, taktMs());
 }
 abgleichPlanen();
 
@@ -1171,9 +1202,6 @@ async function fassungPruefen(){
 document.addEventListener('visibilitychange', () => {
   if(document.hidden) return;
   fassungPruefen();
-  /* Wer die App gerade wieder aufmacht, sitzt am Tisch und trägt gleich ein –
-     also gilt das als Bewegung und der flinke Takt greift. */
-  letzteBewegung = Date.now();
   abgleichen();
   abgleichPlanen();
 });
@@ -2429,12 +2457,13 @@ function ansichtInfo(){
     + 'hundert Byte. Geladen wird die Datei erst, wenn die Antwort ja lautet. Ein Abend am '
     + 'Tresen kostet damit Kilobyte statt Megabyte, was dem Datentarif und dem Akku '
     + 'gleichermaßen zugutekommt.</p>'
-    + '<p>Der Takt richtet sich nach der Lage: Solange eingetragen wird, fragt jedes Gerät '
-    + 'im <strong>Drei-Sekunden-Takt</strong>, und ein eingetragenes Bier geht ohne Verzögerung '
-    + 'hinaus. Ein Strich ist damit üblicherweise in wenigen Sekunden auf den anderen Geräten. '
-    + 'Liegt die Runde still, fällt der Takt auf zwanzig Sekunden zurück. Ein völlig gleichzeitiges '
-    + 'Bild ist nicht vorgesehen — dafür müsste zwischen den Handys ein Server stehen, und den '
-    + 'gibt es bewusst nicht.</p>'
+    + '<p>Solange ein Wochenende läuft und die App offen vorn liegt, fragt jedes Gerät im '
+    + '<strong>Drei-Sekunden-Takt</strong>, und ein eingetragenes Bier geht ohne Verzögerung '
+    + 'hinaus. Ein Strich steht damit üblicherweise nach drei bis vier Sekunden auf den anderen '
+    + 'Handys — auch dann, wenn die Runde vorher eine halbe Stunde nur geredet hat. Liegt kein '
+    + 'Wochenende an oder ist die App im Hintergrund, fällt der Takt zurück; im Hintergrund wird '
+    + 'gar nicht gefragt. Ein völlig gleichzeitiges Bild ist nicht vorgesehen — dafür müsste '
+    + 'zwischen den Handys ein Server stehen, und den gibt es bewusst nicht.</p>'
     + '<p>Beim <strong>Abschließen</strong> eines Wochenendes wird der Verlauf der Eingaben '
     + 'verworfen — wer wann worauf getippt hat. Er ist nach dem Abend wertlos, macht aber vier '
     + 'Fünftel der Datei aus. Die Getränke bleiben vollständig, und der letzte Stand mitsamt '
@@ -2463,7 +2492,7 @@ function ansichtInfo(){
     + '<tr><td class="frage">Wir waren in fünf Kneipen, es gibt aber nur eine Wertung</td>'
     + '<td>Bestimmungsgemäß, siehe § 3. Die Locations stecken im Tag, nicht daneben.</td></tr>'
     + '<tr><td class="frage">Die Tabelle steht auf dem anderen Handy anders</td><td>Kurz warten: '
-    + 'solange gezählt wird, gleicht jedes Gerät alle drei Sekunden ab, danach alle zwanzig — und '
+    + 'bei laufendem Wochenende gleicht jedes Gerät alle drei Sekunden ab, sonst alle zwanzig — und '
     + 'immer dann, wenn die App wieder nach vorn kommt. Steht '
     + 'oben <em>getrennt</em>, zählt das Gerät absichtlich an einer eigenen Station — dann hilft '
     + '<em>Wieder mitlaufen</em>.</td></tr>'
