@@ -509,7 +509,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-10 15:09 · G32 (GitHub)';
+const FASSUNG = '2026-09-10 15:47 · G33 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -522,6 +522,9 @@ const FASSUNG = '2026-09-10 15:09 · G32 (GitHub)';
    bis die Historie durch ist. */
 const NOTIZ_ANZAHL = 3;
 const NOTIZEN = [
+  {f:'G33', d:'10.09.2026', z:'15:47', punkte:[
+    'Der Zurücknehmen-Knopf bei jedem Namen zeigt jetzt ein − statt eines Pfeils – als '
+    + 'klares Gegenstück zum + daneben.']},
   {f:'G32', d:'10.09.2026', z:'15:09', punkte:[
     'Das + bei einem einzelnen Namen fragt jetzt genauso nach wie „Runde für alle“: Stand '
     + 'bei dem Namen vor weniger als drei Minuten schon ein Getränk, erscheint in seiner '
@@ -529,7 +532,7 @@ const NOTIZEN = [
     'Damit fällt auch der häufigste Doppeleintrag auf – einer tippt die Runde, der andere '
     + 'sieht es nicht und geht die Namen einzeln durch. Ein Bier aus einer Runde zählt dafür '
     + 'mit.',
-    'Wer mit ↶ zurücknimmt oder über den Namen von Hand setzt, wird nicht gefragt: Da '
+    'Wer mit − zurücknimmt oder über den Namen von Hand setzt, wird nicht gefragt: Da '
     + 'korrigiert jemand und hat den Stand vor Augen.',
     'Die Rückfrage sagt jetzt „Gerade eben“ statt „Vor 1 Min“, wenn es erst Sekunden her '
     + 'ist – genau dann, wenn zwei gleichzeitig zum Handy greifen.']},
@@ -1598,7 +1601,7 @@ function ansichtZaehlen(){
           erg[id] ? ' data-tu="rechnungTag" data-id="'+id+'"' : '') + '</div></div>'
       + (rueck ? ''
           : '<button class="zurueck" data-tu="minus" data-id="'+id+'" ' + (gs.length?'':'disabled')
-            + ' aria-label="Zurücknehmen bei '+esc(p.name)+'">↶</button>'
+            + ' aria-label="Zurücknehmen bei '+esc(p.name)+'">−</button>'
             + '<button class="plus' + (vorigeGabe ? ' warnung2' : '') + '" data-tu="strich" data-id="'
             + id + '" aria-label="Getränk für ' + esc(p.name)
             + (vorigeGabe ? ', nochmal tippen zum Bestätigen' : '') + '">+</button>')
@@ -2387,7 +2390,7 @@ function ansichtInfo(){
     + 'alle sehen dieselbe Tabelle.</li>'
     + '<li><strong>Runde für alle</strong> trägt das gewählte Getränk in einem Tipp bei jedem ein, '
     + 'der gerade an dieser Location steht. Direkt darunter erscheint dann „Runde zurücknehmen“, '
-    + 'falls es doch nicht für alle war — wer nichts wollte, kann auch einzeln mit ↶ abgezogen '
+    + 'falls es doch nicht für alle war — wer nichts wollte, kann auch einzeln mit − abgezogen '
     + 'werden.</li>'
     + '<li><strong>Schon eingetragen?</strong> Unter dem Runde-Knopf steht immer die letzte Eingabe '
     + 'mit Uhrzeit und Namen. Lag die vorige Eintragung weniger als drei Minuten zurück, fragt das '
@@ -2395,7 +2398,7 @@ function ansichtInfo(){
     + 'gleichzeitig zum Handy greifen. Das gilt für <strong>Runde für alle</strong> ebenso wie für '
     + 'das <strong>+</strong> bei einem einzelnen Namen; dort steht die Frage in dessen Zeile, und '
     + 'derselbe <strong>+</strong> bestätigt sie. Eine Runde zählt dabei mit: Wer gerade aus einer '
-    + 'Runde ein Bier bekommen hat, löst die Frage aus. Wer stattdessen ↶ drückt oder über den '
+    + 'Runde ein Bier bekommen hat, löst die Frage aus. Wer stattdessen − drückt oder über den '
     + 'Namen von Hand setzt, wird nicht gefragt — er korrigiert ja gerade. Unbeantwortet verfällt '
     + 'die Frage nach sechs Sekunden. '
     + 'Der ganze Abend steht unter <strong>Verlauf an dieser Location</strong>.</li>'
@@ -2406,7 +2409,7 @@ function ansichtInfo(){
     + 'geprüft.</li>'
     + '<li>Beim Zählen zeigt die <strong>Pille</strong> oben das aktuelle Getränk. Ein Tipp klappt '
     + 'Stärke und Größe auf, ein Tipp schließt sie wieder — die Auswahl bleibt stehen, bis ihr sie '
-    + 'ändert. Dann beim Namen auf <strong>+</strong>. <strong>↶</strong> nimmt zurück.</li>'
+    + 'ändert. Dann beim Namen auf <strong>+</strong>. <strong>−</strong> nimmt zurück.</li>'
     + '<li>Nach dem Namen der Station wird überall gefragt: beim Eröffnen des Wochenendes im '
     + 'Formular, bei <strong>+ Tag</strong> und bei <strong>+ Location</strong> jeweils gleich '
     + 'danach. Eingeben oder einfach bestätigen — ohne Eingabe bleibt es bei „Location 1, 2, 3“, '
@@ -2624,7 +2627,7 @@ function ansichtInfo(){
     + '<li><strong>Bei gleichzeitigem Tippen:</strong> Schreiben zwei Handys im selben Moment, '
     + 'wird der fremde Stand geholt und mit dem eigenen <strong>zusammengeführt</strong>, nicht '
     + 'überschrieben. Getränke sind Strichlisten: was beide Seiten eingetragen haben, steht danach '
-    + 'beides da, und ein ↶ bleibt ein ↶. Das ist die Voraussetzung dafür, dass zwei getrennte '
+    + 'beides da, und ein − bleibt ein −. Das ist die Voraussetzung dafür, dass zwei getrennte '
     + 'Grüppchen nebeneinander zählen können, ohne sich gegenseitig Biere wegzuschreiben.</li>'
     + '<li><strong>Auf jedem Gerät</strong> läuft eine stille Nebenkopie des letzten Stands mit, '
     + 'damit die App auch ohne Netz startet.</li></ul>'
