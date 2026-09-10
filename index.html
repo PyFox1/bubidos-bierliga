@@ -487,7 +487,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-10 09:36 · G26 (GitHub)';
+const FASSUNG = '2026-09-10 11:45 · G27 (GitHub)';
 
 /* ====== EINSTELLUNGEN – hier anpassen, falls sich Namen ändern ====== */
 const GH_BESITZER = 'PyFox1';
@@ -1131,7 +1131,7 @@ function fazitVon(e){
     if(auf && auf.delta > 0.05) orden.push({t:'Aufsteiger', w:auf.name, v:'+'+zahl(auf.delta)+' Punkte'});
     const konst = leute.filter(l => l.streuung !== null && l.tage === maxTage && l.be > 0)
                        .sort((a,b) => a.streuung - b.streuung)[0];
-    if(konst) orden.push({t:'Gleichmaß', w:konst.name, v:'Ø '+zahl(konst.schnitt,2)+' BE je Tag'});
+    if(konst) orden.push({t:'Gleichmaß', w:konst.name, v:'± '+zahl(konst.streuung,2)+' BE Schwankung'});
     const maxOrte = Math.max.apply(null, leute.map(l => l.orte));
     const durch = leute.filter(l => l.tage === maxTage && l.orte === maxOrte);
     if(durch.length && durch.length < leute.length && maxOrte > 1)
@@ -2522,11 +2522,13 @@ const ERKLAERUNGEN = {
       + 'zählt 0,66, ein starkes 0,33er 0,92, eine Maß 2,00. Alkoholfrei zählt 0,00.',
       'Gewertet wird also nicht, wie viele Gläser jemand hatte, sondern wie viel tatsächlich drin war. '
       + 'Drei kleine Biere schlagen nicht automatisch zwei große.']},
-  orden: {titel:'Die vier Orden', para:'p6', paraName:'§ 6 Ordensverleihung',
+  orden: {titel:'Die fünf Orden', para:'p6', paraName:'§ 6 Ordensverleihung',
     text:['<b>Deckelkönig</b> — die meisten Biereinheiten über das ganze Wochenende. Belohnt die '
         + 'Menge, und damit auch, wer am längsten dabei war.',
       '<b>Schlagzahl</b> — der höchste Schnitt je Tag. Der Gegenpol: wer erst Samstag anreist und '
       + 'dann abliefert, ist hier voll dabei.',
+      '<b>Aufsteiger</b> — der größte Punktgewinn. Geht auffällig oft an Leute, die vorher hinten '
+      + 'lagen. Das ist kein Fehler, das ist Elo.',
       '<b>Gleichmaß</b> — die geringste Schwankung zwischen den Tagen. Für alle, die auch am '
       + 'Sonntag noch reden können.',
       '<b>Durchhalter</b> — an jedem Tag dabei und bei den meisten Locations. Der einzige Orden, '

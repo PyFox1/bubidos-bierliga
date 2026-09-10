@@ -170,6 +170,22 @@ Array heißt „war da, hat nichts getrunken" — das ist etwas völlig anderes 
 Die Punktzahlen werden **nie gespeichert**, sondern bei jedem Laden aus den Getränkelisten neu
 berechnet. Deshalb kann eine Sicherung nie im Widerspruch zur Tabelle stehen.
 
+**Die fünf Orden** — *Deckelkönig*, *Schlagzahl*, *Aufsteiger*, *Gleichmaß*, *Durchhalter* — stehen
+an **drei Stellen**, die auseinanderlaufen können: vergeben werden sie in `fazitVon()`, erklärt im
+Blatt `ERKLAERUNGEN.orden`, nachgeschlagen in **§ 6**. Genau das war schon auseinander: das Blatt
+hieß „Die vier Orden" und ließ den *Aufsteiger* aus, während das Fazit ihn vergab — wer im Fazit auf
+die Erklärung tippte, fand einen Orden weniger, als vor ihm stand. Wer einen Orden anfasst, fasst
+alle drei Stellen an; `orden.mjs` im Scratchpad prüft sie gegeneinander.
+
+Jeder Orden wird von einem Wert begleitet, und der muss **begründen, warum gerade dieser gewonnen
+hat**. Das *Gleichmaß* zeigte lange den Schnitt („Ø 2,00 BE je Tag") statt der Streuung, auf die es
+vergeben wird — im Fazit stand damit neben der *Schlagzahl* mit Ø 6,00 ein Orden für Ø 2,00, ohne
+dass irgendwas den niedrigeren Wert erklärte. Es zeigt jetzt `± 0,00 BE Schwankung`.
+
+Nicht jedes Wochenende vergibt alle fünf: *Schlagzahl* und *Gleichmaß* brauchen mehr als einen Tag,
+der *Aufsteiger* einen echten Punktgewinn, der *Durchhalter* jemanden, der mehr Locations gesehen
+hat als der Rest. Der Titel „Die fünf Orden" meint den Katalog, nicht den einzelnen Abend.
+
 ## Entscheidungen und ihre Gründe
 
 Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehen.
