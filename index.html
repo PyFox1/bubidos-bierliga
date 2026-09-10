@@ -2216,11 +2216,14 @@ async function anKIText(anweisung){
     if(!r.ok) throw new Error('Fehler ' + r.status);
     const d = await r.json();
     if(d.stop_reason === 'refusal') throw new Error('abgelehnt');
-    return (d.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
+    /* Als Liste und nicht zusammengeklebt: Mit der Websuche stehen zwischen den Blöcken
+       Suchanfragen und Suchergebnisse, und davor oft ein Satz Vorrede („Ich schaue mal
+       nach…"). Gesucht wird deshalb von hinten – die eigentliche Antwort steht zuletzt. */
+    return (d.content || []).filter(b => b.type === 'text').map(b => b.text);
   } finally { clearTimeout(uhr); }
 }
-/* Die Antwort kommt zwischen Suchergebnissen heraus, deshalb nicht stur JSON.parse:
-   erst der ganze Text, dann der Teil von der ersten Klammer bis zur letzten. */
+/* Nicht stur JSON.parse: erst der ganze Block, dann der Teil von der ersten Klammer
+   bis zur letzten. */
 function jsonAusText(s){
   const versuch = t => { try{ return JSON.parse(t); }catch(e){ return null; } };
   const a = versuch(String(s).trim());
@@ -2297,7 +2300,10 @@ async function urkundeHolen(tg, m){
   urkundeLaeuft.add(m.id);
   zeichnen();
   try{
-    const j = jsonAusText(await anKIText(urkundeAnweisung(tg, m)));
+    const bloecke = await anKIText(urkundeAnweisung(tg, m));
+    let j = null;
+    for(let i = bloecke.length - 1; i >= 0 && !j; i--) j = jsonAusText(bloecke[i]);
+    if(!j) j = jsonAusText(bloecke.join('\n'));
     const text = j && typeof j.text === 'string' ? j.text.trim() : '';
     /* Zwischendurch kann ein Abgleich `state.we` ausgetauscht haben – dann zeigt `m`
        auf ein Objekt, das niemand mehr sieht. Deshalb über die Kennung neu suchen. */
