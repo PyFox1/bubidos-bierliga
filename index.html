@@ -230,6 +230,19 @@ input,select{font:inherit}
 .warnung{border-left:3px solid var(--malz);background:rgba(184,117,19,.09);
   padding:13px 15px;margin:0 0 10px;border-radius:0 5px 5px 0}
 .warnung p:last-child{margin-bottom:0}
+/* Der Punkt am Zahnrad zeigt an: dort gibt es etwas zu erledigen, solange die
+   Namensfrage offen ist. */
+.kopf-tasten button.hatpunkt{position:relative}
+.kopf-tasten button.hatpunkt::after{content:'';position:absolute;top:1px;right:1px;
+  width:8px;height:8px;border-radius:50%;background:var(--malz);box-shadow:0 0 0 2px var(--zinn)}
+/* Bewusst zurückhaltend – gestrichelt statt gefüllt, damit sie nicht mit dem Knopf
+   „Wochenende eröffnen“ direkt darunter konkurriert. */
+.namenshinweis{display:flex;width:100%;align-items:center;gap:9px;padding:8px 11px;
+  margin:0 0 14px;border-radius:5px;border:1px dashed var(--linie);background:none;
+  color:#B9BEC6;font-size:12.5px;text-align:left;line-height:1.4}
+.namenshinweis b{color:var(--malz)}
+.namenshinweis .nh-punkt{flex:0 0 auto;width:7px;height:7px;border-radius:50%;background:var(--malz)}
+.namenshinweis .nh-pfeil{flex:0 0 auto;margin-left:auto;color:var(--malz);font-size:16px;line-height:1}
 .info{width:100%;border-collapse:collapse;margin:4px 0 10px;font-size:14px}
 .info td{padding:9px 10px 9px 0;border-bottom:1px solid rgba(82,91,102,.45);
   vertical-align:top;color:#C8CED6;line-height:1.5}
@@ -519,7 +532,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-10 17:30 · G38 (GitHub)';
+const FASSUNG = '2026-09-10 17:50 · G39 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -534,6 +547,10 @@ const FASSUNG = '2026-09-10 17:30 · G38 (GitHub)';
 const NOTIZ_START  = 1;
 const NOTIZ_ANZAHL = 3;
 const NOTIZEN = [
+  {f:'G39', d:'10.09.2026', z:'17:50', punkte:[
+    'Solange dieses Handy noch keinen Namen hat, steht am Zahnrad ein kleiner Punkt, und '
+    + 'im Archiv steht darüber eine Zeile, die direkt zu den Einstellungen führt. Vorher '
+    + 'fand die Namensfrage nur, wer von selbst ins Zahnrad tippte.']},
   {f:'G38', d:'10.09.2026', z:'17:30', punkte:[
     'Der Hinweis beim neuen Wochenende sagt jetzt „trag oben ein, wo ihr seid" statt '
     + '„wie das Wochenende heißen soll" – die Wochenenden heißen ja ohnehin meist nach '
@@ -934,6 +951,9 @@ function geraetName(id){
   return g.name || ('Gerät ' + g.nr);
 }
 const ichName = () => geraetName(gid);
+/* Ob die Namensfrage noch offen ist – für den Punkt am Zahnrad, die Zeile im Archiv und
+   die Box in den Einstellungen. Eine Stelle statt drei, die auseinanderlaufen können. */
+const namensfrageOffen = () => !lokal.lesen(NAMENSFRAGE_KEY);
 async function ichSetzen(name){
   if(!gid) return;
   if(!state.geraete) state.geraete = {};
@@ -2254,9 +2274,19 @@ function ansichtArchiv(){
   const {log} = berechnen();
   const offen = state.we.find(w => w.id === state.aktivWe);
 
-  const start = offen
+  /* Nur hier, nicht auch auf dem Zählbildschirm – dort schöbe sie „Halbe“ und „Runde
+     für alle“ nach unten, und wer mitten am Abend zählt, hat Wichtigeres vor. Der
+     Punkt am Zahnrad (kopfBauen) steht trotzdem überall. Gestrichelt statt gefüllt,
+     damit sie nicht mit „Wochenende eröffnen“ direkt darunter konkurriert. */
+  const namenshinweis = namensfrageOffen()
+    ? '<button class="namenshinweis" data-tu="geheEinst"><span class="nh-punkt"></span>'
+      + '<span>Dieses Handy heißt gerade <b>' + esc(ichName() || '—') + '</b> — tipp hier, '
+      + 'um deinen Namen festzulegen</span><span class="nh-pfeil">›</span></button>'
+    : '';
+
+  const start = namenshinweis + (offen
     ? '<button class="knopf voll" data-tu="geheZaehlen">Zurück zu „' + esc(offen.titel) + '“</button>'
-    : '<button class="knopf voll" data-tu="weNeu">Wochenende eröffnen</button>';
+    : '<button class="knopf voll" data-tu="weNeu">Wochenende eröffnen</button>');
 
   if(!state.spieler.length){
     return start + '<div class="leerzustand"><h2>Wer trinkt mit?</h2>'
@@ -2324,7 +2354,7 @@ function ansichtEinst(){
      kommt jahrelang niemand darauf zurück. Also steht die Frage ganz oben, solange sie
      offen ist, und verschwindet, sobald sie einmal beantwortet wurde; auch dann, wenn
      die Antwort „nur die Nummer" lautet. Später ist der Name unter Verwaltung erreichbar. */
-  const frageOffen = !lokal.lesen(NAMENSFRAGE_KEY);
+  const frageOffen = namensfrageOffen();
 
   return (frageOffen
       ? '<div class="abschnitt oben zuerst">Zuerst</div>'
@@ -3250,7 +3280,7 @@ function kopfBauen(m){
       + '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" '
       + 'stroke-linecap="round" aria-hidden="true">'
       + '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></button>'
-      + '<button data-tu="geheEinst" aria-label="Einstellungen">'
+      + '<button data-tu="geheEinst" class="' + (namensfrageOffen() ? 'hatpunkt' : '') + '" aria-label="Einstellungen">'
       + '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" '
       + 'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
       + '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'
@@ -3292,7 +3322,7 @@ function kopfBauen(m){
     + '<div class="kopf-mitte"><div class="kopf-wort">Bubidos Bierliga</div>'
     + '<div class="kopf-zahlen">' + zahlen + '</div></div>'
     + '<div class="kopf-tasten">'
-    + '<button data-tu="geheEinst" aria-label="Einstellungen">'
+    + '<button data-tu="geheEinst" class="' + (namensfrageOffen() ? 'hatpunkt' : '') + '" aria-label="Einstellungen">'
     + '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" '
     + 'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
     + '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'

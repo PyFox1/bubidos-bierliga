@@ -282,6 +282,16 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
     dafür der lokale Merker `NAMENSFRAGE_KEY`. Ohne ihn ließe sich „ich will die Nummer"
     nicht von „noch nicht gefragt" unterscheiden, und der Block stünde jemandem dauerhaft
     im Weg, der sich bewusst dagegen entschieden hat.
+    Die Box allein hilft nur, wer von sich aus aufs Zahnrad tippt. Deshalb trägt der
+    Zahnrad-Knopf zusätzlich einen Punkt (`.hatpunkt`), solange `namensfrageOffen()` gilt
+    — auf dem Zählbildschirm genauso wie im Archiv. Im Archiv steht zusätzlich eine
+    gestrichelte Zeile über „Wochenende eröffnen“, die per Tipp direkt in die
+    Einstellungen springt. Nicht auf dem Zählbildschirm: dort schöbe sie „Halbe“ und
+    „Runde für alle“ nach unten, und wer mitten am Abend zählt, hat Wichtigeres vor —
+    der Punkt am Zahnrad reicht dort. Bewusst gestrichelt statt gefüllt wie die Box selbst,
+    damit sie nicht mit dem Knopf direkt darunter um Aufmerksamkeit konkurriert.
+    `namensfrageOffen()` ist die eine Stelle für „ist die Frage noch offen" — Box, Punkt
+    und Zeile fragen alle dieselbe Funktion, sonst laufen sie irgendwann auseinander.
   - **Nachschlagen** und **Änderungen** stehen offen da.
   - **Verwaltung** klappt alles Seltene auf: Dieses Gerät, Regler, Die Bubidos, Sichern,
     Verbindung. Zustand in `verwaltungOffen` — kein `<details>`, aus demselben Grund wie bei
