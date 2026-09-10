@@ -147,6 +147,9 @@ input,select{font:inherit}
 .abschnitt{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
   color:#98A0AA;margin:26px 2px 6px;padding-top:16px;border-top:1px solid var(--linie)}
 .abschnitt.oben{border-top:none;padding-top:0;margin-top:18px}
+/* Die Namensfrage soll als offene Aufgabe auffallen, nicht als eine Überschrift unter
+   vielen gleich grauen. */
+.abschnitt.zuerst{color:var(--malz)}
 /* Sieht aus wie ein .abschnitt, lässt sich aber antippen. Kein <details>: zeichnen()
    baut die Seite bei jedem Abgleich neu auf und klappte es wieder zu. */
 .aufklapp{display:block;width:100%;text-align:left;font-family:var(--mono);font-size:10px;
@@ -2317,11 +2320,11 @@ function ansichtEinst(){
   const frageOffen = !lokal.lesen(NAMENSFRAGE_KEY);
 
   return (frageOffen
-      ? '<div class="abschnitt oben">Zuerst</div>'
-        + '<p class="hinweis" style="margin:6px 2px 0">Dieses Handy heißt gerade '
+      ? '<div class="abschnitt oben zuerst">Zuerst</div>'
+        + '<div class="warnung"><p style="margin:0">Dieses Handy heißt gerade '
         + '<b style="color:var(--malz)">' + esc(ichName() || '—') + '</b>. Tipp auf deinen Namen, '
         + 'dann steht der im Verlauf an jeder Eingabe statt der Nummer.</p>'
-        + namensChips
+        + namensChips + '</div>'
       : '')
 
     + '<div class="abschnitt' + (frageOffen ? '' : ' oben') + '">Nachschlagen</div>'
