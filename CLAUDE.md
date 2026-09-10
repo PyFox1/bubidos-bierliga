@@ -71,9 +71,16 @@ hinweg festhält.
 
 ## Speicher-Ablauf
 
-1. `sichern()` merkt sich den Stand lokal und plant das Schreiben in **2,5 Sekunden** ein.
-   Weitere Änderungen verschieben den Termin — eine Serie von Tipps wird ein Commit.
-   `sichern({sofort:true})` schreibt ohne Verzögerung.
+1. `sichern()` merkt sich den Stand lokal und schreibt **sofort**, wenn seit dem letzten
+   Schreibvorgang mehr als `SCHREIB_RUHE` (4 s) vergangen ist. Sonst plant es das Schreiben
+   in `SCHREIB_FENSTER` (2,5 s) ein, und weitere Änderungen verschieben den Termin — eine
+   Serie von Tipps wird ein Commit. Der erste Strich nach einer Pause ist damit ohne
+   Verzögerung draußen, was am Tisch den Unterschied macht.
+   `sichern({sofort:true})` schreibt in jedem Fall ohne Verzögerung.
+   `schreibTimer` **muss** beim Feuern auf `null` zurückgesetzt werden. Vergessen war das
+   ein stiller Totalausfall: Die abgelaufene Timer-Kennung bleibt als Zahl stehen, und der
+   Abgleich hielt sie für einen laufenden Schreibvorgang — nach dem ersten eingetragenen
+   Bier kam auf dem Gerät nichts mehr von den anderen an, bis die Seite neu geladen wurde.
 2. `schreiben()` schickt die Datei mit dem bekannten `sha`. Antwortet GitHub mit **409**, war
    jemand schneller: Der fremde Stand wird geladen und über `zusammenfuehren()` mit dem eigenen
    verschmolzen, dann erneut geschrieben. Drei Wege — `basisDaten` ist der zuletzt vom Server
@@ -97,15 +104,31 @@ hinweg festhält.
    überschriebe alles, was in der Zwischenzeit an anderen Tischen eingetragen wurde. Rest:
    Wer von einer Fassung vor G18 kommt, hat beim ersten Start noch keine Basis — einmalig
    greift dort das alte Verhalten, danach heilt es sich mit dem ersten erfolgreichen Abgleich.
-3. `abgleichen()` vergleicht den `sha` und lädt bei Änderung neu — alle 25 Sekunden und
-   zusätzlich, sobald die App wieder nach vorn kommt. Einen Knopf zum Holen gibt es nicht,
-   der Stand ist beim Öffnen da.
+3. `abgleichen()` vergleicht den `sha` und lädt bei Änderung neu. Den Takt setzt
+   `abgleichPlanen()`: **3 Sekunden**, solange in den letzten zwei Minuten etwas passiert ist
+   (`letzteBewegung` — eigene Eingabe, fremde Änderung oder das Nachvornkommen der App),
+   sonst **20 Sekunden**. Einen Knopf zum Holen gibt es nicht, der Stand ist beim Öffnen da.
    Gefragt wird zweistufig: `fernSha()` ruft über `GH_ORDNER()` das **Verzeichnis** ab. Die
    Contents-API liefert dafür die Einträge mit `sha`, aber ohne `content` — ein paar hundert
    Byte statt der ganzen Datei. Erst wenn dieser `sha` von `ghSha` abweicht, wird die Datei
    selbst geholt. Der `sha` aus der Liste ist der git-Blob-Hash, also derselbe Wert wie beim
    Datei-Abruf und beim Schreiben; das ist gegen die echte API geprüft. `fernSha()` gibt
    `null` für „nicht feststellbar" zurück, dann bleibt es beim bisherigen Stand.
+   Dazu der **ETag** des letzten Abrufs als `If-None-Match`. Hat sich nichts getan, antwortet
+   GitHub mit 304 ohne Rumpf, und solche Antworten zählen nicht gegen das Stundenkontingent —
+   erst das macht den 3-Sekunden-Takt bei fünf Geräten am selben Token bezahlbar. Reicht ein
+   Browser den Header nicht durch (er ist cross-origin nur lesbar, wenn GitHub ihn über
+   `Access-Control-Expose-Headers` freigibt), bleibt `ordnerEtag` leer und es läuft wie
+   vorher, nur auf Kosten des Kontingents. Als Auffangnetz liest `fernSha()` zusätzlich
+   `X-RateLimit-Remaining`; unter 1000 setzt `kontingentKnapp` den Takt dauerhaft auf ruhig,
+   damit die App am Abend nicht in ein hartes Limit läuft.
+   Ein ausstehender `schreibTimer` blockiert den Abgleich **nicht** — wer gerade selbst tippt,
+   will erst recht sehen, was drüben eingetragen wird. Nur `schreibtGerade` hält ihn auf
+   (Race mit dem 409-Pfad). Dafür gilt beim Übernehmen: Steht ein eigener Strich aus
+   (`schreibTimer` oder `nochmalSchreiben`), gewinnt der fremde Stand **nie** pauschal, auch
+   wenn sein `stand` neuer ist — er kann diesen Strich gar nicht enthalten und würde ihn
+   wegwerfen. Dann wird zusammengeführt. Ohne offene Eingabe bleibt es beim einfachen
+   Übernehmen.
 4. Ohne Verbindung startet die App aus der lokalen Notfallkopie (`SPIEGEL_KEY`) mit Hinweis.
 5. **Export/Import** in den Einstellungen als zusätzliche Sicherung außerhalb von GitHub.
 
