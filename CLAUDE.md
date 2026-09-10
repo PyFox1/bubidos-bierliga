@@ -39,8 +39,11 @@ Die Variable `ansicht` überschreibt das für Unteransichten. Werte: `null` (aut
 | `ansichtEinst` | Nachschlagen, Verwaltung, Änderungen | Zahnrad |
 | `ansichtInfo` | Betriebsanleitung, §1–§11 | aus den Einstellungen oder Erklär-Blättern |
 
-Überlagerungen (`.blende`), gezeichnet in dieser Rangfolge: `foto`, `rechnung`, `erklaer`,
-`blatt` (Sammel-Eingabe), `sicherBlatt`, `benennen`, `wechsler`, `fazitOffen`.
+Überlagerungen (`.blende`), gezeichnet in dieser Rangfolge: `foto`, `rechnung`, `punkteOffen`,
+`erklaer`, `blatt` (Sammel-Eingabe), `sicherBlatt`, `benennen`, `wechsler`, `fazitOffen`, zuletzt
+die **Urkunde**. Die ist die einzige, die nicht an einer Variablen hängt, sondern am Datenbestand
+(`offeneUrkunde()`) — deshalb steht sie hinten: Sie muss sich vor kein offenes Eingabeblatt
+drängen, sie wartet ohnehin.
 
 `benennen` ist ein Objekt, kein Schalter: `{ortId, mit?, name?}`. `mit` trägt die Vorauswahl
 für „Wer geht mit?“ und fehlt beim neuen Tag, `name` hält den eingetippten Ortsnamen fest,
@@ -68,6 +71,8 @@ hinweg festhält.
 - `aktuell()` / `pinGueltig()` — wo dieses Gerät steht, siehe Aufteilung
 - `zeichnen()` — Fangnetz, ruft `zeichnenRoh()`
 - `ERKLAERUNGEN` — die Erklär-Blätter, jedes mit Verweis auf einen Paragrafen-Anker
+- `markenPruefen()` — legt fällige Tagesmarken an, `offeneUrkunde()` sucht die nächste zu zeigende
+- `urkundeHolen()` / `anKIText()` — der Urkundentext über die API, mit Websuche
 
 ## Speicher-Ablauf
 
@@ -157,6 +162,10 @@ Größen: `033`, `05`, `10`.
 
 **Anwesenheit** = die Person ist ein Schlüssel im `getraenke`-Objekt der Location. Ein leeres
 Array heißt „war da, hat nichts getrunken" — das ist etwas völlig anderes als „war nicht da".
+
+Am Tag hängt außerdem `tag.marken`: die ausgestellten Urkunden, je eine
+`{id, pid, stufe, t, be, text, kopf?, quelle}`. Die `id` ist fest aus `tagId:pid:stufe` gebaut
+und nicht gewürfelt — siehe Tagesmarken weiter unten.
 
 ## Die Wertung
 
@@ -311,7 +320,43 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   alten Beständen wird nicht mehr gelesen, wie schon der `deckel`.
 - **Erklärungen sitzen im Kontext, nicht in der Anleitung.** Tipp auf eine Zahl öffnet ein kurzes
   Blatt mit Verweis in den passenden Paragrafen. Die Betriebsanleitung ist Nachschlagewerk,
-  kein Einstieg. Jeder Paragraf hat einen Anker `p1` bis `p11`.
+  kein Einstieg. Jeder Paragraf hat einen Anker `p1` bis `p12`. Wer einen Paragrafen einschiebt,
+  muss die `para`-Verweise in `ERKLAERUNGEN` mitziehen — dort stehen Anker *und* Klartextname
+  (`§ 7 Technische Daten`), und beide laufen sonst auseinander.
+- **Tagesmarken: 10, 18 und 25 BE je Person und Tag.** Wer eine Stufe reißt, bekommt eine
+  Urkunde. Die Entscheidungen dahinter:
+  - **Die Marke liegt im Datenbestand, nicht in einer Variablen.** Sonst ginge sie bei jedem
+    Neuzeichnen wieder auf, sähe sie nur das Handy, das das Bier getippt hat, und jedes Gerät
+    bekäme einen anderen Text. So verteilt der Abgleich sie wie alles andere.
+  - **Abgehakt wird lokal** (`URKUNDEN_KEY`), nicht im Bestand. Stünde es dort, tippte der Erste
+    sie für alle weg — und genau das soll nicht sein: Wer sein Handy in der Tasche hatte, soll
+    sie beim nächsten Öffnen noch vorfinden, notfalls am Morgen danach.
+  - **Die Kennung ist `tagId:pid:stufe`**, nicht gewürfelt. Legen zwei Geräte dieselbe Marke
+    gleichzeitig an, führt `markenVereinen()` sie über die Kennung zusammen statt sie zu
+    verdoppeln. Aus demselben Grund wird auch der Ersatztext aus der Kennung gewählt und nicht
+    zufällig: Dann steht auf beiden Geräten derselbe.
+  - **Der Ersatztext steht sofort drin, der API-Text ersetzt ihn später.** Andersherum hinge am
+    Bierabend eine leere Urkunde im Netz, und ohne hinterlegten Schlüssel gäbe es nie eine. Beim
+    Zusammenführen gewinnt deshalb `quelle:'ki'` gegen `quelle:'ersatz'`.
+    Nach dem `await` wird die Marke über `markeFinden()` neu gesucht: Ein Abgleich dazwischen
+    kann `state.we` ausgetauscht haben, und der Text landete sonst in einem Objekt, das
+    niemand mehr sieht.
+  - **Gestaffelt wird die Fläche, nicht nur der Text.** 10 ist ein Blatt von unten, 18 eine Karte
+    in der Mitte, 25 nimmt den ganzen Bildschirm. Das erkennt man auch in fortgeschrittener
+    Stunde noch, und darum ging es. Die 25 trägt bewusst kein `data-tu` auf der Blende — wer so
+    weit gekommen ist, drückt den Knopf, statt sie aus Versehen wegzuwischen.
+  - **Der Text nimmt Bezug auf eine echte Nachricht.** Dafür läuft der API-Aufruf mit dem
+    Websuche-Werkzeug; das Modell weiß von sich aus nicht, was heute in der Zeitung stand. Die
+    Suche läuft serverseitig, ein Aufruf genügt also — keine Werkzeugschleife. Im Prompt steht
+    ausdrücklich: nichts Trauriges, und weder Quelle noch Schlagzeile nennen, der Bezug muss
+    sich aus dem Satz ergeben.
+- **`SLANG` ist der Wortschatz der Runde** und geht sowohl in die Anweisung an die API als auch
+  in die Ersatztexte — sonst klängen die beiden verschieden. Erweitern heißt: eine Zeile dazu.
+  **Die Beispiele sind wichtiger als die Bedeutung.** „Peter" ist keine Anrede und kein Füllwort,
+  sondern eine Silbe, die mitten in ein Wort geschoben wird, am liebsten an der Fuge eines
+  zusammengesetzten Wortes: *Bierpetereinheiten*, *ordnungspetergemäß*, *Legendenpeterbildung*.
+  Ohne die Beispielliste streut das Modell es als Einzelwort ein, und dann ist der Witz weg.
+  `urkunde.mjs` prüft, dass zu jedem Eintrag Bedeutung und Beispiele stehen.
 - **Das Eingabe-Tagebuch wird beim Abschließen eines Wochenendes gelöscht.** Gemessen macht es
   rund 81 % der Dateigröße aus und ist nach dem Abend wertlos: gelesen wird `ort.log` nur auf
   dem Zählbildschirm und für die Warnung vor der doppelten Runde. Die Getränkedaten bleiben
@@ -319,7 +364,11 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   Umgesetzt an drei Stellen, damit die Regel überall gilt: `weSchliessen()` räumt beim
   Abschließen auf, `migrieren()` bei jedem Laden für alle bereits abgeschlossenen Wochenenden
   (räumt also Altbestände nach), und `zusammenfuehren()` zum Schluss — sonst holt der Abgleich
-  das Tagebuch von einem Gerät zurück, das den Abschluss noch nicht kennt.
+  das Tagebuch von einem Gerät zurück, das den Abschluss noch nicht kennt. Die Funktion heißt
+  deshalb `abgeschlossenAufraeumen()` und nicht mehr `tagebuchWeg()`: Sie wirft inzwischen auch
+  den **Wortlaut der Urkunden** weg. Die Marke selbst — wer, wann, welche Stufe — sind ein paar
+  Dutzend Byte und bleibt; der Text sind ein paar hundert, und gebraucht wird er nur, bis ihn
+  jedes Handy einmal gesehen hat. Das ist am Ende des Wochenendes vorbei.
   Mit dem 1-MB-Limit der Contents-API gerechnet: mit Tagebuch war bei 23 Wochenenden ≈ 9 Jahren
   Schluss, jetzt bei 117 ≈ 47 Jahren.
 
@@ -328,6 +377,12 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
 - **Klassennamen.** `.plus` ist der große Getränke-Knopf. Der Δ-Chip hieß früher ebenfalls
   `plus` und hat dessen Aussehen geerbt — die Tabelle war zerschossen. Deshalb heißen die
   Δ-Klassen jetzt `dplus`, `dminus`, `dnull`. Bei neuen Klassennamen auf Kollisionen achten.
+  **Die Kehrseite:** Eine neue Überlagerung braucht die Klasse `blende` mit, auch wenn sie
+  ihren eigenen Namensraum hat. An `.blende` hängen `zeichnenRoh()` (räumt die alte weg), die
+  Wischsperre und die Tastensperre. Die Urkunde hieß erst nur `.u-blende` — sie wurde nie
+  weggeräumt, stapelte sich bei jedem Zeichnen, und der Wisch zur nächsten Location ging
+  mitten durch sie hindurch. Sie heißt jetzt `blende u-blende s1|s2|s3`, und weil die
+  `u-`-Regeln hinter `.blende` im Stylesheet stehen, gewinnen sie bei gleicher Spezifität.
 - **Dateigrößen-Grenze.** Die GitHub-Contents-API liefert Inhalte nur bis 1 MB. Hochgerechnet
   reicht das ohne Tagebuch für Jahrzehnte. Wird es eng: alte Jahrgänge in eigene Dateien.
 - **Namensreihen mit Vorauswahl brauchen Kästchen.** `.teiln` allein sieht bei durchweg
