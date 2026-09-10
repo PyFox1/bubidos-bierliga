@@ -158,6 +158,18 @@ input,select{font:inherit}
 .teiln button{padding:9px 14px;border-radius:999px;border:1px solid var(--linie);
   font-size:14px;font-weight:600;color:#98A0AA}
 .teiln button[data-an="1"]{background:var(--deckel);border-color:var(--deckel);color:var(--tinte)}
+/* Für Reihen, in denen von Haus aus alles angehakt ist. Ohne Kästchen liest sich so eine
+   Reihe wie lauter Knöpfe zum Drücken, und der erste Tipp wählt versehentlich ab –
+   genau das ist im Test passiert. Nur für Mehrfachauswahl, nicht für die Chip-Reihen,
+   bei denen genau eines gilt (Gerätename, Modell). */
+.teiln.haken button{padding-left:36px;position:relative}
+.teiln.haken button::before{content:'';position:absolute;left:12px;top:50%;margin-top:-8px;
+  width:16px;height:16px;box-sizing:border-box;border-radius:4px;border:1.5px solid #98A0AA}
+.teiln.haken button[data-an="1"]::before{background:var(--tinte);border-color:var(--tinte)}
+.teiln.haken button[data-an="1"]::after{content:'';position:absolute;left:17px;top:50%;
+  margin-top:-6px;width:6px;height:10px;box-sizing:border-box;
+  border:solid var(--deckel);border-width:0 2px 2px 0;transform:rotate(45deg)}
+.teiln.haken button[data-an="0"]{text-decoration:line-through;text-decoration-thickness:1px}
 .mini{font-family:var(--mono);font-size:11px;color:var(--tinte-weich)}
 .zahlfeld{display:flex;align-items:center;justify-content:space-between;gap:12px;
   padding:12px 0;border-bottom:1px solid var(--linie)}
@@ -494,7 +506,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-10 14:10 · G29 (GitHub)';
+const FASSUNG = '2026-09-10 14:21 · G30 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -505,6 +517,13 @@ const FASSUNG = '2026-09-10 14:10 · G29 (GitHub)';
    f/d/z müssen deshalb zu FASSUNG passen, notizen.mjs prüft das. */
 const NOTIZ_ANZAHL = 3;
 const NOTIZEN = [
+  {f:'G30', d:'10.09.2026', z:'14:21', punkte:[
+    'Wo Namen zum Anhaken stehen – beim Eröffnen eines Wochenendes und bei „Wer geht '
+    + 'mit?“ – hat jetzt jeder ein Kästchen vor sich, angehaktes gefüllt, abgewähltes leer '
+    + 'und durchgestrichen.',
+    'Vorher sah die Reihe aus wie Knöpfe zum Auswählen, dabei ist von vornherein jeder '
+    + 'angehakt und ein Tipp nimmt einen heraus. Wer sie der Reihe nach antippte, hatte am '
+    + 'Ende alle abgewählt.']},
   {f:'G29', d:'10.09.2026', z:'14:10', punkte:[
     'Der Pfeil links neben den Punkten führt an der ersten Location jetzt zurück auf '
     + 'das Wochenende – dorthin, wo Name, Datum und die erste Runde eingetragen wurden.',
@@ -1389,8 +1408,8 @@ function ansichtNeuesWe(){
     + '<span class="pille-be">' + dabei + '/' + alle + '</span>'
     + '<span class="pille-pfeil">' + (vorwahl.offen ? '⌃' : '⌄') + '</span></button>'
     + (vorwahl.offen ? '<div class="wahl-auf">'
-      + '<p class="mini" style="margin:8px 0 0">Antippen schaltet aus und wieder ein.</p>'
-      + '<div class="teiln" id="vorauswahl">'
+      + '<p class="mini" style="margin:8px 0 0">Alle sind angehakt. Tipp ab, wer nicht dabei war.</p>'
+      + '<div class="teiln haken" id="vorauswahl">'
       + state.spieler.map(p => '<button data-tu="vorAn" data-id="'+p.id+'" data-an="'
           + (an(p.id)?1:0) + '">' + esc(p.name)
           + (striche(p.id) ? '<span class="neuzugang">' + striche(p.id) + '×</span>' : '')
@@ -2802,7 +2821,8 @@ function ansichtBenennen(){
   const bleibt = mit ? hier.filter(id => !an(id)) : [];
   const teilung = mit && hier.length > 1
     ? '<div class="wahl-titel" style="margin-top:16px">Wer geht mit?</div>'
-      + '<div class="teiln">'
+      + '<p class="mini" style="margin:6px 0 0">Alle sind angehakt. Tipp ab, wer sitzen bleibt.</p>'
+      + '<div class="teiln haken">'
       + hier.map(id => '<button data-tu="mitAn" data-id="' + esc(id) + '" data-an="'
           + (an(id) ? 1 : 0) + '">' + esc(nameZu(id)) + '</button>').join('')
       + '</div>'

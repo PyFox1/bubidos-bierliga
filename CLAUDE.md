@@ -270,6 +270,13 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   Δ-Klassen jetzt `dplus`, `dminus`, `dnull`. Bei neuen Klassennamen auf Kollisionen achten.
 - **Dateigrößen-Grenze.** Die GitHub-Contents-API liefert Inhalte nur bis 1 MB. Hochgerechnet
   reicht das ohne Tagebuch für Jahrzehnte. Wird es eng: alte Jahrgänge in eigene Dateien.
+- **Namensreihen mit Vorauswahl brauchen Kästchen.** `.teiln` allein sieht bei durchweg
+  angehakten Namen aus wie eine Reihe Knöpfe zum Auswählen — im Test hat jemand sie der Reihe
+  nach angetippt, um „dabei“ zu markieren, und damit alle abgewählt. Mehrfachauswahl bekommt
+  deshalb `.teiln.haken`: Kästchen vor jedem Namen, abgewähltes leer und durchgestrichen, dazu
+  ein Satz darüber, der den Ausgangszustand nennt („Alle sind angehakt“). Reihen, bei denen
+  genau eines gilt (`ichBin`, `kiModellWahl`), bleiben ohne — ein Kästchen verspräche dort
+  Mehrfachauswahl. `haken.mjs` im Scratchpad hält beide Seiten fest.
 - **Escaping.** Namen kommen von Nutzern. Alles, was in HTML landet, muss durch `esc()`.
 - **Das Foto-Zählen funktioniert auf GitHub Pages nicht.** Es ruft die Anthropic-API auf, was nur
   innerhalb eines Claude-Artefakts geht. Der Code ist noch da und meldet das ehrlich. Soll
