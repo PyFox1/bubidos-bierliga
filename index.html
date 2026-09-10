@@ -519,7 +519,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-10 17:20 · G37 (GitHub)';
+const FASSUNG = '2026-09-10 17:30 · G38 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -534,6 +534,10 @@ const FASSUNG = '2026-09-10 17:20 · G37 (GitHub)';
 const NOTIZ_START  = 1;
 const NOTIZ_ANZAHL = 3;
 const NOTIZEN = [
+  {f:'G38', d:'10.09.2026', z:'17:30', punkte:[
+    'Der Hinweis beim neuen Wochenende sagt jetzt „trag oben ein, wo ihr seid" statt '
+    + '„wie das Wochenende heißen soll" – die Wochenenden heißen ja ohnehin meist nach '
+    + 'dem Ort.']},
   {f:'G37', d:'10.09.2026', z:'17:20', punkte:[
     'Die Namensfrage ganz oben in den Einstellungen fällt jetzt auf – in Orange und mit '
     + 'eigener Box, statt wie eine graue Überschrift unter vielen unterzugehen.']},
@@ -1516,7 +1520,7 @@ function ansichtNeuesWe(){
                  : 'Zum Start braucht es zwei — Elo vergleicht paarweise. Wer noch am '
                    + 'Parkplatz steht, kommt später dazu.') + '</p>' : '')
     + (titelLeer ? '<p class="hinweis" id="weTitelHinweis" style="margin:14px 2px 0">'
-        + 'Ohne Namen kein Start — trag oben ein, wie das Wochenende heißen soll.</p>' : '')
+        + 'Ohne Namen kein Start — trag oben ein, wo ihr seid.</p>' : '')
     + (verlust.length ? '<div class="warnung"><p>'
         + verlust.map(p => esc(p.name) + ' hat hier ' + striche(p.id) + ' '
             + (striche(p.id) === 1 ? 'Getränk' : 'Getränke')).join(', ')
