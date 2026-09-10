@@ -278,6 +278,13 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   `JJJJ-MM-TT HH:MM · G<n> (GitHub)`, Uhrzeit lokal (Europa/Berlin), `<n>` bei jeder Änderung eins
   hoch. Die Uhrzeit hilft beim Unterscheiden, wenn wegen Cache/CDN-Verzögerung kurzzeitig zwei
   Fassungen im Umlauf sind.
+- **Mit der Fassung eine Notiz in `NOTIZEN` anlegen**, neueste zuerst, `{f, d, punkte}`. Die
+  Einstellungen zeigen unter *Änderungen* die oberste offen und die beiden darunter hinter
+  „Frühere Fassungen" (`NOTIZ_ANZAHL`, derzeit 3). Geschrieben wird in der Sprache der Runde,
+  nicht in der des Quelltextes: was am Tisch auffiel, nicht welche Funktion angefasst wurde.
+  Der Eintrag ganz oben **muss** zur laufenden `FASSUNG` gehören — `notizen.mjs` prüft das.
+  Kein `<details>` dafür: `zeichnen()` baut die Seite bei jedem Abgleich neu auf, ein offenes
+  `<details>` klappte dabei wieder zu. Deshalb hält `notizenOffen` den Zustand.
 - **Die Betriebsanleitung mitpflegen.** Sie ist Teil der Datei (`ansichtInfo`), im Ton einer
   augenzwinkernden DIN-Norm. Wer eine Funktion ändert, ändert den Paragrafen mit.
 - **Das Fangnetz nicht entfernen.** `zeichnen()` fängt Ausnahmen ab und zeigt einen

@@ -147,6 +147,13 @@ input,select{font:inherit}
 .abschnitt{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
   color:#98A0AA;margin:26px 2px 6px;padding-top:16px;border-top:1px solid var(--linie)}
 .abschnitt.oben{border-top:none;padding-top:0;margin-top:18px}
+.notiz{margin:12px 2px 0}
+.notiz+.notiz{margin-top:16px;padding-top:14px;border-top:1px solid var(--linie)}
+.notiz .fkopf{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--malz)}
+.notiz.alt .fkopf{color:#98A0AA}
+.notiz ul{list-style:none;margin:7px 0 0;padding:0;display:grid;gap:7px}
+.notiz li{position:relative;padding-left:15px;font-size:13.5px;line-height:1.55;color:#B6BDC6}
+.notiz li::before{content:'—';position:absolute;left:0;color:#7C848E}
 .teiln{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
 .teiln button{padding:9px 14px;border-radius:999px;border:1px solid var(--linie);
   font-size:14px;font-weight:600;color:#98A0AA}
@@ -487,7 +494,29 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-10 11:45 · G27 (GitHub)';
+const FASSUNG = '2026-09-10 12:20 · G28 (GitHub)';
+
+/* Was sich je Fassung geändert hat, in der Sprache der Runde und nicht in der des
+   Quelltextes. Neueste zuerst. Die Einstellungen zeigen die oberste offen, die
+   übrigen hinter „Frühere Fassungen"; angezeigt werden NOTIZ_ANZAHL Stück. */
+const NOTIZ_ANZAHL = 3;
+const NOTIZEN = [
+  {f:'G28', d:'10.09.2026', punkte:[
+    'Die Einstellungen führen jetzt, was sich in den letzten Fassungen geändert hat.']},
+  {f:'G27', d:'10.09.2026', punkte:[
+    'Im Fazit fehlte der Aufsteiger in der Ordens-Erklärung – dort stand ein Orden '
+    + 'weniger, als daneben vergeben war.',
+    'Das Gleichmaß weist jetzt die Schwankung zwischen den Tagen aus, für die es '
+    + 'vergeben wird, statt des Tagesschnitts.']},
+  {f:'G26', d:'10.09.2026', punkte:[
+    'Eingetragene Biere erscheinen auf den anderen Geräten wieder binnen weniger '
+    + 'Sekunden, auch wenn die Runde vorher lange still saß.',
+    'Hängt das Netz, bricht der Abruf nach zehn Sekunden ab, statt den Abgleich '
+    + 'anzuhalten.']},
+  {f:'G25', d:'10.09.2026', punkte:[
+    'Nach dem ersten eingetragenen Bier kam von den anderen nichts mehr an, bis die '
+    + 'Seite neu geladen wurde.']}
+];
 
 /* ====== EINSTELLUNGEN – hier anpassen, falls sich Namen ändern ====== */
 const GH_BESITZER = 'PyFox1';
@@ -613,6 +642,9 @@ let wechsler = false, detailId = null, personId = null;
 let rechnung = null, punkteOffen = false, letzteRunde = null;
 let rundeFrage = false, benennen = false, entsperrt = null;
 let sicherBlatt = null, infoZiel = null, erklaer = null;
+/* Kein <details>: zeichnen() baut die Seite bei jedem Abgleich neu auf, und ein
+   offenes <details> klappte dabei wieder zu. */
+let notizenOffen = false;
 let blendeStand = null;
 let stapel = [];
 let vorwahl = null;
@@ -2179,8 +2211,29 @@ function ansichtEinst(){
 
     + '<div class="abschnitt">Nachschlagen</div>'
     + '<button class="knopf leer" data-tu="geheInfo">Betriebsanleitung öffnen</button>'
+
+    + '<div class="abschnitt">Änderungen</div>'
+    + notizBlock()
     + '<p class="hinweis" style="text-align:center;margin-top:14px">Fassung <b '
     + 'style="color:var(--malz)">' + FASSUNG + '</b></p>';
+}
+
+/* Die neueste Notiz steht offen da, die älteren liegen hinter einem Knopf. Wer
+   wissen will, was sich zuletzt geändert hat, soll nicht erst tippen müssen. */
+function notizBlock(){
+  const liste = NOTIZEN.slice(0, NOTIZ_ANZAHL);
+  if(!liste.length) return '';
+  const eine = (n, alt) => '<div class="notiz' + (alt ? ' alt' : '') + '">'
+    + '<div class="fkopf">' + esc(n.f) + ' · ' + esc(n.d) + '</div><ul>'
+    + n.punkte.map(t => '<li>' + esc(t) + '</li>').join('') + '</ul></div>';
+  const rest = liste.slice(1);
+  return eine(liste[0], false)
+    + (rest.length
+        ? (notizenOffen ? rest.map(n => eine(n, true)).join('') : '')
+          + '<button class="knopf leer" style="margin-top:14px" data-tu="notizenAuf">'
+          + (notizenOffen ? 'Frühere Fassungen ausblenden' : 'Frühere Fassungen')
+          + '</button>'
+        : '');
 }
 
 /* ---------- Anleitung ---------- */
@@ -2497,7 +2550,12 @@ function ansichtInfo(){
     + 'oben <em>getrennt</em>, zählt das Gerät absichtlich an einer eigenen Station — dann hilft '
     + '<em>Wieder mitlaufen</em>.</td></tr>'
     + '<tr><td class="frage">Wo ist die Tabelle während des Abends?</td><td>Oben rechts das '
-    + 'Balkensymbol. Von dort führt ein Knopf zurück zum laufenden Wochenende.</td></tr></table></div>'
+    + 'Balkensymbol. Von dort führt ein Knopf zurück zum laufenden Wochenende.</td></tr>'
+    + '<tr><td class="frage">Etwas verhält sich anders als beim letzten Mal</td>'
+    + '<td>Hinterm Zahnrad steht unter <em>Änderungen</em>, was die letzten Fassungen gebracht '
+    + 'haben; <em>Frühere Fassungen</em> klappt die davor auf. Darunter steht die eigene '
+    + 'Fassungskennung — weicht sie von der eines anderen Geräts ab, hängt dort noch die alte '
+    + 'im Zwischenspeicher, und ein Neuladen der Seite holt sie nach.</td></tr></table></div>'
 
     + '<div class="para" id="p11"><h2><i>§ 11</i> Gewährleistung</h2>'
     + '<p>Garantiert wird die korrekte Anwendung der Elo-Formel. Nicht garantiert werden der Hausfrieden, '
@@ -3145,6 +3203,7 @@ const tu = {
     if(!infoZiel) window.scrollTo(0,0);
     zeichnen();
   },
+  notizenAuf(){ notizenOffen = !notizenOffen; zeichnen(); },
   weNeu(){ vorwahl = null; ansicht = 'neu'; window.scrollTo(0,0); zeichnen(); },
   weDetail(el){ tu.merken(); detailId = +el.dataset.id; ansicht = 'wedetail'; window.scrollTo(0,0); zeichnen(); },
   wahlAuf(){ state.wahlOffen = !state.wahlOffen; zeichnen(); },
