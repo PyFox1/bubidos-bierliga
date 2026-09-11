@@ -608,7 +608,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-11 06:12 · G41 (GitHub)';
+const FASSUNG = '2026-09-11 06:44 · G41 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -626,7 +626,7 @@ const NOTIZEN = [
   /* Absichtlich ohne Inhalt: Die Tagesmarken sollen die Runde am Abend überraschen und
      nicht vorher in den Änderungen stehen. Nachzulesen sind sie in § 8 – wer die
      Betriebsanleitung aufschlägt, will es wissen. */
-  {f:'G41', d:'11.09.2026', z:'06:12', punkte:[
+  {f:'G41', d:'11.09.2026', z:'06:44', punkte:[
     'Diese Fassung bringt eine Sache mit, die hier absichtlich nicht steht. '
     + 'Sie meldet sich von selbst.']},
   {f:'G40', d:'10.09.2026', z:'19:42', punkte:[
@@ -2167,8 +2167,13 @@ const KI_SCHEMA = {
   additionalProperties:false
 };
 /* Fest verdrahtet statt als Regler: Die Wahl stand in den Einstellungen und wurde nie
-   benutzt – wer sie wirklich drehen will, ändert sie hier im Quelltext. */
+   benutzt – wer sie wirklich drehen will, ändert sie hier im Quelltext.
+   Zwei Modelle, weil die beiden Aufgaben verschieden sind: Deckel auf einem Foto zählen
+   ist Ablesen, da reicht das schnellere. Der Urkundentext ist das Gegenteil – trockener
+   Ton, Wortspiel, ein Nachrichtenbezug, der sitzen muss, und ein Wortschatz, der nur als
+   Beispielliste im Prompt steht. Das ist ein paar Cent mehr je Urkunde wert. */
 const KI_MODELL = 'claude-sonnet-5';
+const KI_MODELL_URKUNDE = 'claude-opus-5';
 const kiSchluessel = () => (state.einst && state.einst.kiSchluessel || '').trim();
 
 async function anKI(bild, anweisung, signal){
@@ -2235,7 +2240,14 @@ async function anKIText(anweisung){
         'anthropic-dangerous-direct-browser-access':'true'
       },
       body: JSON.stringify({
-        model:KI_MODELL, max_tokens:1500,
+        /* `max_tokens` großzügig, und das ist kein Luxus: Das Modell denkt von Haus aus
+           mit, und Denken, Suchergebnisse und Antwort teilen sich dieses Budget. Bei 1500
+           riss es die Grenze mitten im JSON – die Antwort kam abgeschnitten, das Auslesen
+           scheiterte, der Ersatztext blieb stehen. Ohne jede Meldung, und von außen sah
+           es aus wie „die API liefert keinen Nachrichtenbezug". Der Text selbst bleibt
+           kurz, dafür sorgt die Anweisung, nicht die Grenze. */
+        model:KI_MODELL_URKUNDE, max_tokens:8000,
+        output_config:{effort:'medium'},
         tools:[{type:'web_search_20260209', name:'web_search', max_uses:2}],
         messages:[{role:'user', content:anweisung}]
       })

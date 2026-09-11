@@ -525,7 +525,13 @@ await schritt('Der Aufruf bringt das Websuche-Werkzeug mit', async () => {
   const w = (q.tools || [])[0] || {};
   if(w.name !== 'web_search') throw new Error('Werkzeug: ' + JSON.stringify(q.tools));
   if(!/^web_search_20\d{6}$/.test(w.type || '')) throw new Error('Kennung: ' + w.type);
-  return w.type + ' auf ' + q.model;
+  const soll = await p.evaluate(() => KI_MODELL_URKUNDE);
+  if(q.model !== soll) throw new Error('Modell: ' + q.model + ' statt ' + soll);
+  /* Das Modell denkt mit, und Denken, Suchergebnisse und Antwort teilen sich das Budget.
+     Wird das hier je wieder klein gedreht, reißt die Antwort mitten im JSON ab und der
+     Ersatztext springt ein, ohne dass irgendwo etwas davon steht. */
+  if(!(q.max_tokens >= 4000)) throw new Error('max_tokens nur ' + q.max_tokens);
+  return w.type + ' auf ' + q.model + ', max_tokens ' + q.max_tokens;
 });
 
 /* Wetter ist der billigste Aufhänger, den eine Nachricht hergibt, und beim zweiten Mal

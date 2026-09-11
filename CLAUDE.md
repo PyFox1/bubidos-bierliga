@@ -347,9 +347,16 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
     den Notizen.
   - Der Aufklapper steht **über** den Änderungen: die sind der längste Block, und wer an den
     K-Faktor will, soll nicht am ganzen Protokoll vorbeiscrollen.
-- **Modell und Schlüssel des Foto-Zählens stehen nicht in der Oberfläche.** Das Modell ist
-  `KI_MODELL`, eine Konstante im Quelltext; die Wahl stand als Chip-Reihe in den Einstellungen
-  und wurde nie benutzt. Der Zugangsschlüssel wird weiter aus `state.einst.kiSchluessel`
+- **Modell und Schlüssel des Foto-Zählens stehen nicht in der Oberfläche.** Die Modelle sind
+  Konstanten im Quelltext; die Wahl stand als Chip-Reihe in den Einstellungen und wurde nie
+  benutzt. Es sind **zwei**: `KI_MODELL` fürs Foto-Zählen (Ablesen, da reicht das schnellere)
+  und `KI_MODELL_URKUNDE` für den Urkundentext — trockener Ton, Wortspiel und ein
+  Nachrichtenbezug, der sitzen muss, sind das teurere Modell wert.
+  Dazu ein `max_tokens`, das großzügig aussieht und es nicht ist: Das Modell denkt von Haus
+  aus mit, und Denken, Suchergebnisse und Antwort teilen sich dieses Budget. Bei 1500 riss
+  es mitten im JSON ab, das Auslesen scheiterte, der Ersatztext blieb stehen — ohne Meldung,
+  und von außen sah es aus wie „die API liefert keinen Nachrichtenbezug". `urkunde.mjs`
+  schlägt an, wenn es je wieder klein gedreht wird. Der Zugangsschlüssel wird weiter aus `state.einst.kiSchluessel`
   gelesen, aber nicht mehr dort eingetragen — er kommt in den Datenbestand. Ein `kiModell` in
   alten Beständen wird nicht mehr gelesen, wie schon der `deckel`.
 - **Erklärungen sitzen im Kontext, nicht in der Anleitung.** Tipp auf eine Zahl öffnet ein kurzes
