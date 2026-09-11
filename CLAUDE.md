@@ -13,6 +13,8 @@ Build-Schritte, keine Abhängigkeiten außer drei Google Fonts (Anton, Karla, DM
 
 - **App**: GitHub Pages aus `PyFox1/bubidos-bierliga`
 - **Daten**: `stand.json` in `PyFox1/bubidos-bierliga-daten` (privat), über die GitHub-Contents-API
+- **Testdaten**: dasselbe in `PyFox1/bubidos-bierliga-testdaten`, erreichbar über `?test` in der
+  Adresse — siehe *Testmodus* unter den Entscheidungen
 - **Zugriff**: Jedes Gerät gibt einmalig einen Fine-grained-Token ein, gespeichert in `localStorage`
 
 Die Konfiguration steht ganz oben in der Datei zwischen den `======`-Kommentaren.
@@ -359,6 +361,27 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   schlägt an, wenn es je wieder klein gedreht wird. Der Zugangsschlüssel wird weiter aus `state.einst.kiSchluessel`
   gelesen, aber nicht mehr dort eingetragen — er kommt in den Datenbestand. Ein `kiModell` in
   alten Beständen wird nicht mehr gelesen, wie schon der `deckel`.
+- **Testmodus über `?test` in der Adresse.** Dann läuft die App auf `GH_TEST_REPO` statt
+  `GH_ECHT_REPO` und mit eigenen lokalen Schlüsseln. Zweck: am Handy mit echten Handgriffen
+  etwas ausprobieren, ohne dass die Runde es sieht oder die echte Tabelle etwas abbekommt.
+  - **Ein zweites Repository, nicht bloß eine zweite Datei im selben.** Nur so lässt sich ein
+    Fine-grained-Token vergeben, der ausschließlich das Testrepo kennt — damit ist „der
+    Testmodus schreibt versehentlich in die echten Daten" nicht unwahrscheinlich, sondern
+    unmöglich, auch bei einem Fehler im Code. Ein Warnband allein wäre deutlich schwächer.
+    Im Aufwand kostet es dasselbe: eine Abfrage auf `GH_REPO` statt auf `GH_DATEI`.
+  - **Die lokalen Schlüssel werden in `lokal` getrennt**, nicht an den Konstanten. Durch
+    diese drei Methoden läuft jeder Zugriff — eine Stelle zu vergessen wäre sonst nur eine
+    Frage der Zeit, und ausgerechnet `BASIS_KEY` wäre teuer: Das ist der gemeinsame Vorfahr
+    des Drei-Wege-Abgleichs. Stünde dort der Testbestand und man öffnet danach die echte
+    App, führt `zusammenfuehren()` gegen einen falschen Vorfahren zusammen und wirft echte
+    Biere weg, ohne dass jemandem auffiele warum. Der Speicher hängt an der Domain, nicht am
+    Repository — die Trennung der Datenquelle allein genügt also **nicht**.
+  - **Das Band steht im Fluss, nicht als Overlay.** Es bleibt den ganzen Testbetrieb über
+    stehen; etwas dauerhaft Überlagertes verdeckte den Kopf dauerhaft mit. Quergestreift und
+    nicht bloß farbig, weil man in fortgeschrittener Stunde ein Muster schneller erkennt als
+    einen Farbton. `tests/testmodus.mjs` misst nach, dass es den Kopf nicht überlappt.
+  - Gebaut wurde er erst, als der Bedarf zweimal auftrat — vorher stand hier bewusst nichts.
+    Die App ist eine Datei ohne Sonderwege, und jeder Schalter ist dauerhafte Last.
 - **Erklärungen sitzen im Kontext, nicht in der Anleitung.** Tipp auf eine Zahl öffnet ein kurzes
   Blatt mit Verweis in den passenden Paragrafen. Die Betriebsanleitung ist Nachschlagewerk,
   kein Einstieg. Jeder Paragraf hat einen Anker `p1` bis `p11`. Wer einen Paragrafen einschiebt,

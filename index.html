@@ -597,10 +597,19 @@ table.rechnung td.schlecht{color:#E09084}
   box-shadow:0 4px 14px rgba(0,0,0,.35)}
 .fassung-banner button{background:#1B1B1B;color:var(--deckel);border:0;border-radius:5px;
   padding:6px 12px;font-weight:700;font-size:13px}
+/* Bewusst quergestreift und nicht bloß farbig: In fortgeschrittener Stunde erkennt man
+   ein Muster schneller als einen Farbton, und verwechseln soll man die beiden nie. */
+.testband{padding:calc(env(safe-area-inset-top) + 7px) 12px 7px;
+  font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  text-align:center;color:#1B1B1B;
+  background:repeating-linear-gradient(135deg,#D8A43C 0 12px,#C4902C 12px 24px)}
 </style>
 </head>
 <body>
 
+<!-- Steht im Fluss und nicht als Overlay: Das Band bleibt den ganzen Testbetrieb über
+     stehen, und etwas dauerhaft Überlagertes verdeckte den Kopf dauerhaft mit. -->
+<div class="testband" id="testband" hidden>Testdaten — nicht die echte Tabelle</div>
 <header class="kopf" id="kopf"></header>
 <div class="raute"></div>
 
@@ -608,7 +617,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-11 14:04 · G41 (GitHub)';
+const FASSUNG = '2026-09-11 20:49 · G42 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -628,6 +637,11 @@ const NOTIZEN = [
      anleitung durchblättert, soll den Witz nicht vorher lesen können. Die Marke merkt sich
      trotzdem alles Nötige im Datenbestand (siehe `tag.marken` weiter oben im Quelltext);
      nur erklärt wird sie nirgends. */
+  {f:'G42', d:'11.09.2026', z:'20:49', punkte:[
+    'Hängt man „?test“ an die Adresse, läuft die App auf einem eigenen Satz Daten. Dort '
+    + 'kann man in Ruhe herumprobieren, ohne dass die Tabelle etwas abbekommt oder auf '
+    + 'den anderen Handys etwas aufblinkt. Ein gestreiftes Band oben zeigt, dass gerade '
+    + 'nicht die echten Zahlen vor einem stehen.']},
   {f:'G41', d:'11.09.2026', z:'14:04', punkte:[
     'Diese Fassung bringt eine Sache mit, die hier absichtlich nicht steht. '
     + 'Sie meldet sich von selbst.']},
@@ -716,11 +730,29 @@ const NOTIZEN = [
 ];
 
 /* ====== EINSTELLUNGEN – hier anpassen, falls sich Namen ändern ====== */
-const GH_BESITZER = 'PyFox1';
-const GH_REPO     = 'bubidos-bierliga-daten';
-const GH_DATEI    = 'stand.json';
-const GH_ZWEIG    = 'main';
+const GH_BESITZER  = 'PyFox1';
+const GH_ECHT_REPO = 'bubidos-bierliga-daten';
+const GH_TEST_REPO = 'bubidos-bierliga-testdaten';
+const GH_DATEI     = 'stand.json';
+const GH_ZWEIG     = 'main';
 /* =================================================================== */
+
+/* ---------- Testmodus ----------
+   Steht `?test` in der Adresse, läuft die App auf einem eigenen Repository und mit
+   eigenen lokalen Schlüsseln. Gedacht für: am Handy mit echten Handgriffen etwas
+   ausprobieren, ohne dass die Runde es sieht oder die echte Tabelle etwas abbekommt.
+
+   Warum ein zweites **Repository** und nicht bloß eine zweite Datei im selben: So lässt
+   sich ein Fine-grained-Token vergeben, der ausschließlich das Testrepo kennt. Damit ist
+   „der Testmodus schreibt versehentlich in die echten Daten" nicht unwahrscheinlich,
+   sondern unmöglich – auch bei einem Fehler hier im Code. Ein Warnband allein wäre
+   deutlich schwächer.
+
+   Die Umschaltung sitzt an genau zwei Stellen: hier für die Datenquelle und in `lokal`
+   für den Browser-Speicher. Beides ist nötig – der Speicher hängt an der Domain, nicht
+   am Repository, und beide Adressen liegen auf derselben. */
+const TESTMODUS = /(^|[?&])test(=|&|$)/.test(location.search);
+const GH_REPO = TESTMODUS ? GH_TEST_REPO : GH_ECHT_REPO;
 
 const TOKEN_KEY = 'bubidos-token';
 const SPIEGEL_KEY = 'bubidos-spiegel';
@@ -738,12 +770,26 @@ const URKUNDEN_KEY = 'bubidos-urkunden';
 
 const GETRAENKE_PLATZ = null;
 
-/* ---------- lokaler Kleinkram (Token, Gerätekennung, Spiegel) ---------- */
+/* ---------- lokaler Kleinkram (Token, Gerätekennung, Spiegel) ----------
+   Im Testmodus bekommt **jeder** Schlüssel ein eigenes Präfix, und zwar hier und nicht
+   an den Konstanten oben: Durch diese drei Methoden läuft jeder Zugriff, eine Stelle zu
+   vergessen wäre sonst nur eine Frage der Zeit.
+   Teuer wäre das Vergessen ausgerechnet bei `BASIS_KEY`: Das ist der gemeinsame Vorfahr
+   für den Drei-Wege-Abgleich. Stünde dort der Testbestand und man öffnet danach die
+   echte App, führt `zusammenfuehren()` gegen einen falschen Vorfahren zusammen — das
+   kostet echte Biere, und niemandem fällt auf, warum. Bei `SPIEGEL_KEY` wäre die Folge
+   harmloser, aber verwirrend: Die echte App zeigte ohne Netz die Testdaten.
+   Auch der Token ist getrennt. Das ist keine Schikane, sondern der Sinn der Sache — im
+   Testmodus soll ein Schlüssel liegen, der die echten Daten gar nicht erreichen kann. */
 const lokal = {
-  lesen(k){ try{ return window.localStorage.getItem(k); }catch(e){ return this._n && this._n[k] || null; } },
-  schreiben(k,v){ try{ window.localStorage.setItem(k,v); }
+  s(k){ return TESTMODUS ? 'test-' + k : k; },
+  lesen(k){ k = this.s(k);
+    try{ return window.localStorage.getItem(k); }catch(e){ return this._n && this._n[k] || null; } },
+  schreiben(k,v){ k = this.s(k);
+    try{ window.localStorage.setItem(k,v); }
     catch(e){ this._n = this._n || {}; this._n[k] = v; } },
-  loeschen(k){ try{ window.localStorage.removeItem(k); }
+  loeschen(k){ k = this.s(k);
+    try{ window.localStorage.removeItem(k); }
     catch(e){ if(this._n) delete this._n[k]; } }
 };
 
@@ -4910,6 +4956,9 @@ document.addEventListener('keydown', ev => {
 const BUBIDOS = ['Korbi','Fifu','Sperry','Gerry','Kammy'];
 
 (async function(){
+  /* Vor allem anderen: Wer im Testmodus ist, soll es sehen, bevor der erste Stand da ist –
+     auch dann, wenn das Laden gleich in einen Fehlerbildschirm läuft. */
+  if(TESTMODUS) document.getElementById('testband').hidden = false;
   ichLaden();
   pinLaden();
   basisLaden();
