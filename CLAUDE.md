@@ -103,7 +103,8 @@ hinweg festhält.
 - `aktuell()` / `pinGueltig()` — wo dieses Gerät steht, siehe Aufteilung
 - `zeichnen()` — Fangnetz, ruft `zeichnenRoh()`
 - `ERKLAERUNGEN` — die Erklär-Blätter, jedes mit Verweis auf einen Paragrafen-Anker
-- `markenPruefen()` — legt fällige Tagesmarken an, `offeneUrkunde()` sucht die nächste zu zeigende
+- `markenPruefen()` — legt fällige Tagesmarken an (nur beim Eintragen), `markenAufraeumen()`
+  nimmt sie zurück (überall), `offeneUrkunde()` sucht die nächste zu zeigende
 - `urkundeHolen()` / `anKIText()` — der Urkundentext über die API, mit Websuche
 
 ## Speicher-Ablauf
@@ -196,9 +197,9 @@ Größen: `033`, `05`, `10`.
 Array heißt „war da, hat nichts getrunken" — das ist etwas völlig anderes als „war nicht da".
 
 Am Tag hängt außerdem `tag.marken`: die ausgestellten Urkunden, je eine
-`{id, stufe, pids, be, t, ort, ortNr, text, kopf?, quelle}`. Die `id` ist fest aus `tagId:stufe`
-gebaut und nicht gewürfelt, `pids` sind die, die die Stufe **gemeinsam zuerst** gerissen haben —
-siehe Tagesmarken weiter unten.
+`{id, stufe, pid, be, t, ort, ortNr, text, kopf?, quelle}`. Die `id` ist fest aus
+`tagId:stufe:pid` gebaut und nicht gewürfelt — die Marke gehört **einer Person**, nicht der
+Stufe. Siehe Tagesmarken weiter unten.
 
 ## Die Wertung
 
@@ -356,25 +357,41 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   kein Einstieg. Jeder Paragraf hat einen Anker `p1` bis `p12`. Wer einen Paragrafen einschiebt,
   muss die `para`-Verweise in `ERKLAERUNGEN` mitziehen — dort stehen Anker *und* Klartextname
   (`§ 7 Technische Daten`), und beide laufen sonst auseinander.
-- **Tagesmarken: 10, 18 und 25 BE, je Stufe und Tag genau eine.** Die Entscheidungen dahinter:
-  - **Sie gehört dem, der zuerst dort war.** Wer später nachzieht, bekommt nichts mehr — sonst
-    wäre es kein Rennen, sondern eine Teilnahmebestätigung. Deshalb heißt die Kennung
-    `tagId:stufe` und trägt die Person *nicht*: Steht sie einmal, ist die Stufe für den Tag
-    vergeben. Jeder Tag fängt wieder bei null an.
-  - **Mehrere gleichzeitig stehen zusammen auf einer Urkunde.** „Runde für alle“ schiebt die
-    halbe Tischrunde im selben Moment über die Marke; die kommen alle in `pids`. Dafür gibt es
-    je Stufe zwei Sätze Ersatztexte (`ein` / `viele`) — „Korbi und Fifu hat“ wäre sonst nicht zu
-    erklären, und der Prompt sagt der API ausdrücklich, sie zusammen anzusprechen.
+- **Tagesmarken: 10, 18 und 25 BE, je Stufe, Tag und Person genau eine.** Die Entscheidungen
+  dahinter:
+  - **Jeder bekommt seine eigene.** Die Kennung heißt `tagId:stufe:pid` und trägt die Person.
+    Das war einmal andersherum — eine Urkunde je Stufe und Tag, für den, der zuerst dort war —
+    und genau daran ist es gescheitert: Wer dem einen das zehnte Bier tippt und zwei Sekunden
+    später dem nächsten, hat für sein Gefühl zwei gleichzeitige Zehner vor sich; die Marke sah
+    nur den ersten. Mehrere kamen nur dann zusammen auf eine Urkunde, wenn *ein einziger*
+    `markenPruefen()`-Durchlauf sie zugleich erwischte, also praktisch nur bei „Runde für alle“.
+    Ein Zeitfenster hätte die Grenze bloß verschoben. Jetzt gibt es kein Rennen: Wer die Stufe
+    reißt, bekommt sie. Jeder Tag fängt wieder bei null an.
+  - **Mehrere Urkunden kommen nacheinander.** Eine Runde für alle kann drei auf einmal
+    auslösen; `offeneUrkunde()` sortiert nach `t`, `stufe` und zuletzt `pid`, damit auf jedem
+    Handy dieselbe zuerst steht. Ersatztexte gibt es deshalb nur noch in der Einzahl.
   - **Die Marke liegt im Datenbestand, nicht in einer Variablen.** Sonst ginge sie bei jedem
     Neuzeichnen wieder auf, sähe sie nur das Handy, das das Bier getippt hat, und jedes Gerät
     bekäme einen anderen Text. So verteilt der Abgleich sie wie alles andere.
+  - **Angelegt wird nur beim Eintragen, zurückgenommen überall.** `markenPruefen()` läuft an den
+    vier Eintragungsstellen und *nicht* beim Abgleich — sonst riefen fünf Handys für dieselbe
+    Urkunde fünfmal die API. Das Zurücknehmen dagegen steckt in `markenAufraeumen()` und läuft
+    in `sichern()` und `uebernehmen()`: Fällt jemand durch ein ↶, ein Minus oder „War hier
+    nicht dabei“ unter die Stufe, verschwindet die Urkunde. Jedes Gerät rechnet das aus
+    denselben Strichen selbst aus — deshalb muss keine Löschung durch den Abgleich getragen
+    werden, was mit einer reinen Vereinigung ohnehin nicht ginge. In `sichern()` und nicht an
+    jeder einzelnen Stelle, weil durch `sichern()` jede Änderung kommt und eine davon zu
+    vergessen nur eine Frage der Zeit wäre.
+  - **Der Ort auf der Marke ist der der Person** (`personOrt()`), nicht der des Handys. Nach
+    einer Aufteilung steht das tippende Gerät woanders als der, für den es tippt — und
+    `markenPruefen()` geht ohnehin alle Leute des Tages durch, nicht nur die an dieser Station.
   - **Abgehakt wird lokal** (`URKUNDEN_KEY`), nicht im Bestand. Stünde es dort, tippte der Erste
     sie für alle weg — und genau das soll nicht sein: Wer sein Handy in der Tasche hatte, soll
     sie beim nächsten Öffnen noch vorfinden, notfalls am Morgen danach.
-  - **Beim Zusammenführen gewinnt die frühere Marke**, nicht die zuletzt geschriebene. Haben
-    zwei Geräte nebeneinander gezählt und beide die Stufe vergeben, entscheidet der Zeitstempel
-    und nicht, wessen Schreibvorgang zufällig durchkam — sonst hinge „wer war zuerst“ am Netz.
-    Bei gleicher Zeit gewinnt `quelle:'ki'` gegen `quelle:'ersatz'`.
+  - **Beim Zusammenführen gewinnt die frühere Marke**, nicht die zuletzt geschriebene. Tippen
+    zwei Geräte dasselbe Bier, bevor der Abgleich durch ist, entscheidet der Zeitstempel und
+    nicht, wessen Schreibvorgang zufällig durchkam. Bei gleicher Zeit gewinnt `quelle:'ki'`
+    gegen `quelle:'ersatz'`.
   - **Der Ersatztext steht sofort drin, der API-Text ersetzt ihn später.** Andersherum hinge am
     Bierabend eine leere Urkunde im Netz, und ohne hinterlegten Schlüssel gäbe es nie eine.
     Nach dem `await` wird die Marke über `markeFinden()` neu gesucht: Ein Abgleich dazwischen
@@ -397,8 +414,7 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
     und die Maße des jeweiligen Handys. Darauf stehen Datum, Uhrzeit, Wochenende, Tag und
     „*n*. Location: Name“ — dafür merkt sich die Marke `ort` und `ortNr` beim Anlegen; später
     ließe sich das nicht mehr rekonstruieren, weil die Runde weiterzieht.
-    **Je Person ein eigenes Blatt**, auch wenn mehrere die Marke gemeinsam gerissen haben: Wer
-    sich das aufhängt, will seinen Namen groß sehen; die anderen stehen als Zeile darunter.
+    Ein Blatt, ein Name, groß — wer sich das aufhängt, will sich darauf wiederfinden.
     Weitergereicht wird über `navigator.share`, weil ein Download-Link auf dem iPhone im Nichts
     endet — von dort führt der Weg in die Fotos. Herunterladen ist nur der Rückfall.
     **Falle:** Ein Canvas löst kein Nachladen einer Schrift aus. Ohne das ausdrückliche
@@ -448,9 +464,13 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   genau eines gilt (`ichBin`, `kiModellWahl`), bleiben ohne — ein Kästchen verspräche dort
   Mehrfachauswahl. `tests/haken.mjs` hält beide Seiten fest.
 - **Escaping.** Namen kommen von Nutzern. Alles, was in HTML landet, muss durch `esc()`.
-- **Das Foto-Zählen funktioniert auf GitHub Pages nicht.** Es ruft die Anthropic-API auf, was nur
-  innerhalb eines Claude-Artefakts geht. Der Code ist noch da und meldet das ehrlich. Soll
-  irgendwann über einen Zwischendienst zurückkommen oder ganz raus.
+- **Der Aufruf der Anthropic-API aus dem Browser geht.** Er läuft mit
+  `anthropic-dangerous-direct-browser-access` und wurde auf GitHub Pages am Foto-Zählen
+  nachgewiesen. Hier stand lange das Gegenteil — das war überholt. Daran hängt auch der
+  Nachrichtenbezug der Urkunden: derselbe Endpunkt, derselbe Header. Was damit **nicht**
+  geprüft ist, ist die serverseitige Websuche (`web_search`) auf diesem Weg; dafür gibt es
+  `tests/echt-ki.mjs`. Der Schlüssel liegt im Datenbestand und damit im Browser jedes Geräts —
+  das ist für fünf Freunde vertretbar, für alles andere nicht.
 - **Kein `localStorage` für die eigentlichen Daten.** Nur Token, Gerätekennung, der eigene
   Standort (`ortPin`), die Notfallkopie und die Abgleich-Basis liegen lokal. Die Wahrheit
   steht immer im Repository. Spiegel und Basis sind je eine volle Fassung des Stands — bei

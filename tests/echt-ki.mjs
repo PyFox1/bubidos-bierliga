@@ -8,7 +8,8 @@
 
    Läuft absichtlich nicht in der normalen Runde mit: kostet Geld und braucht Netz.
 
-   Aufruf:   ANTHROPIC_API_KEY=sk-ant-… node tests/echt-ki.mjs
+   Aufruf:   ANTHROPIC_API_KEY=sk-ant-… node tests/echt-ki.mjs        (25 – drei Aufrufe)
+             ANTHROPIC_API_KEY=sk-ant-… node tests/echt-ki.mjs 10     (nur einer)
    Ergebnis: tests/bilder/echt-*.png und der Wortlaut auf der Konsole.
 
    Der Schlüssel wird nur an die API geschickt, nirgends geloggt und nirgends abgelegt. */
@@ -66,43 +67,55 @@ await p.waitForTimeout(300);
 
 console.log('\n════ Was an die API geht ════\n');
 console.log(await p.evaluate(s => urkundeAnweisung(state.we[0].tage[0],
-  {id:'901:' + s, stufe:s, pids:['1'], be:{'1':s}, ort:'Augustiner'}), STUFE));
+  {id:'901:' + s + ':1', stufe:s, pid:'1', be:s, ort:'Augustiner'}), STUFE));
 
-console.log('\n════ Aufruf läuft ════');
+/* Ein Strich auf Stufe 25 reißt auch die 10 und die 18 – seit jeder seine eigene Urkunde
+   bekommt, sind das drei Marken und drei Aufrufe. Das kostet dreimal, zeigt dafür aber
+   genau das, worauf es ankommt: drei Texte, drei verschiedene Nachrichtenbezüge. Wer nur
+   einen zahlen will, ruft mit `10` auf. */
+const erwartet = [10, 18, 25].filter(s => s <= STUFE);
+console.log('\n════ Aufruf läuft (' + erwartet.length + ' Urkunde'
+  + (erwartet.length > 1 ? 'n, also ' + erwartet.length + ' Aufrufe' : '') + ') ════');
 const start = Date.now();
 await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
 
-let m = null;
-for(let i = 0; i < 40; i++){
+let alle = [];
+for(let i = 0; i < 60; i++){
   await p.waitForTimeout(1500);
-  m = await p.evaluate(s => {
-    const x = (state.we[0].tage[0].marken || []).find(y => y.stufe === s);
-    return x ? {stufe:x.stufe, quelle:x.quelle, text:x.text, kopf:x.kopf,
-                laeuft:urkundeLaeuft.has(x.id)} : null;
-  }, STUFE);
-  if(m && !m.laeuft) break;
+  alle = await p.evaluate(() => (state.we[0].tage[0].marken || [])
+    .slice().sort((a,b) => a.stufe - b.stufe)
+    .map(x => ({stufe:x.stufe, quelle:x.quelle, text:x.text, kopf:x.kopf,
+                laeuft:urkundeLaeuft.has(x.id)})));
+  if(alle.length >= erwartet.length && alle.every(x => !x.laeuft)) break;
   process.stdout.write('.');
 }
 const dauer = Math.round((Date.now() - start)/100)/10;
 
-console.log('\n\n════ Was zurückkam ════\n');
-if(!m){ console.log('Gar keine Marke – da stimmt etwas anderes nicht.'); }
-else {
+console.log('\n\n════ Was zurückkam (nach ' + dauer + ' s) ════');
+if(!alle.length){ console.log('\nGar keine Marke – da stimmt etwas anderes nicht.'); }
+const wetter = /wetter|hitze|regen|unwetter|grad celsius|temperatur|sonnensch|schnee|sturm/i;
+alle.forEach(m => {
+  console.log('\n──── Stufe ' + m.stufe + ' ────');
   console.log('Quelle:  ' + m.quelle + (m.quelle === 'ki'
     ? '   (von der API)' : '   ← ERSATZTEXT, der Aufruf ist nicht durchgekommen'));
-  console.log('Dauer:   ' + dauer + ' s');
   if(m.kopf) console.log('\nÜberschrift:\n  ' + m.kopf);
   console.log('\nText:');
-  console.log('  ' + m.text.replace(/(.{78} )/g, '$1\n  '));
-
-  const wetter = /wetter|hitze|regen|unwetter|grad celsius|temperatur|sonnensch|schnee|sturm/i;
-  console.log('\n════ Gegenprobe ════');
-  console.log(wetter.test(m.text) ? '  WETTER: Das Verbot hat nicht gehalten.'
-                                  : '  Kein Wetter. Gut.');
+  console.log('  ' + (m.text || '').replace(/(.{78} )/g, '$1\n  '));
+  const alles = (m.text || '') + ' ' + (m.kopf || '');
+  console.log(wetter.test(alles) ? '\n  WETTER: Das Verbot hat nicht gehalten.'
+                                 : '\n  Kein Wetter. Gut.');
   const slang = ['zappt','zappen','gezappt','peter'].filter(w =>
-    new RegExp(w, 'i').test(m.text + ' ' + (m.kopf || '')));
+    new RegExp(w, 'i').test(alles));
   console.log('  Slang:  ' + (slang.length ? slang.join(', ') : 'keiner benutzt'));
-}
+});
+
+/* Der eigentliche Zweck des Skripts: Kam überhaupt etwas von der API, oder hat sich der
+   Ersatztext nur gut getarnt? */
+console.log('\n════ Fazit ════');
+const ki = alle.filter(x => x.quelle === 'ki').length;
+console.log(ki === alle.length && ki
+  ? '  Alle ' + ki + ' Texte kamen von der API. Websuche und Browser-Zugriff gehen.'
+  : '  Nur ' + ki + ' von ' + alle.length + ' kamen durch – oben steht, welche.');
 
 const datei = ORDNER + 'echt-' + STUFE + '.png';
 await p.evaluate(async s => {
