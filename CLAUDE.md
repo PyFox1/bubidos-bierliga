@@ -435,6 +435,26 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   zusammengesetzten Wortes: *Bierpetereinheiten*, *ordnungspetergemäß*, *Legendenpeterbildung*.
   Ohne die Beispielliste streut das Modell es als Einzelwort ein, und dann ist der Witz weg.
   `urkunde.mjs` prüft, dass zu jedem Eintrag Bedeutung und Beispiele stehen.
+  Fünf Einträge sind **Zitate einer Offenbacher Netzfigur** und in der Runde stehende
+  Wendungen. Drei wörtlich: *„Da kommt dir der Mock hoch"* (Ekel, gegen eine Sache),
+  *„Ja, ja, die Sprüch kenn mer alle"* (Abwinken vor einer Ankündigung) und *„Dis is er,
+  dis is der Mann fürs Leben"* (Pointe, die Verdopplung gehört dazu). Die stehen in Mundart
+  da und müssen es bleiben — wer sie beim Aufräumen glättet („die Sprüche kennen wir
+  alle"), hat ein grammatisch sauberes Wörterbuch und einen Eintrag, der nach niemandem
+  mehr klingt. `urkunde.mjs` schlägt darauf an, im Wörterbuch **und** in den Ersatztexten.
+  Zwei weitere sind **in der Form übernommen und im Ziel getauscht**: *„mehr gezappt wie
+  ich gepisst hab"* und *„Dreck, Dreck, Original Dreck"*. Im Original geht das eine ums
+  Ficken und das andere gegen eine Frau. Wiedererkennbar ist beide Male nicht das Ziel,
+  sondern die Bauart — die absurde Steigerung, die dreifache Verschärfung. Der Grund für
+  den Tausch ist mechanisch und nicht prüde: Der Wortlaut steht in einem Prompt, der bei
+  **jeder** Urkunde ein bis zwei Einträge einweben soll, das Modell trägt den satirischen
+  Rahmen des Originals nicht mit, und das Ergebnis ist ein Blatt mit einem Namen darauf,
+  das weitergeschickt wird. `urkunde.mjs` prüft deshalb, dass die Bedeutung weiterhin auf
+  eine *Sache* zeigt und kein Beispiel auf eine Person.
+  **Was nicht aus einer belegten Quelle stammt, kommt nicht rein.** Die Einträge landen
+  wörtlich im Prompt; ein dazuerfundenes Beispiel erzeugt Urkunden, die nach einer Runde
+  klingen, die es nicht gibt — schlechter als gar kein Eintrag. Im Zweifel nachfragen statt
+  ergänzen.
 - **Das Eingabe-Tagebuch wird beim Abschließen eines Wochenendes gelöscht.** Gemessen macht es
   rund 81 % der Dateigröße aus und ist nach dem Abend wertlos: gelesen wird `ort.log` nur auf
   dem Zählbildschirm und für die Warnung vor der doppelten Runde. Die Getränkedaten bleiben

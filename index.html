@@ -608,7 +608,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-11 06:44 · G41 (GitHub)';
+const FASSUNG = '2026-09-11 07:05 · G41 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -626,7 +626,7 @@ const NOTIZEN = [
   /* Absichtlich ohne Inhalt: Die Tagesmarken sollen die Runde am Abend überraschen und
      nicht vorher in den Änderungen stehen. Nachzulesen sind sie in § 8 – wer die
      Betriebsanleitung aufschlägt, will es wissen. */
-  {f:'G41', d:'11.09.2026', z:'06:44', punkte:[
+  {f:'G41', d:'11.09.2026', z:'07:05', punkte:[
     'Diese Fassung bringt eine Sache mit, die hier absichtlich nicht steht. '
     + 'Sie meldet sich von selbst.']},
   {f:'G40', d:'10.09.2026', z:'19:42', punkte:[
@@ -1179,7 +1179,40 @@ const SLANG = [
   {w:'Peter', b:'kein eigenes Wort, sondern eine Silbe, die mitten in ein anderes Wort '
      + 'geschoben wird, am liebsten an der Fuge eines zusammengesetzten Wortes. Steht nie '
      + 'für sich allein und ist keine Anrede. Höchstens einmal je Text, sonst nutzt es sich ab.',
-   bsp:['Bierpetereinheiten', 'ordnungspetergemäß', 'Legendenpeterbildung', 'Nachpetertag']}
+   bsp:['Bierpetereinheiten', 'ordnungspetergemäß', 'Legendenpeterbildung', 'Nachpetertag']},
+  /* Die beiden folgenden sind Zitate einer Offenbacher Netzfigur und in der Runde stehende
+     Wendungen. Wörtlich so übernehmen, nicht ins Hochdeutsche glätten – „die Sprüche kennen
+     wir alle“ ist nicht dasselbe und klingt nach niemandem. */
+  {w:'Da kommt dir der Mock hoch', b:'Ausruf des Ekels: Einem wird schlecht, es steigt einem '
+     + 'hoch. Richtet sich immer gegen eine Sache und nie gegen eine Person — gegen das '
+     + 'alkoholfreie Bier, gegen die eine Halbe zu viel, gegen den Gedanken ans Nachmachen.',
+   bsp:['Beim bloßen Gedanken kommt dir der Mock hoch',
+        'Da kommt dir der Mock hoch', 'dem kommt der Mock hoch']},
+  {w:'Die Sprüch kenn mer alle', b:'Abwinken vor einer Ankündigung, die keiner glaubt — '
+     + '„jetzt ist aber Schluss“, „ich fahr gleich heim“, „das war die letzte“. Steht fast '
+     + 'immer mit „Ja, ja“ davor und wird gern gleich wiederholt.',
+   bsp:['Ja, ja, die Sprüch kenn mer alle',
+        'Die Sprüch kenn mer alle, die kenn mer alle']},
+  {w:'Dis is er, dis is der Mann fürs Leben', b:'Vorstellung des idealen Kandidaten, als '
+     + 'Pointe an den Schluss gesetzt. Die Verdopplung gehört dazu und wird nicht gekürzt. '
+     + 'Passt dorthin, wo eine Leistung keiner weiteren Begründung mehr bedarf.',
+   bsp:['Dis is er, dis is der Mann fürs Leben',
+        'Ja, ja, das ist er, der Mann fürs Leben']},
+  /* Die nächsten zwei sind in der Form übernommen und im Ziel getauscht: Im Original geht
+     das eine ums Ficken und das andere gegen eine Frau. Wiedererkennbar ist beides Mal
+     nicht das Ziel, sondern die Bauart – die absurde Steigerung hier, die dreifache
+     Verschärfung dort. Der Wortlaut steht in einem Prompt, der bei *jeder* Urkunde ein bis
+     zwei Einträge einweben soll, und das Ergebnis trägt einen Namen und wird verschickt. */
+  {w:'mehr gezappt wie ich gepisst hab', b:'Angeberei in absurder Steigerungsform, bei der '
+     + 'zwei Dinge verglichen werden, die man nicht vergleicht. Immer über die eigene '
+     + 'Leistung, nie über die eines anderen.',
+   bsp:['Ich hab mehr gezappt wie ich gepisst hab',
+        'mehr Halbe wie Schritte']},
+  {w:'Dreck, Dreck, Original Dreck', b:'Vernichtendes Urteil in drei Stufen, wobei das '
+     + 'dritte „Original“ die Steigerung trägt. Gilt ausschließlich einer Sache — dem '
+     + 'alkoholfreien Bier, der lauwarmen Halben, dem Glas mit Rand. Nie einem Menschen.',
+   bsp:['Alkoholfrei? Dreck, Dreck, Original Dreck',
+        'Dreck, Dreck, Original Dreck']}
 ];
 
 /* Ohne Netz, ohne Schlüssel oder wenn die API zickt, steht einer davon da. Sie müssen
@@ -1192,18 +1225,18 @@ const URKUNDE_ERSATZ = {
      text:'Zehn Bierpetereinheiten an einem Tag. Ab hier ist das keine Verkostung mehr, '
         + 'sondern eine Haltung.'},
     {kopf:'Die Zehn ist gefallen',
-     text:'{name} hat zehn Biereinheiten ordnungspetergemäß hinterlegt. Die Tabelle nimmt '
-        + 'es zur Kenntnis, der Kreislauf noch nicht.'},
+     text:'{name} hat zehn Biereinheiten ordnungspetergemäß hinterlegt. Angekündigt war eine. '
+        + 'Ja, ja, die Sprüch kenn mer alle.'},
     {kopf:'Zweistellig, und nicht einmal spät',
-     text:'Zehn Biereinheiten für {name}. Was als Feierabendbier begann, ist inzwischen ein '
-        + 'Vorhaben — und der Rest der Runde zappt hinterher.'}
+     text:'Zehn Biereinheiten für {name}, der heute mehr gezappt hat wie er gepisst hat. Was '
+        + 'als Feierabendbier begann, ist inzwischen ein Vorhaben.'}
   ],
   18: [
     {text:'Achtzehn Biereinheiten an einem einzigen Tag, ordnungspetergemäß erfasst und gegen '
         + 'jede Nachprüfung gefeit. {name} zappt in einer Taktung, die andernorts '
         + 'genehmigungspflichtig wäre.'},
     {text:'Achtzehn. {name} hat die Grenze zwischen Abend und Vorhaben überschritten. '
-        + 'Wer jetzt noch mithalten will, tut das auf eigene Rechnung.'},
+        + 'Wer jetzt noch mithalten will, dem kommt beim bloßen Gedanken der Mock hoch.'},
     {text:'Achtzehn Biereinheiten, erfasst, geprüft, nicht wegzudiskutieren. {name} zappt seit '
         + 'Stunden so gleichmäßig durch, dass andere Leute Training dazu sagen würden.'}
   ],
@@ -1213,7 +1246,7 @@ const URKUNDE_ERSATZ = {
     {text:'Fünfundzwanzig Biereinheiten. Es gibt keine Stufe darüber, weil beim Festlegen niemand '
         + 'ernsthaft damit gerechnet hat. {name} hat sie trotzdem gefunden.'},
     {text:'Fünfundzwanzig. Was {name} heute weggezappt hat, wird in dieser Runde noch in Jahren '
-        + 'als Maßeinheit herhalten müssen. Die Urkunde ist das Mindeste.'}
+        + 'als Maßeinheit herhalten müssen. Dis is er, dis is der Mann fürs Leben.'}
   ]
 };
 

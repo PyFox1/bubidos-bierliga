@@ -476,6 +476,51 @@ await schritt('Das Wörterbuch hat zu jedem Wort Beispiele', async () => {
   return (await p.evaluate(() => SLANG.length)) + ' Wörter';
 });
 
+/* Die beiden Zitate sind Mundart und müssen es bleiben. Wer sie beim Aufräumen ins
+   Hochdeutsche zieht — „die Sprüche kennen wir alle“ —, hat ein grammatisch sauberes
+   Wörterbuch und einen Eintrag, der nach niemandem mehr klingt. Dasselbe gilt für die
+   Ersatztexte: Stünde die Wendung nur im Prompt, klängen API-Text und Ersatztext
+   verschieden, je nachdem ob gerade Netz da war. */
+await schritt('Die Mundart-Zitate stehen wörtlich da, auch in den Ersatztexten', async () => {
+  const x = await p.evaluate(() => {
+    const woerter = SLANG.map(s => s.w + ' ' + s.b + ' ' + (s.bsp || []).join(' ')).join(' | ');
+    const texte = MARKEN.map(s => URKUNDE_ERSATZ[s]
+      .map(v => (v.kopf || '') + ' ' + v.text).join(' ')).join(' ');
+    return {woerter, texte};
+  });
+  ['Mock', 'die Sprüch kenn mer alle', 'Dis is er, dis is der Mann fürs Leben',
+   'gezappt wie ich gepisst hab', 'Original Dreck'].forEach(w => {
+    if(x.woerter.indexOf(w) < 0) throw new Error('„' + w + '" fehlt im Wörterbuch');
+  });
+  [/\bMock\b/, /die Sprüch kenn mer alle/, /Dis is er, dis is der Mann fürs Leben/,
+   /gezappt hat wie er gepisst hat/].forEach(r => {
+    if(!r.test(x.texte)) throw new Error('kein Ersatztext benutzt ' + r);
+  });
+  if(/Sprüche kennen wir alle|kommt dir der Schleim|Das ist er, das ist der Mann/
+      .test(x.woerter + x.texte))
+    throw new Error('jemand hat es ins Hochdeutsche geglättet');
+  return 'wörtlich, in beiden';
+});
+
+/* Zwei Einträge sind bewusst in der Form übernommen und im Ziel getauscht. Wer sie später
+   „originalgetreu“ zurückdreht, baut einen Prompt, der bei jeder Urkunde anbietet, eine
+   Frau Dreck zu nennen — auf einem Blatt, das einen Namen trägt und verschickt wird. */
+await schritt('Die zwei getauschten Einträge zielen auf eine Sache, nicht auf einen Menschen',
+  async () => {
+  const x = await p.evaluate(() => {
+    const s = SLANG.find(y => y.w === 'Dreck, Dreck, Original Dreck') || {};
+    const g = SLANG.find(y => /gepisst/.test(y.w)) || {};
+    return {dreck:s.b || '', dreckBsp:(s.bsp || []).join(' | '), gezappt:g.w + ' ' + (g.b || '')};
+  });
+  if(!/Sache/.test(x.dreck) || !/Nie einem Menschen|nie einem Menschen/.test(x.dreck))
+    throw new Error('die Bedeutung sagt nicht mehr, dass es einer Sache gilt: ' + x.dreck);
+  if(/\bfrau|\bsie\b|\bdie ist\b/i.test(x.dreckBsp))
+    throw new Error('ein Beispiel zielt auf eine Person: ' + x.dreckBsp);
+  if(/gefickt|ficken/i.test(x.gezappt))
+    throw new Error('der Eintrag wurde auf das Original zurückgedreht');
+  return 'beide zielen auf eine Sache';
+});
+
 await schritt('Zu jeder Stufe gibt es mehrere Ersatztexte', async () => {
   const schlecht = await p.evaluate(() => MARKEN.filter(s =>
     !(URKUNDE_ERSATZ[s] || []).length));
