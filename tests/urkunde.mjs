@@ -594,23 +594,23 @@ console.log('\n══ Betriebsanleitung und Änderungen ══');
 await p.evaluate(() => { ansicht = 'info'; zeichnen(); });
 await p.waitForTimeout(250);
 
-await schritt('§ 8 handelt von den Tagesmarken', async () => {
-  const t = await p.evaluate(() => {
-    const e = document.getElementById('p8'); return e ? e.innerText : null; });
-  if(!t) throw new Error('p8 gibt es nicht');
-  if(!/§ 8\s*Tagesmarken/i.test(t)) throw new Error('Kopf: ' + t.slice(0,60));
-  ['zehn', 'achtzehn', 'fünfundzwanzig'].forEach(w => {
-    if(t.indexOf(w) < 0) throw new Error('„' + w + '" fehlt'); });
+/* Bewusst kein eigener Paragraf: Die Tagesmarken sollen überraschen, und das gilt auch
+   für den, der von sich aus in der Anleitung nachschlägt. Deshalb hier das Gegenteil
+   des früheren Tests – die Betriebsanleitung darf sie an keiner Stelle verraten. */
+await schritt('Die Betriebsanleitung verrät die Tagesmarken nirgends', async () => {
+  const t = await p.evaluate(() => document.getElementById('app').innerText);
+  ['Tagesmarke', 'Ehrenurkunde', 'Biereinheiten an einem Tag', 'zwanzig Biereinheiten']
+    .forEach(w => { if(t.indexOf(w) >= 0) throw new Error('„' + w + '" steht doch drin'); });
 });
 
-await schritt('Die Paragrafen sind lückenlos von 1 bis 12 durchnummeriert', async () => {
+await schritt('Die Paragrafen sind lückenlos von 1 bis 11 durchnummeriert', async () => {
   const nr = await p.evaluate(() => [...document.querySelectorAll('.para')]
     .map(e => ({id:e.id, kopf:(e.querySelector('h2 i') || {}).textContent})));
   nr.forEach((x,i) => {
     if(x.id !== 'p' + (i+1)) throw new Error('an Stelle ' + (i+1) + ' steht ' + x.id);
     if(x.kopf !== '§ ' + (i+1)) throw new Error(x.id + ' trägt den Kopf ' + x.kopf);
   });
-  if(nr.length !== 12) throw new Error('es sind ' + nr.length);
+  if(nr.length !== 11) throw new Error('es sind ' + nr.length);
   return nr.length + ' Paragrafen';
 });
 

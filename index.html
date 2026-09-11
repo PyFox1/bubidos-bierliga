@@ -608,7 +608,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-11 07:05 · G41 (GitHub)';
+const FASSUNG = '2026-09-11 08:02 · G41 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -623,10 +623,12 @@ const FASSUNG = '2026-09-11 07:05 · G41 (GitHub)';
 const NOTIZ_START  = 1;
 const NOTIZ_ANZAHL = 3;
 const NOTIZEN = [
-  /* Absichtlich ohne Inhalt: Die Tagesmarken sollen die Runde am Abend überraschen und
-     nicht vorher in den Änderungen stehen. Nachzulesen sind sie in § 8 – wer die
-     Betriebsanleitung aufschlägt, will es wissen. */
-  {f:'G41', d:'11.09.2026', z:'07:05', punkte:[
+  /* Absichtlich ohne Inhalt: Die Tagesmarken sollen die Runde am Abend überraschen. Anders
+     als sonst gibt es dafür auch keinen Paragrafen zum Nachschlagen – wer die Betriebs-
+     anleitung durchblättert, soll den Witz nicht vorher lesen können. Die Marke merkt sich
+     trotzdem alles Nötige im Datenbestand (siehe `tag.marken` weiter oben im Quelltext);
+     nur erklärt wird sie nirgends. */
+  {f:'G41', d:'11.09.2026', z:'08:02', punkte:[
     'Diese Fassung bringt eine Sache mit, die hier absichtlich nicht steht. '
     + 'Sie meldet sich von selbst.']},
   {f:'G40', d:'10.09.2026', z:'19:42', punkte:[
@@ -3185,34 +3187,7 @@ function ansichtInfo(){
     + 'steht, muss liefern, um zu halten. Und wer an einem Tag fehlt, verliert nichts — er kommt in der '
     + 'Wertung dieses Tages schlicht nicht vor.</p></div>'
 
-    + '<div class="para" id="p8"><h2><i>§ 8</i> Tagesmarken</h2>'
-    + '<p>Wer an einem Tag <strong>zehn Biereinheiten</strong> erreicht, erhält eine '
-    + 'Urkunde. Bei <strong>achtzehn</strong> und bei <strong>fünfundzwanzig</strong> noch '
-    + 'einmal, jeweils in gesteigerter Ausführung. Ausgestellt wird <strong>je Person</strong>: '
-    + 'Es ist kein Wettlauf, wer nachzieht, bekommt seine eigene. Maßgeblich ist der Tag und '
-    + 'nicht das Wochenende — am nächsten Morgen sind alle drei wieder zu haben.</p>'
-    + '<p>Überschreiten mehrere die Marke kurz nacheinander, was bei einer Runde für alle '
-    + 'regelmäßig vorkommt, erscheinen die Urkunden <strong>nacheinander</strong>, jede mit '
-    + 'ihrem eigenen Namen und ihrem eigenen Wortlaut.</p>'
-    + '<p>Fällt jemand wieder unter die Marke, weil ein Getränk zurückgenommen wurde, wird die '
-    + 'Urkunde <strong>eingezogen</strong> und verschwindet von allen Geräten. Ein bereits '
-    + 'gesichertes Bild bleibt davon unberührt.</p>'
-    + '<p>Die Urkunde erscheint auf <strong>jedem Gerät</strong>, das die App geöffnet hat, und '
-    + 'bleibt dort liegen, bis sie einmal bestätigt wurde. Wer sein Handy derweil in der Tasche '
-    + 'hatte, findet sie beim nächsten Öffnen vor, notfalls am Morgen danach. Das Bestätigen gilt '
-    + 'ausschließlich für das eigene Gerät; die Urkunde eines anderen lässt sich nicht wegtippen.</p>'
-    + '<p>Der Wortlaut wird zum Anlass verfasst und nimmt <strong>Bezug auf das Tagesgeschehen</strong>. '
-    + 'Steht dafür keine Verbindung zur Verfügung, tritt eine vorgefertigte Ausfertigung an ihre '
-    + 'Stelle. Ein Anspruch auf Originalität besteht in diesem Fall nicht.</p>'
-    + '<p>Die Urkunde lässt sich als <strong>Bild sichern</strong>. Darauf vermerkt sind Datum, '
-    + 'Uhrzeit, Wochenende, Tag sowie Nummer und Name der Location, an der die Marke fiel — '
-    + 'und zwar der Location <strong>dieser Person</strong>, auch wenn die Runde sich '
-    + 'zwischenzeitlich aufgeteilt hat.</p>'
-    + '<p>Mit dem Abschluss des Wochenendes wird der Wortlaut vernichtet. Die Marke selbst — wer, '
-    + 'wann, welche Stufe — bleibt aktenkundig. Gesicherte Bilder sind davon nicht betroffen; '
-    + 'das ist der Sinn des Sicherns.</p></div>'
-
-    + '<div class="para" id="p9"><h2><i>§ 9</i> Datenschutz</h2>'
+    + '<div class="para" id="p8"><h2><i>§ 8</i> Datenschutz</h2>'
     + '<p>App und Daten liegen getrennt. Die App selbst steht öffentlich auf GitHub Pages — '
     + '<strong>jeder mit dem Link</strong> kann sie öffnen und den Code lesen. Die Tabelle bekommt '
     + 'er damit nicht zu sehen: Die Daten liegen in einem <strong>privaten</strong> Repository, und '
@@ -3223,7 +3198,7 @@ function ansichtInfo(){
     + '<p><strong>Praktisch heißt das:</strong> Schlüssel nur in der Gruppe weitergeben, keine '
     + 'Klarnamen wo Vornamen reichen, und nichts eintragen, was niemanden etwas angeht.</p></div>'
 
-    + '<div class="para" id="p10"><h2><i>§ 10</i> Sicherung</h2>'
+    + '<div class="para" id="p9"><h2><i>§ 9</i> Sicherung</h2>'
     + '<p>Die Daten liegen in einem eigenen Repository, und <strong>jede Änderung wird dort ein '
     + 'Commit</strong>. Überschrieben wird nichts, jeder frühere Stand bleibt abrufbar. Darauf '
     + 'setzen drei Ebenen auf:</p><ul>'
@@ -3261,7 +3236,7 @@ function ansichtInfo(){
     + 'Locations, Tage und Wochenenden lassen sich weiterhin gezielt entfernen — und selbst das '
     + 'steht danach noch in der Historie.</p></div>'
 
-    + '<div class="para" id="p11"><h2><i>§ 11</i> Störungsbehebung</h2>'
+    + '<div class="para" id="p10"><h2><i>§ 10</i> Störungsbehebung</h2>'
     + '<table class="info">'
     + '<tr><td class="frage">Das Foto meldet 47 Striche</td><td>Entweder galt ein Bierfleck als Strich, '
     + 'oder ihr wart fleißig. Mit Minus korrigieren. Bei 47 bitte auch § 2 nochmals lesen.</td></tr>'
@@ -3289,7 +3264,7 @@ function ansichtInfo(){
     + 'hängt dort noch die alte Fassung im Zwischenspeicher, und ein Neuladen der Seite holt '
     + 'sie nach.</td></tr></table></div>'
 
-    + '<div class="para" id="p12"><h2><i>§ 12</i> Gewährleistung</h2>'
+    + '<div class="para" id="p11"><h2><i>§ 11</i> Gewährleistung</h2>'
     + '<p>Garantiert wird die korrekte Anwendung der Elo-Formel. Nicht garantiert werden der Hausfrieden, '
     + 'die Richtigkeit handschriftlicher Strichlisten nach dem vierten Bier und das Zustandekommen des '
     + 'nächsten Wochenendes.</p>'

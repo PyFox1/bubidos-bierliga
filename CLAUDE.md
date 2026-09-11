@@ -69,7 +69,7 @@ Die Variable `ansicht` überschreibt das für Unteransichten. Werte: `null` (aut
 | `ansichtPerson` | Kacheln, Orden, Wochenenden | Tipp auf einen Namen in der Tabelle |
 | `ansichtWeDetail` | Fazit eines Wochenendes | Tipp auf eine Wochenendzeile |
 | `ansichtEinst` | Nachschlagen, Verwaltung, Änderungen | Zahnrad |
-| `ansichtInfo` | Betriebsanleitung, §1–§12 | aus den Einstellungen oder Erklär-Blättern |
+| `ansichtInfo` | Betriebsanleitung, §1–§11 | aus den Einstellungen oder Erklär-Blättern |
 
 Überlagerungen (`.blende`), gezeichnet in dieser Rangfolge: `foto`, `rechnung`, `punkteOffen`,
 `erklaer`, `blatt` (Sammel-Eingabe), `sicherBlatt`, `benennen`, `wechsler`, `fazitOffen`, zuletzt
@@ -361,7 +361,7 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   alten Beständen wird nicht mehr gelesen, wie schon der `deckel`.
 - **Erklärungen sitzen im Kontext, nicht in der Anleitung.** Tipp auf eine Zahl öffnet ein kurzes
   Blatt mit Verweis in den passenden Paragrafen. Die Betriebsanleitung ist Nachschlagewerk,
-  kein Einstieg. Jeder Paragraf hat einen Anker `p1` bis `p12`. Wer einen Paragrafen einschiebt,
+  kein Einstieg. Jeder Paragraf hat einen Anker `p1` bis `p11`. Wer einen Paragrafen einschiebt,
   muss die `para`-Verweise in `ERKLAERUNGEN` mitziehen — dort stehen Anker *und* Klartextname
   (`§ 7 Technische Daten`), und beide laufen sonst auseinander.
 - **Tagesmarken: 10, 18 und 25 BE, je Stufe, Tag und Person genau eine.** Die Entscheidungen
@@ -534,9 +534,13 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   laufende Fassung, nicht bloß die erste Zeile einer Liste.
   **Ausnahme G41:** Die Tagesmarken stehen bewusst *nicht* in den Änderungen — sie sollen die
   Runde am Abend überraschen, und wer nachschaut was neu ist, hätte den Witz vorher gelesen.
-  Die Notiz sagt, dass etwas da ist, und nicht was. Nachzulesen sind sie in § 8: Wer die
-  Betriebsanleitung aufschlägt, will es wissen. `urkunde.mjs` prüft, dass die Notiz nicht
-  doch verrät. Das ist die einzige Stelle, an der eine Notiz absichtlich schweigt.
+  Die Notiz sagt, dass etwas da ist, und nicht was. Anders als sonst gibt es dafür auch
+  **keinen eigenen Paragrafen** in der Betriebsanleitung — die Überraschung soll auch dem
+  entgehen, der von sich aus nachschlägt, nicht nur dem, der die Notizen liest. Ein
+  Erklär-Blatt zeigt hier folglich auf nichts; die Marke steht nur im Quelltext
+  (`tag.marken`, siehe Tagesmarken weiter unten) und in der Anwendung selbst. `urkunde.mjs`
+  prüft, dass weder eine Notiz noch die Anleitung den Witz vorwegnimmt. Das ist die einzige
+  Stelle, an der beides absichtlich schweigt.
   Geschrieben wird sonst **für den, der die App bedient**: was er jetzt anders vorfindet oder neu
   kann. Keine Funktions- und Klassennamen, kein `sha`/`ETag`/`Timer`, und vor allem keine
   Floskeln — „diverse Verbesserungen", „Stabilität erhöht" sagen niemandem etwas. Statt
