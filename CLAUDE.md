@@ -494,10 +494,21 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
 - **Der Aufruf der Anthropic-API aus dem Browser geht.** Er läuft mit
   `anthropic-dangerous-direct-browser-access` und wurde auf GitHub Pages am Foto-Zählen
   nachgewiesen. Hier stand lange das Gegenteil — das war überholt. Daran hängt auch der
-  Nachrichtenbezug der Urkunden: derselbe Endpunkt, derselbe Header. Was damit **nicht**
-  geprüft ist, ist die serverseitige Websuche (`web_search`) auf diesem Weg; dafür gibt es
-  `tests/echt-ki.mjs`. Der Schlüssel liegt im Datenbestand und damit im Browser jedes Geräts —
-  das ist für fünf Freunde vertretbar, für alles andere nicht.
+  Nachrichtenbezug der Urkunden: derselbe Endpunkt, derselbe Header. Der Schlüssel liegt im
+  Datenbestand und damit im Browser jedes Geräts — das ist für fünf Freunde vertretbar, für
+  alles andere nicht.
+  **Gegen die echte API geprüft** (G41): Opus 5 mit `web_search_20260209`, `effort: medium`
+  und `max_tokens: 8000` antwortet mit 200, führt zwei Suchen aus und liefert einen echten
+  Nachrichtenbezug. Gemessen dabei: 51.000 Eingabe-Token — die Suchergebnisse machen fast
+  alles davon aus —, 2.423 Ausgabe-Token, davon **1.413 fürs Denken**. Zwei Zahlen zum
+  Merken: Das alte `max_tokens: 1500` hätte mitten im JSON abgeschnitten, und eine Urkunde
+  kostet damit rund **35 Cent**, nicht die anfangs geschätzten acht. Wird das zu viel:
+  `max_uses` der Websuche von 2 auf 1, das halbiert die Eingabe.
+- **Ein abfangender Proxy lässt den Aufruf wie einen App-Fehler aussehen.** In einer Sandbox,
+  die TLS aufbricht, scheitert der Aufruf **aus dem Browser** nach ein bis zwei Sekunden mit
+  `ERR_CERT_AUTHORITY_INVALID`; `urkundeHolen()` schluckt das und lässt den Ersatztext stehen.
+  `tests/echt-ki.mjs` meldet dann „ERSATZTEXT“, obwohl die App in Ordnung ist. Gegenprobe:
+  denselben Rumpf per `curl` schicken — geht der durch, liegt es an der Umgebung.
 - **Kein `localStorage` für die eigentlichen Daten.** Nur Token, Gerätekennung, der eigene
   Standort (`ortPin`), die Notfallkopie und die Abgleich-Basis liegen lokal. Die Wahrheit
   steht immer im Repository. Spiegel und Basis sind je eine volle Fassung des Stands — bei

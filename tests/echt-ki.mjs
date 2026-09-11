@@ -12,7 +12,14 @@
              ANTHROPIC_API_KEY=sk-ant-… node tests/echt-ki.mjs 10     (nur einer)
    Ergebnis: tests/bilder/echt-*.png und der Wortlaut auf der Konsole.
 
-   Der Schlüssel wird nur an die API geschickt, nirgends geloggt und nirgends abgelegt. */
+   Der Schlüssel wird nur an die API geschickt, nirgends geloggt und nirgends abgelegt.
+
+   Braucht eine Umgebung, in der **der Browser** TLS zu api.anthropic.com aufbauen kann.
+   Hinter einem abfangenden Proxy (manche Agenten-Sandbox) scheitert der Aufruf nach
+   ein bis zwei Sekunden mit ERR_CERT_AUTHORITY_INVALID, `urkundeHolen()` schluckt das,
+   und oben steht dann „ERSATZTEXT“ — was wie ein Fehler der App aussieht und keiner ist.
+   Gegenprobe in so einem Fall: denselben Rumpf per curl schicken. Geht das durch, liegt
+   es an der Umgebung. Am Handy über GitHub Pages stellt sich die Frage nicht. */
 import { chromium } from 'playwright-core';
 import http from 'http';
 import fs from 'fs';
