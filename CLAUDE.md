@@ -458,8 +458,26 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
     Websuche-Werkzeug; das Modell weiß von sich aus nicht, was in der Zeitung stand. Die Suche
     läuft serverseitig, ein Aufruf genügt also — keine Werkzeugschleife. Sie muss **nicht von
     heute** sein: Der Prompt lässt die letzten Tage zu, ein guter Bezug schlägt einen frischen.
-    Außerdem darin: nichts Trauriges, und weder Quelle noch Schlagzeile nennen — der Bezug muss
-    sich aus dem Satz ergeben.
+    Außerdem darin: nichts Trauriges, nichts übers Wetter, und weder Quelle noch Schlagzeile
+    nennen — der Bezug muss sich aus dem Satz ergeben.
+  - **Bekannt schlägt passend: Es muss eine große Meldung sein** (G44). Die App sucht nichts
+    aus, das Modell tut es — der Prompt gibt keine Suchanfrage vor, sondern nur Kriterien.
+    Und die waren allein auf Passung getrimmt („nimm die, die am besten passt"). Damit konnte
+    eine Randmeldung gewinnen, die am Tisch keiner kennt. Zusammen mit der Regel, Quelle und
+    Schlagzeile *nicht* zu nennen, blieb dem Leser dann nichts, woran er andockt: ein Satz, der
+    sichtbar auf etwas anspielt, das niemand auflöst. Die Regel „nenn die Schlagzeile nicht"
+    geht überhaupt nur auf, wenn die Meldung ohnehin jeder kennt — Bekanntheit ist deshalb
+    Vorbedingung, nicht Kür, und steht im Prompt **vor** der Passung. Der Maßstab ist bewusst
+    eine Person, kein Ressort: „jeder, der einmal am Tag seine Nachrichten-App aufmacht".
+    Erlaubt sind **Deutschland, Welt und Fußball**; anderer Sport nicht — Randsportarten kennt
+    in der Runde nicht jeder, und dann ist der Witz wieder weg. Findet sich unter den großen
+    Meldungen keine, die sich verweben lässt, soll gar keine hinein: Eine Anspielung, die
+    keiner erkennt, ist keine Pointe.
+    Dazu ein mechanischer Punkt, der leicht übersehen wird: Es gibt **genau eine** Suche
+    (`max_uses: 1`), und was sie zurückbringt, ist der ganze Auswahlvorrat. Deshalb sagt der
+    Prompt ausdrücklich, wofür sie zu verwenden ist — für die Schlagzeilen dieser Tage, *nicht*
+    für „eine Nachricht, die zum Bier passt". Sonst holt die eine Suche eine Nische herein, und
+    die Auswahl steht schief, bevor sie beginnt. `urkunde-ki.mjs` hält beide Seiten fest.
   - **Das Bild zum Aufheben wird auf ein Canvas gezeichnet** (`urkundeBild()`), nicht aus der
     Seite geschnitten. Ein Bildschirmfoto hätte den Zählbildschirm dahinter, die Blende darüber
     und die Maße des jeweiligen Handys. Darauf stehen Datum, Uhrzeit, Wochenende, Tag und

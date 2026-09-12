@@ -105,6 +105,32 @@ await schritt('Die Anweisung verlangt den Nachrichtenbezug', async () => {
   return 'Bezug, Zeitfenster und Slang stehen drin';
 });
 
+/* Die Auswahl war lange allein auf Passung getrimmt: „nimm die, die am besten passt".
+   Damit konnte eine Randmeldung gewinnen, die kein Mensch am Tisch kennt – und weil
+   Quelle und Schlagzeile ungenannt bleiben müssen, hat der Leser dann gar nichts, woran
+   er andockt. Die Bekanntheit ist deshalb Vorbedingung, nicht Kür: Erst die großen
+   Meldungen, dann darunter die beste Passung. */
+await schritt('Die Meldung muss eine sein, die jeder kennt', async () => {
+  const t = letzterLeib.messages[0].content;
+  ['Nachrichten-App', 'Aufmacher', 'genau eine Suche', 'lieber gar keine']
+    .forEach(w => { if(t.indexOf(w) < 0) throw new Error('„' + w + '" fehlt'); });
+  /* Die eine Suche geht auf die Schlagzeilen, nicht auf ein Thema, das zum Bier passt –
+     sonst holt sie eine Nische herein, und die Auswahl steht von vornherein schief. */
+  if(t.indexOf('nicht für eine Nachricht, die zum Bier passt') < 0)
+    throw new Error('die Suchrichtung steht nicht drin');
+  return 'bekannt vor passend';
+});
+
+await schritt('Erlaubt sind Deutschland, Welt und Fußball – sonst kein Sport', async () => {
+  const t = letzterLeib.messages[0].content;
+  ['Deutschland', 'Welt', 'Fußball'].forEach(w => {
+    if(t.indexOf(w) < 0) throw new Error('„' + w + '" fehlt');
+  });
+  if(t.indexOf('anderer Sport nicht') < 0)
+    throw new Error('der übrige Sport wird nicht ausgeschlossen');
+  return 'drei Gebiete';
+});
+
 console.log('\n══ Was ankommt ══');
 
 await schritt('Der Text von der API ersetzt den Ersatztext', async () => {
