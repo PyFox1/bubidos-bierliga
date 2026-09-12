@@ -615,7 +615,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-12 11:48 · G45 (GitHub)';
+const FASSUNG = '2026-09-12 12:30 · G46 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -635,6 +635,8 @@ const NOTIZEN = [
      anleitung durchblättert, soll den Witz nicht vorher lesen können. Die Marke merkt sich
      trotzdem alles Nötige im Datenbestand (siehe `tag.marken` weiter oben im Quelltext);
      nur erklärt wird sie nirgends. */
+  {f:'G46', d:'12.09.2026', z:'12:30', punkte:[
+    'Die Sache von neulich hat dazugelernt und redet jetzt deutlich mehr wie die Runde.']},
   {f:'G45', d:'12.09.2026', z:'11:48', punkte:[
     'Die Sache von neulich meldet sich jetzt in dem Moment, in dem sie fällig wird — '
     + 'die Pause davor ist weg.']},
@@ -1235,45 +1237,181 @@ const MARKEN = [10, 18, 25];
    Die Beispiele sind wichtiger als die Bedeutung – ohne sie streut das Modell
    „Peter“ als Anrede ein, und genau das ist es nicht. */
 const SLANG = [
-  {w:'zappen', b:'trinken',
+  /* Die mit `kern` sind die stehenden Wendungen, an denen die Runde sich erkennt. Sie
+     standen hier zuerst allein; seit der Wortschatz auf über dreißig Einträge gewachsen
+     ist, käme jede einzelne sonst nur noch in jeder zwanzigsten Urkunde dran, und genau
+     die, die den Ton machen, gingen in der Masse unter. Die Anweisung nimmt bevorzugt
+     daraus, der Rest ist Fundus. */
+  {w:'zappen', b:'trinken', kern:true,
    bsp:['zappt sich zweistellig', 'hat den ganzen Abend durchgezappt', 'weggezappt']},
   {w:'Peter', b:'kein eigenes Wort, sondern eine Silbe, die mitten in ein anderes Wort '
      + 'geschoben wird, am liebsten an der Fuge eines zusammengesetzten Wortes. Steht nie '
      + 'für sich allein und ist keine Anrede. Höchstens einmal je Text, sonst nutzt es sich ab.',
+   kern:true,
    bsp:['Bierpetereinheiten', 'ordnungspetergemäß', 'Legendenpeterbildung', 'Nachpetertag']},
-  /* Die beiden folgenden sind Zitate einer Offenbacher Netzfigur und in der Runde stehende
-     Wendungen. Wörtlich so übernehmen, nicht ins Hochdeutsche glätten – „die Sprüche kennen
-     wir alle“ ist nicht dasselbe und klingt nach niemandem. */
+
+  /* ---- Assi Toni, Offenbacher Netzfigur ----
+     Wörtlich so übernehmen, nicht ins Hochdeutsche glätten – „die Sprüche kennen wir
+     alle“ ist nicht dasselbe und klingt nach niemandem. */
   {w:'Da kommt dir der Mock hoch', b:'Ausruf des Ekels: Einem wird schlecht, es steigt einem '
      + 'hoch. Richtet sich immer gegen eine Sache und nie gegen eine Person — gegen das '
      + 'alkoholfreie Bier, gegen die eine Halbe zu viel, gegen den Gedanken ans Nachmachen.',
+   kern:true,
    bsp:['Beim bloßen Gedanken kommt dir der Mock hoch',
         'Da kommt dir der Mock hoch', 'dem kommt der Mock hoch']},
   {w:'Die Sprüch kenn mer alle', b:'Abwinken vor einer Ankündigung, die keiner glaubt — '
      + '„jetzt ist aber Schluss“, „ich fahr gleich heim“, „das war die letzte“. Steht fast '
      + 'immer mit „Ja, ja“ davor und wird gern gleich wiederholt.',
+   kern:true,
    bsp:['Ja, ja, die Sprüch kenn mer alle',
         'Die Sprüch kenn mer alle, die kenn mer alle']},
   {w:'Dis is er, dis is der Mann fürs Leben', b:'Vorstellung des idealen Kandidaten, als '
      + 'Pointe an den Schluss gesetzt. Die Verdopplung gehört dazu und wird nicht gekürzt. '
      + 'Passt dorthin, wo eine Leistung keiner weiteren Begründung mehr bedarf.',
+   kern:true,
    bsp:['Dis is er, dis is der Mann fürs Leben',
         'Ja, ja, das ist er, der Mann fürs Leben']},
   /* Die nächsten zwei sind in der Form übernommen und im Ziel getauscht: Im Original geht
-     das eine ums Ficken und das andere gegen eine Frau. Wiedererkennbar ist beides Mal
-     nicht das Ziel, sondern die Bauart – die absurde Steigerung hier, die dreifache
-     Verschärfung dort. Der Wortlaut steht in einem Prompt, der bei *jeder* Urkunde ein bis
-     zwei Einträge einweben soll, und das Ergebnis trägt einen Namen und wird verschickt. */
+     das eine ums Ficken und das andere gegen eine Frau. Sie bleiben so, auch seit die
+     übrigen Zitate im Wortlaut dastehen – in dieser Form kennt die Runde sie inzwischen,
+     und die Ersatztexte zitieren sie wörtlich mit. */
   {w:'mehr gezappt wie ich gepisst hab', b:'Angeberei in absurder Steigerungsform, bei der '
      + 'zwei Dinge verglichen werden, die man nicht vergleicht. Immer über die eigene '
      + 'Leistung, nie über die eines anderen.',
+   kern:true,
    bsp:['Ich hab mehr gezappt wie ich gepisst hab',
         'mehr Halbe wie Schritte']},
   {w:'Dreck, Dreck, Original Dreck', b:'Vernichtendes Urteil in drei Stufen, wobei das '
      + 'dritte „Original“ die Steigerung trägt. Gilt ausschließlich einer Sache — dem '
      + 'alkoholfreien Bier, der lauwarmen Halben, dem Glas mit Rand. Nie einem Menschen.',
+   kern:true,
    bsp:['Alkoholfrei? Dreck, Dreck, Original Dreck',
-        'Dreck, Dreck, Original Dreck']}
+        'Dreck, Dreck, Original Dreck']},
+
+  {w:'Des sin Sachen ausm Leeeeeben', b:'Beteuerung, dass etwas wirklich passiert ist — die '
+     + 'Verteidigung gegen den Vorwurf, so etwas erzähle man nicht. Kommt direkt nach etwas '
+     + 'Unglaublichem. Die gedehnten E gehören dazu und werden nicht gekürzt.',
+   bsp:['Des sin Sachen ausm Leeeeeben', 'Kein Wort erfunden, des sin Sachen ausm Leeeeeben']},
+  {w:'Kleiner Scherz am Rande, aber im Prinzip isses so', b:'Nachgeschobene Halb-Zurücknahme, '
+     + 'die die Behauptung in Wahrheit bekräftigt. Steht hinter einer Übertreibung und nimmt '
+     + 'ihr nichts.',
+   bsp:['Kleiner Scherz am Rande, aber im Prinzip isses so']},
+  {w:'Genau so is des, NUR so', b:'Bekräftigung ohne Spielraum, gern mit „ihr wisst, dass es '
+     + 'so ist“ hinterher. Das NUR trägt den Nachdruck und steht groß.',
+   bsp:['Genau so is des, NUR so', 'Genau so is des, NUR so, ihr wisst, dass es so ist']},
+  {w:'des sind normale Gedanken', b:'Trockene Feststellung, dass das eben Gesagte für den '
+     + 'Sprecher völlig gewöhnlich ist. Wirkt nur, weil der Inhalt alles andere als '
+     + 'gewöhnlich war.',
+   bsp:['Ich lieg jetz hier, des sind normale Gedanken', 'des sind normale Gedanken']},
+  {w:'ER is widder de Durchgepeitschte', b:'Vorwegnahme des erwarteten Vorwurfs: Jetzt heißt '
+     + 'es wieder, ausgerechnet der sei es gewesen. Als Klage über die eigene Rolle oder als '
+     + 'stehender Witz über den, auf den ohnehin alle zeigen.',
+   bsp:['Und jetzt sacht ihr, ER is widder de Durchgepeitschte']},
+  {w:'der hat e guden Ruf, der ise früher en Assi gewesen', b:'Lob, das sich selbst '
+     + 'widerspricht — die Empfehlung besteht gerade aus dem, was gegen sie spricht. Gilt '
+     + 'einem Ruf, einer Kneipe, einem Bier.',
+   bsp:['Die Kneipe hat e guden Ruf, die war früher e Assi-Laden',
+        'Der hat e guden Ruf, der ise früher en Assi gewesen']},
+  {w:'Bam, ba-bam! Flatsch, flatsch!', b:'Lautmalerei mitten in einer Schilderung, die sie '
+     + 'echt wirken lassen soll. In der Runde sind es Gläser, Deckel und Zapfhahn.',
+   bsp:['Bam, ba-bam! Und die Halbe stand', 'Flatsch, flatsch, der Deckel war voll']},
+  {w:'Dann machts BAM!', b:'Der schlagartige Umschwung, nach dem das Urteil kommt. Auftakt, '
+     + 'nie für sich allein — es folgt immer, was danach gilt.',
+   bsp:['Dann machts BAM! Und dann ist alkoholfrei für mich Dreck, Original Dreck',
+        'Dann machts BAM, und die Halbe war leer']},
+  {w:'So schlecht schmeckt des doch gar net', b:'Beschwichtigung, mit der einem etwas '
+     + 'schmackhaft geredet wird, das man nicht will. Gilt einem Getränk.',
+   bsp:['So schlecht schmeckt des doch gar net, sagen sie beim Alkoholfreien']},
+  {w:'da unten brennt mir gleich alles weg', b:'Drängeln mit erfundener Dringlichkeit. In der '
+     + 'Runde ist das Glas gemeint, das warm wird, oder die Runde, die zu lange braucht.',
+   bsp:['Beeil dich mal, da unten brennt mir gleich alles weg',
+        'Beeil dich, sonst brennt mir die Halbe weg']},
+  {w:'Erzähl des ned rum, des bleibt unner uns', b:'Bitte um Verschwiegenheit mit schlechtem '
+     + 'Gewissen. Geht um die eigene Leistung.',
+   bsp:['Erzähl des ned rum, dass ich so hart gezappt hab',
+        'Des bleibt unner uns, ich hab eh e schlechtes Gewissen']},
+  {w:'so geil, so schee, so romandisch', b:'Schwärmerei in Serie, in der sich die Adjektive '
+     + 'überschlagen. Gilt einem Abend, einem Bier, einer Kneipe.',
+   bsp:['So geil, so schee, so romandisch war der Abend', 'Des is mein Traumbier, so schee']},
+  {w:'So ein Orgasmus hatte ich noch nie', b:'Superlativ über ein Erlebnis, das alles '
+     + 'Bisherige übertreffen soll. Leitet die Pointe ein, die meist mit „des isser“ weitergeht.',
+   bsp:['So ein Orgasmus hatte ich noch nie, des isser', 'So eine Halbe hatte ich noch nie']},
+  {w:'Oh, mach doch, wenn’s dich net stört', b:'Gleichgültige Erlaubnis, die in Wahrheit ein '
+     + 'Abwinken ist.',
+   bsp:['Oh, mach doch, wenn’s dich net stört', 'Noch eine? Mach doch, wenn’s dich net stört']},
+  {w:'Die wollen das so', b:'Rechtfertigung durch eine angeblich fremde Erwartung. Gilt der '
+     + 'Regel, der Tabelle, dem Brauch.',
+   bsp:['Die Tabelle will das so', 'Die wollen das so, sagt die Regel']},
+  {w:'An deiner Schneck da unne rumzuschupper, des es andersda wie bei annern Fraun',
+   b:'Behauptung der Unvergleichbarkeit: Bei dem einen ist alles anders als bei allen '
+     + 'anderen. Die Bauart ist „des es andersda wie bei annern“ und wird auf die Kneipe, '
+     + 'das Bier, den Abend gelegt.',
+   bsp:['Des Bier hier, des es andersda wie bei annern',
+        'An deiner Schneck da unne rumzuschupper, des es andersda wie bei annern Fraun']},
+
+  /* ---- Der Boxprinz, Große Freiheit ----
+     Aus der Szene, in der das Filmteam angerempelt wird. Übernommen ist der Wortlaut, die
+     Ohrfeige bleibt draußen: Die Wendungen zielen auf Einwände, nicht auf Gegenüber. */
+  {w:'Hast du ’n Problem? Geh weiter!', b:'Abfertigung eines Einwands, über den nicht '
+     + 'diskutiert wird. Richtet sich gegen den Einwand.',
+   bsp:['Alkoholfrei? Hast du ’n Problem? Geh weiter!',
+        'Zur Frage, ob das noch gesund ist: Hast du ’n Problem? Geh weiter!']},
+  {w:'Noch ’n Problem? Besser isses!', b:'Schlusspunkt, nach dem nichts mehr kommt. Das '
+     + '„Besser isses“ steht auch allein und besiegelt eine Entscheidung, die keiner '
+     + 'Begründung mehr bedarf.',
+   bsp:['Noch eine Halbe? Besser isses', 'Noch ’n Problem? Besser isses!']},
+  {w:'So, komm, weiter!', b:'Aufbruchssignal: Das Thema ist beendet, die Runde zieht zur '
+     + 'nächsten Station. Steht am Ende, nicht am Anfang.',
+   bsp:['So, komm, weiter!', 'Deckel drauf, so, komm, weiter']},
+  {w:'keinen Bock, hier mit den Arschlöchern rumzureden', b:'Abbruch einer Rechtfertigung, zu '
+     + 'der man keine Lust hat, mitsamt Abgang. Gilt der Fragerei und dem Gerede darum.',
+   bsp:['Keinen Bock, hier mit den Arschlöchern rumzureden',
+        'Die Zahl steht, keinen Bock hier rumzureden']},
+
+  /* ---- Willi Konrad ----
+     Die Schimpfkaskade vor laufender Kamera. Wörtlich übernommen, auch das Grobe: In der
+     Runde sind das stehende Sprüche. Gesteuert wird über die Bedeutung, wogegen sie gehen —
+     gegen Zweifel, Fragen und das Alkoholfreie, und beim Schimpfwort anerkennend. */
+  {w:'Isch hab ka Geld überwiese', b:'Flaches Leugnen im Brustton der Empörung, bevor '
+     + 'überhaupt jemand nachgehakt hat.',
+   bsp:['Isch hab ka Geld überwiese', 'Isch hab ka alkoholfrei getrunke']},
+  {w:'Was soll denn die doofe Frage?', b:'Empörte Zurückweisung einer Frage, die man nicht '
+     + 'beantworten will — die Frage selbst wird zum Skandal erklärt.',
+   bsp:['Ob das die letzte war? Was soll denn die doofe Frage?',
+        'Was soll denn die doofe Frage?']},
+  {w:'Sind Sie in Ihrem Kopf net normal oder was?', b:'Empörte Rückfrage auf einen Vorschlag, '
+     + 'der einem absurd erscheint. Gilt dem Vorschlag.',
+   bsp:['Alkoholfrei? Sind Sie in Ihrem Kopf net normal oder was?',
+        'Sind Sie in Ihrem Kopf net normal oder was?']},
+  {w:'Unverschämt mir so a Frage zu stellen', b:'Die Frage wird zur Unverschämtheit erklärt, '
+     + 'statt sie zu beantworten. Steht gern direkt vor oder nach der Zurückweisung.',
+   bsp:['Unverschämt mir so a Frage zu stellen',
+        'Wie viel noch? Unverschämt mir so a Frage zu stellen']},
+  {w:'Isch hau Ihnen in die Fresse, mehr sind se net wert', b:'Maßlose Drohung, die aus der '
+     + 'Form lebt und nicht aus der Absicht: Empörung, die sofort ins Gewaltige kippt und '
+     + 'dadurch komisch wird. Geht gegen Zweifel an der Zahl und gegen das Alkoholfreie, '
+     + 'nicht gegen den, dem die Urkunde gilt.',
+   bsp:['Wer da an der Zahl zweifelt: Isch hau Ihnen in die Fresse, mehr sind se net wert',
+        'Mehr sind se net wert']},
+  {w:'Weg!', b:'Einsilbiger Befehl an etwas, das im Weg ist: das leere Glas, die Karte, das '
+     + 'Alkoholfreie. Wird wiederholt, wenn nichts passiert.',
+   bsp:['Weg!', 'Das Alkoholfreie? Weg!']},
+  {w:'Schicken Sie mir den Chefredakteur', b:'Eskalation zur höheren Instanz wegen einer '
+     + 'Kleinigkeit. In der Runde ist das der Wirt, die Brauerei, die Tabelle.',
+   bsp:['Schicken Sie mir den Chefredakteur', 'Die Halbe war lau — schicken Sie mir den Wirt']},
+  {w:'wie können Sie mich auf so etwas ansprechen?', b:'Empörung darüber, überhaupt gefragt '
+     + 'worden zu sein. Gilt der Frage.',
+   bsp:['Wie können Sie mich auf so etwas ansprechen?',
+        'Nachzählen? Wie können Sie mich auf so etwas ansprechen?']},
+  {w:'Hab in meinem ganzen Leben noch kein Geld in die Schweiz überwiesen', b:'Leugnen über '
+     + 'das ganze Leben hinweg, in einer Ausführlichkeit, die niemand verlangt hat. Die '
+     + 'Bauart „Hab in meinem ganzen Leben noch kei …“ trägt und lässt sich auf alles legen.',
+   bsp:['Hab in meinem ganzen Leben noch kein Geld in die Schweiz überwiesen',
+        'Hab in meinem ganzen Leben noch kei Alkoholfreies bestellt']},
+  {w:'Dreckschwein!', b:'Schimpfwort als Anerkennung — in der Runde der Ausruf, wenn jemand '
+     + 'etwas geschafft hat, das keiner für möglich hielt. Bewundernd gebraucht, als Ausruf '
+     + 'für sich, nie als Urteil über einen Menschen.',
+   bsp:['Fünfundzwanzig? Dreckschwein!', 'Dreckschwein!']}
 ];
 
 /* Ohne Netz, ohne Schlüssel oder wenn die API zickt, steht einer davon da. Sie müssen
@@ -2532,8 +2670,10 @@ function urkundeAnweisung(tg, m){
       + 'Keine Ausrufezeichen, keine Emojis, kein Werbesprech, nicht gönnerhaft. '
       + 'Zwei bis vier Sätze.',
     '',
-    'Der Wortschatz der Runde. Bau ein bis zwei davon ein, nicht mehr:',
-    SLANG.map(s => '- ' + s.w + ': ' + s.b + ' Beispiele: ' + s.bsp.join(', ')).join('\n'),
+    'Der Wortschatz der Runde. Bau ein bis zwei davon ein, nicht mehr. Die mit ★ sind '
+      + 'die stehenden Wendungen, an denen die Runde sich erkennt — nimm bevorzugt daraus:',
+    SLANG.map(s => '- ' + (s.kern ? '★ ' : '') + s.w + ': ' + s.b + ' Beispiele: '
+      + s.bsp.join(', ')).join('\n'),
     '',
     'Antworte ausschließlich mit JSON, ohne Vorrede: '
       + (m.stufe === 10 ? '{"kopf":"…","text":"…"}' : '{"text":"…"}')

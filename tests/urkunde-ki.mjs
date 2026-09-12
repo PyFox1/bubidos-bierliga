@@ -133,6 +133,16 @@ await schritt('Erlaubt sind Deutschland, Welt und Fußball – sonst kein Sport'
   return 'drei Gebiete';
 });
 
+await schritt('Der Kern geht als Rangfolge mit raus', async () => {
+  const t = letzterLeib.messages[0].content;
+  if(t.indexOf('★') < 0) throw new Error('keine Markierung in der Anweisung');
+  if(t.indexOf('nimm bevorzugt daraus') < 0)
+    throw new Error('die Rangfolge wird nicht verlangt');
+  const markiert = (t.match(/★/g) || []).length;
+  if(markiert < 5) throw new Error('nur ' + markiert + ' markiert');
+  return markiert + '× ★ von ' + (t.match(/\n- /g) || []).length + ' Einträgen';
+});
+
 console.log('\n══ Was ankommt ══');
 
 await schritt('Der Text von der API ersetzt den Ersatztext', async () => {

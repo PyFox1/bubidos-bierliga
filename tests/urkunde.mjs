@@ -521,6 +521,51 @@ await schritt('Die zwei getauschten Einträge zielen auf eine Sache, nicht auf e
   return 'beide zielen auf eine Sache';
 });
 
+/* Der Wortschatz kommt aus drei Quellen, und die Zitate stehen im Wortlaut da — auch das
+   Grobe. In der Runde sind das stehende Sprüche; wer sie beim Aufräumen glättet oder
+   herausnimmt, hat ein sauberes Wörterbuch und einen Ton, nach dem niemand mehr klingt.
+   Gesteuert wird nicht über den Wortlaut, sondern über die Bedeutung: wogegen die Wendung
+   geht, und dass das Schimpfwort anerkennend gemeint ist. */
+await schritt('Alle drei Quellen stehen wörtlich im Wortschatz', async () => {
+  const woerter = await p.evaluate(() =>
+    SLANG.map(s => s.w + ' ' + s.b + ' ' + (s.bsp || []).join(' ')).join(' | '));
+  ['Des sin Sachen ausm Leeeeeben', 'Dann machts BAM', 'des es andersda wie bei annern',
+   'Besser isses', 'mit den Arschlöchern rumzureden', 'Isch hau Ihnen in die Fresse',
+   'Dreckschwein', 'Geld in die Schweiz überwiesen']
+    .forEach(w => { if(woerter.indexOf(w) < 0) throw new Error('„' + w + '" fehlt'); });
+  return 'Toni, Boxprinz und Konrad';
+});
+
+/* Die Drohung und das Schimpfwort stehen im Wortlaut drin, aber die Bedeutung sagt, wohin
+   sie zielen. Fällt der Satz weg, baut der Prompt bei jeder Urkunde an, jemanden zu
+   beschimpfen, dessen Name groß darüber steht und die verschickt wird. */
+await schritt('Bei den groben Wendungen sagt die Bedeutung, wogegen sie gehen', async () => {
+  const x = await p.evaluate(() => {
+    const f = SLANG.find(y => /in die Fresse/.test(y.w)) || {};
+    const d = SLANG.find(y => /Dreckschwein/.test(y.w)) || {};
+    return {fresse:f.b || '', dreck:d.b || ''};
+  });
+  if(!/nicht gegen den, dem die Urkunde gilt/.test(x.fresse))
+    throw new Error('die Drohung sagt nicht mehr, wogegen sie geht: ' + x.fresse);
+  if(!/[Aa]nerkennung|anerkennend/.test(x.dreck) || !/nie als Urteil über einen Menschen/.test(x.dreck))
+    throw new Error('das Schimpfwort ist nicht mehr als Anerkennung erklärt: ' + x.dreck);
+  return 'beide gesteuert';
+});
+
+/* Über dreißig Einträge, und das Modell baut ein bis zwei ein: Ohne Rangfolge käme jede
+   einzelne nur in jeder zwanzigsten Urkunde dran, und die Wendungen, an denen die Runde
+   sich überhaupt erkennt, gingen in der Masse unter. */
+await schritt('Die stehenden Wendungen sind als Kern markiert', async () => {
+  const x = await p.evaluate(() => ({
+    n: SLANG.length, kern: SLANG.filter(s => s.kern).map(s => s.w)}));
+  if(x.kern.length < 5) throw new Error('nur ' + x.kern.length + ' im Kern');
+  ['Da kommt dir der Mock hoch', 'Die Sprüch kenn mer alle',
+   'Dis is er, dis is der Mann fürs Leben'].forEach(w => {
+    if(x.kern.indexOf(w) < 0) throw new Error('„' + w + '" steht nicht mehr im Kern');
+  });
+  return x.kern.length + ' von ' + x.n;
+});
+
 await schritt('Zu jeder Stufe gibt es mehrere Ersatztexte', async () => {
   const schlecht = await p.evaluate(() => MARKEN.filter(s =>
     !(URKUNDE_ERSATZ[s] || []).length));

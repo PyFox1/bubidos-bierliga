@@ -523,22 +523,31 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   zusammengesetzten Wortes: *Bierpetereinheiten*, *ordnungspetergemäß*, *Legendenpeterbildung*.
   Ohne die Beispielliste streut das Modell es als Einzelwort ein, und dann ist der Witz weg.
   `urkunde.mjs` prüft, dass zu jedem Eintrag Bedeutung und Beispiele stehen.
-  Fünf Einträge sind **Zitate einer Offenbacher Netzfigur** und in der Runde stehende
-  Wendungen. Drei wörtlich: *„Da kommt dir der Mock hoch"* (Ekel, gegen eine Sache),
-  *„Ja, ja, die Sprüch kenn mer alle"* (Abwinken vor einer Ankündigung) und *„Dis is er,
-  dis is der Mann fürs Leben"* (Pointe, die Verdopplung gehört dazu). Die stehen in Mundart
-  da und müssen es bleiben — wer sie beim Aufräumen glättet („die Sprüche kennen wir
-  alle"), hat ein grammatisch sauberes Wörterbuch und einen Eintrag, der nach niemandem
-  mehr klingt. `urkunde.mjs` schlägt darauf an, im Wörterbuch **und** in den Ersatztexten.
-  Zwei weitere sind **in der Form übernommen und im Ziel getauscht**: *„mehr gezappt wie
-  ich gepisst hab"* und *„Dreck, Dreck, Original Dreck"*. Im Original geht das eine ums
-  Ficken und das andere gegen eine Frau. Wiedererkennbar ist beide Male nicht das Ziel,
-  sondern die Bauart — die absurde Steigerung, die dreifache Verschärfung. Der Grund für
-  den Tausch ist mechanisch und nicht prüde: Der Wortlaut steht in einem Prompt, der bei
-  **jeder** Urkunde ein bis zwei Einträge einweben soll, das Modell trägt den satirischen
-  Rahmen des Originals nicht mit, und das Ergebnis ist ein Blatt mit einem Namen darauf,
-  das weitergeschickt wird. `urkunde.mjs` prüft deshalb, dass die Bedeutung weiterhin auf
-  eine *Sache* zeigt und kein Beispiel auf eine Person.
+  **Drei Quellen** (G46): *Assi Toni*, eine Offenbacher Netzfigur; die Szene auf der Großen
+  Freiheit aus dem *Boxprinz*; und die Schimpfkaskade von *Willi Konrad* vor laufender Kamera.
+  Alle drei stehen **im Wortlaut** da, Mundart und Grobheit eingeschlossen — es sind stehende
+  Sprüche der Runde, und wer sie ins Hochdeutsche zieht („die Sprüche kennen wir alle") oder
+  das Anstößige herausnimmt, hat ein sauberes Wörterbuch und einen Ton, nach dem niemand mehr
+  klingt. `urkunde.mjs` schlägt darauf an, im Wörterbuch **und** in den Ersatztexten.
+  **Gesteuert wird über die Bedeutung, nicht über den Wortlaut.** Das ist der Kern: Der Eintrag
+  steht wörtlich im Prompt, der bei *jeder* Urkunde ein bis zwei davon einweben soll, und heraus
+  kommt ein Blatt mit einem Namen darauf, das weitergeschickt wird. Das Modell trägt den
+  satirischen Rahmen des Originals nicht mit — also sagt die Bedeutung, **wogegen** die Wendung
+  geht. „Isch hau Ihnen in die Fresse" richtet sich gegen Zweifel an der Zahl und gegen das
+  Alkoholfreie, ausdrücklich nicht gegen den, dem die Urkunde gilt; „Dreckschwein" ist als
+  Anerkennung erklärt, als Ausruf über eine Leistung, die keiner für möglich hielt, nie als
+  Urteil über einen Menschen. `urkunde.mjs` prüft genau diese beiden Sätze — fallen sie weg,
+  baut der Prompt wieder an, jemanden zu beschimpfen, dessen Name groß darüber steht.
+  Zwei Einträge sind **in der Form übernommen und im Ziel getauscht**: *„mehr gezappt wie ich
+  gepisst hab"* und *„Dreck, Dreck, Original Dreck"*. Im Original geht das eine ums Ficken und
+  das andere gegen eine Frau. Sie bleiben getauscht, auch seit die übrigen Zitate wörtlich
+  dastehen: In dieser Form kennt die Runde sie inzwischen, und die **Ersatztexte zitieren sie
+  wörtlich mit** — ein Zurückdrehen bräche also beides auseinander.
+  **Der Kern hat Vorrang.** Mit 37 Einträgen und ein bis zwei je Urkunde käme jede einzelne
+  Wendung nur noch in etwa jeder zwanzigsten dran, und ausgerechnet die, an denen die Runde
+  sich erkennt, gingen in der Masse unter. Deshalb trägt eine Handvoll `kern:true`, die
+  Anweisung markiert sie mit ★ und nimmt bevorzugt daraus; der Rest ist Fundus. Wer einen
+  Eintrag ergänzt, entscheidet mit, ob er dazugehört — im Zweifel nicht.
   **Was nicht aus einer belegten Quelle stammt, kommt nicht rein.** Die Einträge landen
   wörtlich im Prompt; ein dazuerfundenes Beispiel erzeugt Urkunden, die nach einer Runde
   klingen, die es nicht gibt — schlechter als gar kein Eintrag. Im Zweifel nachfragen statt
