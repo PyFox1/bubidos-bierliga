@@ -615,7 +615,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-12 09:19 · G44 (GitHub)';
+const FASSUNG = '2026-09-12 11:48 · G45 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -635,6 +635,9 @@ const NOTIZEN = [
      anleitung durchblättert, soll den Witz nicht vorher lesen können. Die Marke merkt sich
      trotzdem alles Nötige im Datenbestand (siehe `tag.marken` weiter oben im Quelltext);
      nur erklärt wird sie nirgends. */
+  {f:'G45', d:'12.09.2026', z:'11:48', punkte:[
+    'Die Sache von neulich meldet sich jetzt in dem Moment, in dem sie fällig wird — '
+    + 'die Pause davor ist weg.']},
   {f:'G44', d:'12.09.2026', z:'09:19', punkte:[
     'Die Sache von neulich meldet sich jetzt nur noch einmal statt zweimal. Dafür lässt '
     + 'sie sich ein paar Sekunden länger Zeit, bevor sie aufgeht.']},
@@ -1373,11 +1376,57 @@ function markenPruefen(){
                  ort: wo.name, ortNr: wo.nr,
                  text: v.text.replace(/\{name\}/g, name)};
       if(v.kopf) m.kopf = v.kopf.replace(/\{name\}/g, name);
+      /* Liegt der Text schon vorbereitet, ist die Marke von Geburt an fertig: Sie geht
+         mit demselben Tipp auf, der das Bier eingetragen hat, ohne Aufruf und ohne
+         Warten. Das ist der Normalfall, der Rest darunter ist der Rückfall. */
+      const fertig = urkundeVorrat.get(id);
+      if(fertig && fertig.text){
+        m.text = fertig.text;
+        if(stufe === 10 && fertig.kopf) m.kopf = fertig.kopf;
+        m.quelle = 'ki';
+      } else frisch.push(m);
       tg.marken.push(m);
-      frisch.push(m);
     });
   });
   frisch.forEach(m => urkundeHolen(tg, m));
+  urkundeVorbereiten(tg);
+}
+
+/* Wie viele BE vor einer Stufe der Text bestellt wird. Zwei, damit auch der nicht an
+   der Vorbereitung vorbeispringt, der eine Maß trinkt — das sind 2 BE auf einen Tipp. */
+const URKUNDE_VORLAUF = 2;
+
+/* Die vorbereiteten Texte, nur im Arbeitsspeicher. In den Bestand gehören sie nicht:
+   Sie sind auf Verdacht geholt, und wer bei neun aufhört, hinterließe dort einen Text,
+   den nie jemand sieht. Über den Abgleich müssen sie auch nicht — wer die Stufe
+   einträgt, schreibt seinen Text mit der Marke, und die verteilt der Abgleich wie
+   alles andere. Ein `null` im Vorrat heißt „schon bestellt oder schiefgegangen" und
+   verhindert, dass derselbe Text zweimal geholt wird. */
+const urkundeVorrat = new Map();
+
+/* Warum überhaupt vorbereiten: Der Aufruf dauert rund fünfzehn Sekunden, und die
+   standen bis G44 zwischen dem Bier und der Meldung — erst als Tausch mitten im Lesen,
+   dann als Wartezeit. Beides ist der falsche Moment. Zwei BE vorher ist reichlich Zeit
+   (eine Halbe dauert am Tisch Minuten), und dann liegt der Text da, wenn er gebraucht
+   wird. Läuft wie `markenPruefen()` nur beim Eintragen und nicht beim Abgleich, sonst
+   bestellten fünf Handys denselben Text fünfmal. */
+function urkundeVorbereiten(tg){
+  if(!kiSchluessel()) return;
+  tagLeute(tg).forEach(pid => {
+    const be = beAmTag(tg, pid);
+    MARKEN.forEach(stufe => {
+      if(be + 1e-9 >= stufe) return;                    // schon gerissen
+      if(be + URKUNDE_VORLAUF + 1e-9 < stufe) return;   // noch zu weit weg
+      const id = tg.id + ':' + stufe + ':' + pid;
+      if(urkundeVorrat.has(id)) return;
+      urkundeVorrat.set(id, null);
+      /* `be: stufe`, nicht der Stand von jetzt: Die Urkunde wird für den Moment
+         geschrieben, in dem die Stufe fällt, nicht für den davor. */
+      urkundeTextHolen(tg, {id, stufe, pid, be: stufe})
+        .then(j => { if(j) urkundeVorrat.set(id, j); })
+        .catch(e => kiFehlerMerken((e && e.message) || String(e)));
+    });
+  });
 }
 
 const urkundenGesehen = () => {
@@ -2497,28 +2546,37 @@ function kiFehlerMerken(grund){
 function kiFehlerLesen(){
   try{ return JSON.parse(lokal.lesen(KIFEHLER_KEY)); }catch(e){ return null; }
 }
+/* Der eine Weg zum Text — die Vorbereitung geht ihn genauso wie der Rückfall darunter.
+   Gibt `null` zurück, wenn nichts Brauchbares kam; Fehler wirft er weiter. */
+async function urkundeTextHolen(tg, m){
+  const bloecke = await anKIText(urkundeAnweisung(tg, m));
+  let j = null;
+  for(let i = bloecke.length - 1; i >= 0 && !j; i--) j = jsonAusText(bloecke[i]);
+  if(!j) j = jsonAusText(bloecke.join('\n'));
+  const text = j && typeof j.text === 'string' ? j.text.trim() : '';
+  return text.length > 20 ? {text, kopf: j.kopf ? String(j.kopf).trim() : ''} : null;
+}
+
 const urkundeLaeuft = new Set();
+/* Der Rückfall: Die Stufe fiel, bevor der vorbereitete Text da war — weil jemand in
+   einem Sprung mehrere BE eingetragen hat oder der Abend gerade erst anfing. */
 async function urkundeHolen(tg, m){
   if(!kiSchluessel()) return;
   urkundeLaeuft.add(m.id);
   zeichnen();
   try{
-    const bloecke = await anKIText(urkundeAnweisung(tg, m));
-    let j = null;
-    for(let i = bloecke.length - 1; i >= 0 && !j; i--) j = jsonAusText(bloecke[i]);
-    if(!j) j = jsonAusText(bloecke.join('\n'));
-    const text = j && typeof j.text === 'string' ? j.text.trim() : '';
+    const j = await urkundeTextHolen(tg, m);
     /* Zwischendurch kann ein Abgleich `state.we` ausgetauscht haben – dann zeigt `m`
        auf ein Objekt, das niemand mehr sieht. Deshalb über die Kennung neu suchen. */
-    const ziel = text.length > 20 ? markeFinden(m.id) : null;
+    const ziel = j ? markeFinden(m.id) : null;
     if(ziel){
-      ziel.text = text;
-      if(ziel.stufe === 10 && j.kopf) ziel.kopf = String(j.kopf).trim();
+      ziel.text = j.text;
+      if(ziel.stufe === 10 && j.kopf) ziel.kopf = j.kopf;
       ziel.quelle = 'ki';
       sichern();
       lokal.loeschen(KIFEHLER_KEY);
     } else {
-      kiFehlerMerken('Antwort ohne brauchbaren Text');
+      kiFehlerMerken(j ? 'Marke ist nicht mehr da' : 'Antwort ohne brauchbaren Text');
     }
   }catch(e){
     /* Nach außen bleibt der Ersatztext stehen, das ist der ganze Zweck. Aber der Grund

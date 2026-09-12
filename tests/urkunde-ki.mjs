@@ -44,6 +44,7 @@ const antwort = (kopf, text) => ({
 });
 
 let letzterLeib = null;
+let rufe = 0;
 const kiMock = (kopf, text) => p.route('**/api.anthropic.com/**', r => {
   letzterLeib = JSON.parse(r.request().postData() || '{}');
   r.fulfill({status:200, contentType:'application/json',
@@ -68,6 +69,7 @@ await p.waitForTimeout(700);
 
 const aufbau = v => p.evaluate(v => {
   localStorage.removeItem('bubidos-urkunden');
+  urkundeVorrat.clear();
   const bier = k => Array(k).fill('normal:05');
   const g = {}; Object.keys(v.be).forEach(id => g[id] = bier(v.be[id]));
   state.spieler = [{id:1,name:'Korbi'},{id:2,name:'Fifu'},{id:3,name:'Sperry'}];
@@ -273,6 +275,61 @@ await schritt('Ein geglückter Text räumt die Notiz wieder weg', async () => {
   const f = await p.evaluate(() => kiFehlerLesen());
   if(f) throw new Error('die Notiz steht noch: ' + JSON.stringify(f));
   return 'weg';
+});
+
+console.log('\n══ Vorbereitet, bevor die Stufe fällt ══');
+
+/* Der Aufruf dauert rund fünfzehn Sekunden, und die standen bis G44 zwischen dem Bier
+   und der Meldung – erst als Tausch mitten im Lesen, dann als Wartezeit. Beides ist der
+   falsche Moment. Deshalb wird der Text bestellt, bevor die Stufe überhaupt fällt. */
+await schritt('Zwei BE vor der Stufe wird der Text bestellt', async () => {
+  rufe = 0;
+  await p.route('**/api.anthropic.com/**', r => {
+    rufe++;
+    r.fulfill({status:200, contentType:'application/json',
+      body:JSON.stringify(antwort(KOPF10, TEXT10))});
+  });
+  await aufbau({be:{'1':7, '2':2, '3':1}});
+  await p.waitForTimeout(200);
+  await p.evaluate(() => tu.strich({dataset:{id:'1'}}));     // → 8, das ist der Vorlauf
+  await p.waitForTimeout(500);
+  if(!rufe) throw new Error('es wurde nichts bestellt');
+  const v = await p.evaluate(() =>
+    (urkundeVorrat.get('901:10:1') || {}).text || null);
+  if(!v) throw new Error('der Vorrat ist leer');
+  /* Eine Marke darf daraus noch nicht werden – gerissen ist die Stufe ja nicht. */
+  if(await marke(10)) throw new Error('die Marke steht schon da');
+  /* Und im Bestand hat der Text nichts verloren: Wer bei neun aufhört, hinterliesse
+     dort einen, den nie jemand sieht. */
+  const bestand = await p.evaluate(() => JSON.stringify(standDaten()));
+  if(bestand.indexOf('Zeitumstellung') >= 0)
+    throw new Error('der vorbereitete Text steht im Bestand');
+  return rufe + ' Aufruf, Text liegt bereit';
+});
+
+/* Der eigentliche Punkt: Das zehnte Bier soll sich anfühlen wie jedes andere – ein
+   Tipp, und die Meldung steht da. Kein Aufbau dazwischen, dieser Test lebt von dem
+   Vorrat, den der vorige angelegt hat. */
+await schritt('Fällt die Stufe, steht die Meldung mit demselben Tipp da', async () => {
+  rufe = 0;
+  const r = await p.evaluate(() => {
+    const tipp = () => tu.strich({dataset:{id:'1'}});
+    tipp(); tipp();                       // → 9; der erste Tipp fragt nur nach
+    tipp();                               // fragt nach
+    const t0 = performance.now();
+    tipp();                               // → 10, die Stufe fällt
+    const ms = Math.round(performance.now() - t0);
+    const e = document.querySelector('.u-blende');
+    return {ms, text: e ? e.innerText : null, be: beAmTag(state.we[0].tage[0], '1'),
+            quelle: (state.we[0].tage[0].marken.find(m => m.stufe === 10) || {}).quelle};
+  });
+  if(r.be < 10) throw new Error('das Bier ist gar nicht drin, erst ' + r.be + ' BE');
+  if(!r.text) throw new Error('keine Blende nach dem Tipp');
+  if(r.quelle !== 'ki') throw new Error('Quelle ' + r.quelle);
+  if(r.text.indexOf('Zeitumstellung') < 0)
+    throw new Error('nicht der vorbereitete Text: ' + r.text.slice(0, 60));
+  if(rufe) throw new Error(rufe + ' Aufruf(e) beim Überschreiten, der Text lag doch bereit');
+  return 'nach ' + r.ms + ' ms, ohne Aufruf';
 });
 
 console.log('\n══ Eine Meldung, nicht zwei ══');

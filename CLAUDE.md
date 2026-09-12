@@ -448,6 +448,32 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
     den Ablauf: Bleibt der Text aus, stößt zu dem Zeitpunkt sonst niemand eines an, und die Marke
     bliebe liegen. Den Hinweis „Der Text wird noch geschärft" gibt es nicht mehr — er konnte nur
     erscheinen, solange die unfertige Marke aufging.
+  - **Der Text wird bestellt, bevor die Stufe fällt** (`urkundeVorbereiten()`, G45). Das ist
+    die Auflösung des Widerspruchs zwischen den beiden Punkten darüber: Die Meldung soll mit
+    fertigem Text aufgehen *und* in dem Moment, in dem das Bier eingetragen wird. Beides geht
+    nur, wenn die fünfzehn Sekunden vorher verbraucht sind. Erreicht jemand `stufe −
+    URKUNDE_VORLAUF` (2 BE), läuft der Aufruf los und das Ergebnis liegt in `urkundeVorrat`;
+    fällt die Stufe, wird die Marke damit **geboren** — `quelle:'ki'` von Anfang an, also
+    sofort reif. Gemessen: 3 ms statt 15 s, bei **demselben einen Aufruf**, nur früher.
+    Zwei BE sind der Vorlauf, weil eine Maß 2 BE auf einen Tipp bringt — mit nur einem
+    springt der Maßtrinker an der Vorbereitung vorbei.
+    Der Vorrat liegt **im Arbeitsspeicher, nicht im Bestand**: Er ist auf Verdacht geholt, und
+    wer bei neun aufhört, hinterließe dort einen Text, den nie jemand sieht. Über den Abgleich
+    muss er auch nicht — wer die Stufe einträgt, schreibt seinen Text mit der Marke, und die
+    verteilt der Abgleich wie alles andere. Ein `null` im Vorrat heißt „schon bestellt oder
+    schiefgegangen" und verhindert die zweite Bestellung.
+    Wie `markenPruefen()` läuft die Vorbereitung **nur beim Eintragen**, nie beim Abgleich —
+    sonst bestellten fünf Handys denselben Text fünfmal. Tippen an einem Abend zwei Geräte
+    abwechselnd, wird er zweimal geholt; das ist der Preis dafür, dass nichts Spekulatives in
+    den Bestand wandert, und kostet im schlimmsten Fall ein paar Cent.
+    Der Rückfall bleibt: Wer in einem Sprung mehrere BE einträgt oder eine Stufe reißt, bevor
+    die Vorbereitung durch ist, bekommt den Weg von G44 — Ersatztext im Bestand, Marke wartet
+    auf den Text. Beide Wege gehen durch `urkundeTextHolen()`, damit sie nicht auseinanderlaufen.
+    Die Anweisung bekommt `be: stufe` statt des Standes von jetzt: Die Urkunde wird für den
+    Moment geschrieben, in dem die Stufe fällt. Der Ort fehlt der vorbereiteten Anweisung
+    dagegen (die Marke hat noch keinen) — gut so, denn bis zum zehnten Bier kann die Runde
+    weitergezogen sein, und ein falscher Wirtshausname im Text fiele sofort auf. Auf dem Bild
+    steht der Ort ohnehin, und der stimmt: Er wird beim Anlegen der Marke festgehalten.
   - **Gestaffelt wird die Fläche, nicht nur der Text.** 10 ist ein Blatt von unten, 18 eine Karte
     in der Mitte, 25 nimmt den ganzen Bildschirm. Das erkennt man auch in fortgeschrittener
     Stunde noch, und darum ging es. Die 25 trägt bewusst kein `data-tu` auf der Blende — wer so
