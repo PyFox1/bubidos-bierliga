@@ -486,8 +486,6 @@ table.rechnung td.schlecht{color:#E09084}
    die Urkunde hindurch. Deshalb stehen diese Regeln hinter `.blende`: Was beide setzen,
    gewinnt hier. */
 .u-blende{position:fixed;inset:0;background:rgba(20,23,27,.88);z-index:55;display:grid}
-.u-hinweis{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;
-  text-transform:uppercase;opacity:.55;margin:12px 0 0}
 .u-andenken{margin-top:16px;padding-top:14px;border-top:1px dashed #8B8577;text-align:center}
 .u-andenken p{margin:0 0 10px;font-size:13px;opacity:.72;line-height:1.4}
 .u-sicherreihe{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
@@ -617,7 +615,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-12 06:45 · G43 (GitHub)';
+const FASSUNG = '2026-09-12 08:02 · G44 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -637,6 +635,9 @@ const NOTIZEN = [
      anleitung durchblättert, soll den Witz nicht vorher lesen können. Die Marke merkt sich
      trotzdem alles Nötige im Datenbestand (siehe `tag.marken` weiter oben im Quelltext);
      nur erklärt wird sie nirgends. */
+  {f:'G44', d:'12.09.2026', z:'08:02', punkte:[
+    'Die Sache von neulich meldet sich jetzt nur noch einmal statt zweimal. Dafür lässt '
+    + 'sie sich ein paar Sekunden länger Zeit, bevor sie aufgeht.']},
   {f:'G43', d:'12.09.2026', z:'06:45', punkte:[
     'Eine Sache von neulich läuft jetzt spürbar runder. Mehr dazu bewusst nicht — wer '
     + 'sie kennt, merkt es von selbst.']},
@@ -1387,6 +1388,49 @@ function urkundeAbhaken(id){
   if(l.indexOf(id) < 0) l.push(id);
   lokal.schreiben(URKUNDEN_KEY, JSON.stringify(l.slice(-60)));
 }
+/* Wie lange eine Marke auf ihren Text warten darf, bevor sie mit dem Ersatztext aufgeht.
+   Der Aufruf dauert gemessen rund 15 s (siehe `KI_FRIST`); das hier ist die Grenze für
+   den Fall, dass überhaupt nichts mehr kommt. */
+const URKUNDE_WARTE = 25000;
+
+/* Eine Marke geht erst auf, wenn ihr Text feststeht. Sonst steht die Eilmeldung zweimal
+   da: erst mit dem Ersatztext, Sekunden später mit dem echten – andere Überschrift,
+   anderer Text, und wer gerade liest, liest mitten im Satz etwas anderes. Am Tisch kam
+   das als zwei getrennte Meldungen an. Bis G43 fiel es nie auf, weil der Aufruf
+   zuverlässig in die Frist lief und der Ersatztext ohnehin stehenblieb.
+   Drei Wege, die sie aufgehen lassen: Der Text ist da (`ki`), es ist kein Schlüssel
+   hinterlegt – dann kommt nie einer –, oder die Wartezeit ist um. Solange dieses Handy
+   selbst noch fragt, wartet es auf seine Antwort statt auf die Uhr: `urkundeHolen()`
+   zeichnet, sobald sie da ist, und ist durch `KI_FRIST` ohnehin begrenzt. Ein langsamer
+   Aufruf schiebt die Marke damit nach hinten, statt sie zweimal zu zeigen. */
+function urkundeReif(m){
+  if(m.quelle === 'ki' || !kiSchluessel()) return true;
+  if(urkundeLaeuft.has(m.id)) return false;
+  return Date.now() - (m.t || 0) >= URKUNDE_WARTE;
+}
+
+/* Wartet eine Marke noch, muss dieses Handy von selbst noch einmal zeichnen – sonst
+   bliebe sie liegen, bis zufällig etwas anderes ein Neuzeichnen auslöst. Für die, an
+   denen dieses Handy selbst hängt, braucht es das nicht: Da zeichnet `urkundeHolen()`. */
+let urkundeWarteTimer = null;
+function urkundeWartePlanen(){
+  clearTimeout(urkundeWarteTimer);
+  urkundeWarteTimer = null;
+  const we = state.we.find(w => w.id === state.aktivWe);
+  if(!we || we.zu || !kiSchluessel()) return;
+  const gesehen = urkundenGesehen();
+  let frueh = null;
+  (we.tage || []).forEach(t => (t.marken || []).forEach(m => {
+    if(!m.text || gesehen.indexOf(m.id) >= 0) return;
+    if(urkundeReif(m) || urkundeLaeuft.has(m.id)) return;
+    const rest = (m.t || 0) + URKUNDE_WARTE - Date.now();
+    if(frueh === null || rest < frueh) frueh = rest;
+  }));
+  if(frueh === null) return;
+  urkundeWarteTimer = setTimeout(() => { urkundeWarteTimer = null; zeichnen(); },
+    Math.max(frueh, 0) + 40);
+}
+
 /* Die älteste noch nicht gesehene Urkunde des laufenden Wochenendes. Älteste zuerst,
    damit bei zweien nacheinander die kleinere Stufe vor der größeren steht. */
 function offeneUrkunde(){
@@ -1398,7 +1442,7 @@ function offeneUrkunde(){
      mehrere Marken in derselben Millisekunde an, und auf jedem Handy dieselbe zuerst. */
   alle.sort((a,b) => (a.m.t || 0) - (b.m.t || 0) || a.m.stufe - b.m.stufe
     || String(a.m.pid).localeCompare(String(b.m.pid)));
-  return alle.find(x => x.m.text && gesehen.indexOf(x.m.id) < 0) || null;
+  return alle.find(x => x.m.text && gesehen.indexOf(x.m.id) < 0 && urkundeReif(x.m)) || null;
 }
 
 /* ---------- Speicher: GitHub ---------- */
@@ -4140,8 +4184,6 @@ function ansichtUrkunde(x){
   const name = p ? p.name : 'Unbekannt';
   const uhr = new Date(m.t || Date.now());
   const zwei = n => ('0' + n).slice(-2);
-  const hinweis = urkundeLaeuft.has(m.id)
-    ? '<p class="u-hinweis">Der Text wird noch geschärft</p>' : '';
   const andenken = '<div class="u-andenken"><p>' + esc(name)
     + ', sichere dir das als Andenken.</p><div class="u-sicherreihe">'
     + '<button class="u-sichern" data-tu="urkundeSichern" data-pid="'
@@ -4158,7 +4200,6 @@ function ansichtUrkunde(x){
     + '<span class="u-chip">10 BE · Tagesmarke</span>'
     + '<h3>' + esc(m.kopf || (name + ' zappt sich zweistellig')) + '</h3>'
     + '<p class="u-text">' + esc(m.text) + '</p>'
-    + hinweis
     + andenken
     + '<button class="u-knopf" data-tu="urkundeWeg">Passt</button>'
     + '</div></div></div></div>';
@@ -4172,7 +4213,6 @@ function ansichtUrkunde(x){
     + '<div class="u-einheit">Biereinheiten an einem Tag</div>'
     + '<h2 class="u-name">' + esc(name) + '</h2>'
     + '<p class="u-text">' + esc(m.text) + '</p>'
-    + hinweis
     + andenken
     + '<button class="u-knopf" data-tu="urkundeWeg">Zur Kenntnis genommen</button>'
     + '</div><div class="raute"></div></div></div>';
@@ -4189,7 +4229,6 @@ function ansichtUrkunde(x){
     + '<h2 class="u-name">' + esc(name) + '</h2>'
     + '<div class="u-linie"></div>'
     + '<p class="u-text">' + esc(m.text) + '</p>'
-    + hinweis
     + '<div class="u-siegel"><span>Bubidos<br>Ehrensache<br>'
       + uhr.getFullYear() + '</span></div>'
     + andenken
@@ -4245,6 +4284,7 @@ function zeichnenRoh(){
   else {
     const u = offeneUrkunde();
     if(u) document.body.insertAdjacentHTML('beforeend', ansichtUrkunde(u));
+    else urkundeWartePlanen();
   }
 
   if(hoehe){

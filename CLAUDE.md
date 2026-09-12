@@ -427,6 +427,27 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
     Nach dem `await` wird die Marke über `markeFinden()` neu gesucht: Ein Abgleich dazwischen
     kann `state.we` ausgetauscht haben, und der Text landete sonst in einem Objekt, das
     niemand mehr sieht.
+  - **Im Bestand wird getauscht, auf dem Schirm nicht: Die Marke geht erst auf, wenn ihr Text
+    feststeht** (`urkundeReif()`, G44). Das ist die Kehrseite des Punktes darüber. Solange der
+    Aufruf zuverlässig in die Frist lief, blieb der Ersatztext ohnehin stehen und niemand sah je
+    einen Tausch. Seit er in 15 s antwortet (G43), stand die Eilmeldung zweimal da: erst mit dem
+    Ersatztext, Sekunden später mit anderem Kopf und anderem Text — `zeichnen()` baut die Blende
+    ja neu auf. Am Tisch kam das als **zwei Meldungen** an, und wer gerade las, las mitten im
+    Satz etwas anderes. Gemeldet wurde es genau so: „erst die alte Meldung, dann die mit API".
+    Drei Wege lassen sie aufgehen: `quelle:'ki'`, kein hinterlegter Schlüssel (dann kommt nie
+    einer), oder `URKUNDE_WARTE` (25 s) ist um. Solange **dieses** Handy selbst fragt, wartet es
+    auf seine Antwort statt auf die Uhr — `urkundeHolen()` zeichnet, sobald sie da ist, und
+    `KI_FRIST` begrenzt das ohnehin. Ein langsamer Aufruf schiebt die Marke damit nach hinten,
+    statt sie zweimal zu zeigen. Die Wartezeit ist die Grenze für den Fall, dass gar nichts mehr
+    kommt; sie muss über einem echten Aufruf liegen, sonst ist der Tausch wieder zu sehen.
+    Der Preis ist bewusst bezahlt: Zwischen dem zehnten Bier und der Meldung liegen jetzt rund
+    fünfzehn Sekunden. Eine Meldung, die man zu Ende lesen kann, ist mehr wert als eine sofortige,
+    die sich austauscht. Dass niemand darauf wartet, ist gerade der Punkt — die Marke überrascht,
+    sie wird nicht erwartet. Weil die Regel am Datenbestand hängt und nicht an lokalem Zustand,
+    verhalten sich alle fünf Handys gleich. Dazu plant `urkundeWartePlanen()` ein Neuzeichnen auf
+    den Ablauf: Bleibt der Text aus, stößt zu dem Zeitpunkt sonst niemand eines an, und die Marke
+    bliebe liegen. Den Hinweis „Der Text wird noch geschärft" gibt es nicht mehr — er konnte nur
+    erscheinen, solange die unfertige Marke aufging.
   - **Gestaffelt wird die Fläche, nicht nur der Text.** 10 ist ein Blatt von unten, 18 eine Karte
     in der Mitte, 25 nimmt den ganzen Bildschirm. Das erkennt man auch in fortgeschrittener
     Stunde noch, und darum ging es. Die 25 trägt bewusst kein `data-tu` auf der Blende — wer so

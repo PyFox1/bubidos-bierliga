@@ -249,6 +249,73 @@ await schritt('Ein geglückter Text räumt die Notiz wieder weg', async () => {
   return 'weg';
 });
 
+console.log('\n══ Eine Meldung, nicht zwei ══');
+
+/* Bis G43 lief der Aufruf zuverlässig in die Frist, der Ersatztext blieb stehen, und
+   niemand sah je den Tausch. Seit die API in 15 s antwortet, stand die Eilmeldung
+   zweimal da: erst mit dem Ersatztext, Sekunden später mit anderem Kopf und anderem
+   Text. Am Tisch kam das als zwei getrennte Meldungen an – und wer gerade las, las
+   mitten im Satz etwas anderes. */
+await schritt('Der Ersatztext geht nie auf, wenn der echte noch unterwegs ist', async () => {
+  await p.route('**/api.anthropic.com/**', async r => {
+    await new Promise(w => setTimeout(w, 1200));
+    r.fulfill({status:200, contentType:'application/json',
+      body:JSON.stringify(antwort(KOPF10, TEXT10))});
+  });
+  await aufbau({be:{'1':9, '2':2, '3':1}});
+  await p.waitForTimeout(200);
+  await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
+  /* Alle 60 ms nachsehen, was auf dem Schirm steht. Stünde der Ersatztext auch nur
+     einen Wimpernschlag da, hätte die Runde zwei Meldungen gesehen. */
+  const gesehen = [];
+  for(let i = 0; i < 30; i++){
+    const t = await p.evaluate(() =>
+      (document.querySelector('.u-blende') || {}).innerText || null);
+    if(t) gesehen.push(t);
+    await p.waitForTimeout(60);
+  }
+  if(!gesehen.length) throw new Error('die Blende kam gar nicht');
+  const falsch = gesehen.filter(t => t.indexOf('Zeitumstellung') < 0);
+  if(falsch.length) throw new Error('davor stand etwas anderes: ' + falsch[0].slice(0, 80));
+  return gesehen.length + '× nachgesehen, immer derselbe Text';
+});
+
+/* Kommt gar nichts mehr – kein Netz, falscher Schlüssel –, darf die Marke nicht auf
+   ewig liegenbleiben. Nach `URKUNDE_WARTE` geht sie mit dem Ersatztext auf, und zwar
+   von selbst: Ein Neuzeichnen stößt zu dem Zeitpunkt sonst niemand an. */
+await schritt('Bleibt der Text aus, geht sie nach der Wartezeit von selbst auf', async () => {
+  await p.route('**/api.anthropic.com/**', r => r.fulfill({status:500, body:'{}'}));
+  await aufbau({be:{'1':9, '2':2, '3':1}});
+  await p.waitForTimeout(200);
+  await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
+  await p.waitForTimeout(700);
+  if(await p.evaluate(() => !!document.querySelector('.u-blende')))
+    throw new Error('sie geht sofort auf, die Wartezeit greift nicht');
+  /* Die Uhr vorstellen statt 25 s zu warten. Gezeichnet wird genau einmal – dass sie
+     danach aufgeht, muss der eingeplante Termin erledigen. */
+  await p.evaluate(() => {
+    const m = state.we[0].tage[0].marken.find(x => x.stufe === 10);
+    m.t = Date.now() - URKUNDE_WARTE + 400;
+    zeichnen();
+  });
+  if(await p.evaluate(() => !!document.querySelector('.u-blende')))
+    throw new Error('sie geht zu früh auf');
+  await p.waitForTimeout(900);
+  if(!(await p.evaluate(() => !!document.querySelector('.u-blende'))))
+    throw new Error('sie geht nach der Wartezeit nicht auf');
+  const m = await marke(10);
+  if(m.quelle !== 'ersatz') throw new Error('Quelle ' + m.quelle);
+  return 'mit dem Ersatztext, nach der Wartezeit';
+});
+
+/* Die Wartezeit muss über einem echten Aufruf liegen. Steht sie darunter, geht die
+   Marke kurz vor der Antwort auf, und der Tausch ist wieder zu sehen. */
+await schritt('Die Wartezeit deckt einen normalen Aufruf ab', async () => {
+  const ms = await p.evaluate(() => URKUNDE_WARTE);
+  if(!(ms >= 20000)) throw new Error('URKUNDE_WARTE steht auf ' + ms + ' ms');
+  return Math.round(ms/1000) + ' s';
+});
+
 await schritt('Und wenn gar kein Schlüssel hinterlegt ist, wird nicht gefragt', async () => {
   let gefragt = false;
   await p.route('**/api.anthropic.com/**', r => { gefragt = true; r.abort(); });
