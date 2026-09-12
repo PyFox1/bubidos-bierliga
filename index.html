@@ -615,7 +615,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-12 12:30 · G46 (GitHub)';
+const FASSUNG = '2026-09-12 12:44 · G46 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -635,7 +635,7 @@ const NOTIZEN = [
      anleitung durchblättert, soll den Witz nicht vorher lesen können. Die Marke merkt sich
      trotzdem alles Nötige im Datenbestand (siehe `tag.marken` weiter oben im Quelltext);
      nur erklärt wird sie nirgends. */
-  {f:'G46', d:'12.09.2026', z:'12:30', punkte:[
+  {f:'G46', d:'12.09.2026', z:'12:44', punkte:[
     'Die Sache von neulich hat dazugelernt und redet jetzt deutlich mehr wie die Runde.']},
   {f:'G45', d:'12.09.2026', z:'11:48', punkte:[
     'Die Sache von neulich meldet sich jetzt in dem Moment, in dem sie fällig wird — '
@@ -1408,10 +1408,13 @@ const SLANG = [
      + 'Bauart „Hab in meinem ganzen Leben noch kei …“ trägt und lässt sich auf alles legen.',
    bsp:['Hab in meinem ganzen Leben noch kein Geld in die Schweiz überwiesen',
         'Hab in meinem ganzen Leben noch kei Alkoholfreies bestellt']},
-  {w:'Dreckschwein!', b:'Schimpfwort als Anerkennung — in der Runde der Ausruf, wenn jemand '
-     + 'etwas geschafft hat, das keiner für möglich hielt. Bewundernd gebraucht, als Ausruf '
-     + 'für sich, nie als Urteil über einen Menschen.',
-   bsp:['Fünfundzwanzig? Dreckschwein!', 'Dreckschwein!']}
+  {w:'Dreckschwein!', b:'Schimpfwort als Auszeichnung, und zwar direkt an den gerichtet, den '
+     + 'es feiert: „Du Dreckschwein“ ist in dieser Runde die höchste Form der Anerkennung für '
+     + 'etwas, das keiner für möglich hielt. Applaus, kein Urteil — bewundernd gesagt und so '
+     + 'verstanden, nie herablassend.',
+   kern:true,
+   bsp:['Fünfundzwanzig an einem Tag? Du Dreckschwein!',
+        'Du Dreckschwein hast das wirklich durchgezogen', 'Dreckschwein!']}
 ];
 
 /* Ohne Netz, ohne Schlüssel oder wenn die API zickt, steht einer davon da. Sie müssen

@@ -533,11 +533,18 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   steht wörtlich im Prompt, der bei *jeder* Urkunde ein bis zwei davon einweben soll, und heraus
   kommt ein Blatt mit einem Namen darauf, das weitergeschickt wird. Das Modell trägt den
   satirischen Rahmen des Originals nicht mit — also sagt die Bedeutung, **wogegen** die Wendung
-  geht. „Isch hau Ihnen in die Fresse" richtet sich gegen Zweifel an der Zahl und gegen das
-  Alkoholfreie, ausdrücklich nicht gegen den, dem die Urkunde gilt; „Dreckschwein" ist als
-  Anerkennung erklärt, als Ausruf über eine Leistung, die keiner für möglich hielt, nie als
-  Urteil über einen Menschen. `urkunde.mjs` prüft genau diese beiden Sätze — fallen sie weg,
-  baut der Prompt wieder an, jemanden zu beschimpfen, dessen Name groß darüber steht.
+  geht — und in welchem Sinn, nicht ob überhaupt.
+  Bei **„Dreckschwein"** ist die Anrede der Witz: „Du Dreckschwein" sagt man dem, den man
+  feiert, und in dieser Runde weiß das jeder. Die Bedeutung erklärt es deshalb als
+  *Auszeichnung*, bewundernd gesagt und so verstanden, mit einem Beispiel, das den Gefeierten
+  direkt anspricht. Hier stand zwischenzeitlich „nie als Urteil über einen Menschen" — das war
+  zu vorsichtig und verbot ausgerechnet den Gebrauch, um den es geht; das Modell schrieb brav
+  daran vorbei. Der Eintrag trägt jetzt `kern`.
+  Bei **„Isch hau Ihnen in die Fresse"** bleibt es dagegen bei der Ablenkung: Die Drohung geht
+  gegen Zweifel an der Zahl und gegen das Alkoholfreie, nicht gegen den, dem die Urkunde gilt.
+  Das Schimpfwort ist Applaus, eine Prügelandrohung an den Gefeierten wäre keiner.
+  `urkunde.mjs` prüft beide Sätze — fallen sie weg, entscheidet der Zufall, in welche Richtung
+  die groben Wendungen zeigen, auf einem Blatt, das einen Namen trägt und verschickt wird.
   Zwei Einträge sind **in der Form übernommen und im Ziel getauscht**: *„mehr gezappt wie ich
   gepisst hab"* und *„Dreck, Dreck, Original Dreck"*. Im Original geht das eine ums Ficken und
   das andere gegen eine Frau. Sie bleiben getauscht, auch seit die übrigen Zitate wörtlich

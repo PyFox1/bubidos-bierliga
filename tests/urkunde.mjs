@@ -543,12 +543,18 @@ await schritt('Bei den groben Wendungen sagt die Bedeutung, wogegen sie gehen', 
   const x = await p.evaluate(() => {
     const f = SLANG.find(y => /in die Fresse/.test(y.w)) || {};
     const d = SLANG.find(y => /Dreckschwein/.test(y.w)) || {};
-    return {fresse:f.b || '', dreck:d.b || ''};
+    return {fresse:f.b || '', dreck:d.b || '', dreckBsp:(d.bsp || []).join(' | ')};
   });
   if(!/nicht gegen den, dem die Urkunde gilt/.test(x.fresse))
     throw new Error('die Drohung sagt nicht mehr, wogegen sie geht: ' + x.fresse);
-  if(!/[Aa]nerkennung|anerkennend/.test(x.dreck) || !/nie als Urteil über einen Menschen/.test(x.dreck))
-    throw new Error('das Schimpfwort ist nicht mehr als Anerkennung erklärt: ' + x.dreck);
+  /* Beim Schimpfwort ist die Anrede der Witz: „Du Dreckschwein" sagt man dem, den man
+     feiert, und in dieser Runde weiß das jeder. Die Bedeutung muss das hergeben, sonst
+     schreibt das Modell brav daran vorbei — festgehalten wird deshalb beides: dass es
+     eine Auszeichnung ist und dass es direkt an den Gefeierten geht. */
+  if(!/Auszeichnung/.test(x.dreck) || !/bewundernd/.test(x.dreck))
+    throw new Error('das Schimpfwort ist nicht mehr als Auszeichnung erklärt: ' + x.dreck);
+  if(!/Du Dreckschwein/.test(x.dreckBsp))
+    throw new Error('kein Beispiel spricht den Gefeierten an: ' + x.dreckBsp);
   return 'beide gesteuert';
 });
 
