@@ -114,6 +114,10 @@ alle.forEach(m => {
   const slang = ['zappt','zappen','gezappt','peter'].filter(w =>
     new RegExp(w, 'i').test(alles));
   console.log('  Slang:  ' + (slang.length ? slang.join(', ') : 'keiner benutzt'));
+  /* Die Frage, für die es dieses Skript gibt: Steht wirklich eine Nachricht im Text?
+     Das Modell muss sie in `bezug` benennen — fehlt der, hat es sie weggelassen, und
+     genau das ist am Tisch aufgefallen, obwohl der Wortschatz saß. */
+  console.log('  Bezug:  ' + (m.bezug || '← KEINER, die halbe Pointe fehlt'));
 });
 
 /* Der eigentliche Zweck des Skripts: Kam überhaupt etwas von der API, oder hat sich der
@@ -123,6 +127,10 @@ const ki = alle.filter(x => x.quelle === 'ki').length;
 console.log(ki === alle.length && ki
   ? '  Alle ' + ki + ' Texte kamen von der API. Websuche und Browser-Zugriff gehen.'
   : '  Nur ' + ki + ' von ' + alle.length + ' kamen durch – oben steht, welche.');
+const mitBezug = alle.filter(x => x.bezug).length;
+console.log(mitBezug === alle.length && mitBezug
+  ? '  Alle ' + mitBezug + ' haben einen Nachrichtenbezug.'
+  : '  Nur ' + mitBezug + ' von ' + alle.length + ' haben einen Nachrichtenbezug.');
 
 const datei = ORDNER + 'echt-' + STUFE + '.png';
 await p.evaluate(async s => {

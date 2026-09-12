@@ -504,6 +504,29 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
     Prompt ausdrücklich, wofür sie zu verwenden ist — für die Schlagzeilen dieser Tage, *nicht*
     für „eine Nachricht, die zum Bier passt". Sonst holt die eine Suche eine Nische herein, und
     die Auswahl steht schief, bevor sie beginnt. `urkunde-ki.mjs` hält beide Seiten fest.
+  - **Der Bezug wird verlangt, nicht erlaubt — und er steht zuletzt** (G48). Am Tisch fiel auf,
+    dass die Eilmeldungen keinen Nachrichtenbezug mehr hatten, obwohl der Wortschatz saß: Der
+    Text kam also von der API, nur ohne die halbe Pointe. Zwei Gründe, beide hausgemacht.
+    **Erstens** endete der Nachrichtenteil seit G44 auf „Ist keine dabei, die sich verweben
+    lässt, dann lieber gar keine". Zusammen mit der verschärften Latte (nur Aufmacher, nur drei
+    Gebiete, nichts Trauriges, nichts übers Wetter) war Weglassen der bequemste Weg — die
+    Erlaubnis wurde genommen. Sie ist raus; jetzt steht dort „Ohne die ist der Text nicht
+    fertig".
+    **Zweitens** die Reihenfolge: Der Wortschatz ist mit G46 von sieben auf 38 Einträge
+    gewachsen und damit der mit Abstand längste Teil der Anweisung. Er stand zwischen dem
+    Nachrichtenteil und der JSON-Zeile — alles davor ging darin unter. Der Nachrichtenteil
+    steht deshalb **hinter** dem Wortschatz, direkt vor dem JSON. Wer hier je wieder etwas
+    einschiebt, prüfe, was dadurch nach hinten rutscht; `urkunde-ki.mjs` misst die Reihenfolge.
+    Dazu der Hebel: Das Modell muss die benutzte Meldung in **`bezug`** benennen, drei, vier
+    Worte. Wer sie benennen muss, sucht auch eine — und es macht das Weglassen sichtbar, statt
+    es lautlos zu lassen. Der Wert steht auf keiner Urkunde, hängt aber an der Marke, damit
+    `echt-ki.mjs` ihn zeigen kann; `abgeschlossenAufraeumen()` wirft ihn mit dem Text weg.
+    Fehlt er, bleibt der Text trotzdem stehen — ein guter Text ohne Bezug schlägt den
+    Ersatztext —, aber `kiFehlerMerken()` notiert es, und es steht unter *Verwaltung →
+    Verbindung*. Dieselbe Regel wie beim stillen Rückfall: lieber eine Anzeige als ein Rätsel.
+    Nächster Hebel, falls es wieder nachlässt: `effort` von `low` auf `medium`. Das war auf
+    Tempo getrimmt, als noch jemand auf den Text wartete — seit der Vorbereitung (G45) wartet
+    niemand mehr, die Sekunden sind also wieder zu haben.
   - **Das Bild zum Aufheben wird auf ein Canvas gezeichnet** (`urkundeBild()`), nicht aus der
     Seite geschnitten. Ein Bildschirmfoto hätte den Zählbildschirm dahinter, die Blende darüber
     und die Maße des jeweiligen Handys. Darauf stehen Datum, Uhrzeit, Wochenende, Tag und

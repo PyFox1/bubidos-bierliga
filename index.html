@@ -615,7 +615,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-12 13:23 · G47 (GitHub)';
+const FASSUNG = '2026-09-12 14:29 · G48 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -635,6 +635,9 @@ const NOTIZEN = [
      anleitung durchblättert, soll den Witz nicht vorher lesen können. Die Marke merkt sich
      trotzdem alles Nötige im Datenbestand (siehe `tag.marken` weiter oben im Quelltext);
      nur erklärt wird sie nirgends. */
+  {f:'G48', d:'12.09.2026', z:'14:29', punkte:[
+    'Die Sache von neulich nimmt jetzt wieder Bezug auf das, was gerade in der Welt '
+    + 'passiert. Das war zuletzt abhandengekommen.']},
   {f:'G47', d:'12.09.2026', z:'13:23', punkte:[
     'Noch ein Wort in der Sammlung von neulich dazugekommen.']},
   {f:'G46', d:'12.09.2026', z:'12:44', punkte:[
@@ -950,7 +953,7 @@ function standDaten(){
 function abgeschlossenAufraeumen(w){
   (w.tage || []).forEach(t => {
     (t.orte || []).forEach(o => { delete o.log; });
-    (t.marken || []).forEach(m => { delete m.text; delete m.kopf; });
+    (t.marken || []).forEach(m => { delete m.text; delete m.kopf; delete m.bezug; });
   });
 }
 function migrieren(we){
@@ -1531,6 +1534,7 @@ function markenPruefen(){
       if(fertig && fertig.text){
         m.text = fertig.text;
         if(stufe === 10 && fertig.kopf) m.kopf = fertig.kopf;
+        if(fertig.bezug) m.bezug = fertig.bezug;
         m.quelle = 'ki';
       } else frisch.push(m);
       tg.marken.push(m);
@@ -2658,24 +2662,6 @@ function urkundeAnweisung(tg, m){
     '',
     auftrag,
     '',
-    'Verweb eine echte Nachricht so in den Text, dass Trinkleistung und Nachricht sich '
-      + 'gegenseitig kommentieren.',
-    'Du hast genau eine Suche. Nimm sie für die großen Meldungen dieser Tage — nicht für '
-      + 'eine Nachricht, die zum Bier passt. Erst schauen, was oben steht, dann daraus '
-      + 'die aussuchen, die sich am besten verweben lässt.',
-    'Es muss eine sein, die jeder kennt, der einmal am Tag seine Nachrichten-App '
-      + 'aufmacht: der Aufmacher, nicht die Meldung von Seite neun. Drei Gebiete sind '
-      + 'erlaubt — Deutschland, Welt und Fußball; anderer Sport nicht. Sie muss nicht '
-      + 'von heute sein, die letzten paar Tage gehen auch, und unter den großen Meldungen '
-      + 'schlägt ein guter Bezug einen frischen. Ist keine dabei, die sich verweben lässt, '
-      + 'dann lieber gar keine: Eine Anspielung, die keiner erkennt, ist keine Pointe.',
-    'Nenn weder Quelle noch Schlagzeile, der Bezug muss sich aus dem Satz selbst ergeben. '
-      + 'Das geht nur auf, wenn die Meldung ohnehin jeder kennt — deshalb die große.',
-    'Zwei Dinge sind ausgeschlossen. Erstens nichts Trauriges: keine Unglücke, keine '
-      + 'Toten, keine Kriege, keine Krankheiten. Zweitens nichts über das Wetter — '
-      + 'Hitzerekorde, Regen, Unwetter, Temperaturen. Das ist keine Nachricht, das ist '
-      + 'der billigste Aufhänger, den es gibt, und er langweilt beim zweiten Mal.',
-    '',
     'Sprache: Deutsch. Ton: knapp und trocken, wie eine augenzwinkernde technische Norm. '
       + 'Keine Ausrufezeichen, keine Emojis, kein Werbesprech, nicht gönnerhaft. '
       + 'Zwei bis vier Sätze.',
@@ -2685,8 +2671,31 @@ function urkundeAnweisung(tg, m){
     SLANG.map(s => '- ' + (s.kern ? '★ ' : '') + s.w + ': ' + s.b + ' Beispiele: '
       + s.bsp.join(', ')).join('\n'),
     '',
+    /* Steht bewusst ganz zuletzt, direkt vor der JSON-Zeile: Der Wortschatz darüber ist
+       inzwischen der längste Teil der Anweisung, und was davor stand, ging darin unter. */
+    'Und jetzt das, woran der Text hängt: In ihn gehört eine **echte Nachricht**, so '
+      + 'verwoben, dass Trinkleistung und Nachricht sich gegenseitig kommentieren. Ohne '
+      + 'die ist der Text nicht fertig. Das ist keine Kür, sondern die halbe Pointe.',
+    'Du hast genau eine Suche. Nimm sie für die großen Meldungen dieser Tage — nicht für '
+      + 'eine Nachricht, die zum Bier passt. Erst schauen, was oben steht, dann daraus '
+      + 'die aussuchen, die sich am besten verweben lässt.',
+    'Es muss eine sein, die jeder kennt, der einmal am Tag seine Nachrichten-App '
+      + 'aufmacht: der Aufmacher, nicht die Meldung von Seite neun. Drei Gebiete sind '
+      + 'erlaubt — Deutschland, Welt und Fußball; anderer Sport nicht. Sie muss nicht '
+      + 'von heute sein, die letzten paar Tage gehen auch, und unter den großen Meldungen '
+      + 'schlägt ein guter Bezug einen frischen.',
+    'Nenn weder Quelle noch Schlagzeile, der Bezug muss sich aus dem Satz selbst ergeben. '
+      + 'Das geht nur auf, wenn die Meldung ohnehin jeder kennt — deshalb die große.',
+    'Zwei Dinge sind ausgeschlossen. Erstens nichts Trauriges: keine Unglücke, keine '
+      + 'Toten, keine Kriege, keine Krankheiten. Zweitens nichts über das Wetter — '
+      + 'Hitzerekorde, Regen, Unwetter, Temperaturen. Das ist keine Nachricht, das ist '
+      + 'der billigste Aufhänger, den es gibt, und er langweilt beim zweiten Mal.',
+    'In "bezug" schreibst du in drei, vier Worten, welche Meldung du genommen hast. Das '
+      + 'steht auf keiner Urkunde und liest niemand — es steht da, damit der Bezug '
+      + 'wirklich einer ist und nicht bloß ein Gefühl von Aktualität.',
+    '',
     'Antworte ausschließlich mit JSON, ohne Vorrede: '
-      + (m.stufe === 10 ? '{"kopf":"…","text":"…"}' : '{"text":"…"}')
+      + (m.stufe === 10 ? '{"kopf":"…","text":"…","bezug":"…"}' : '{"text":"…","bezug":"…"}')
   ].join('\n');
 }
 function kiFehlerMerken(grund){
@@ -2704,7 +2713,15 @@ async function urkundeTextHolen(tg, m){
   for(let i = bloecke.length - 1; i >= 0 && !j; i--) j = jsonAusText(bloecke[i]);
   if(!j) j = jsonAusText(bloecke.join('\n'));
   const text = j && typeof j.text === 'string' ? j.text.trim() : '';
-  return text.length > 20 ? {text, kopf: j.kopf ? String(j.kopf).trim() : ''} : null;
+  if(text.length <= 20) return null;
+  /* `bezug` steht auf keiner Urkunde. Er ist der Hebel, der das Weglassen unmöglich
+     macht: Wer die Meldung benennen muss, sucht auch eine. Und er ist die Anzeige —
+     kommt ein Text ohne ihn, fehlt die halbe Pointe, und das stünde sonst nirgends.
+     Genau die Sorte stiller Ausfall, für die es die Notiz gibt. */
+  const bezug = j.bezug ? String(j.bezug).trim() : '';
+  if(bezug) lokal.loeschen(KIFEHLER_KEY);
+  else kiFehlerMerken('Text kam ohne Nachrichtenbezug');
+  return {text, kopf: j.kopf ? String(j.kopf).trim() : '', bezug};
 }
 
 const urkundeLaeuft = new Set();
@@ -2722,9 +2739,11 @@ async function urkundeHolen(tg, m){
     if(ziel){
       ziel.text = j.text;
       if(ziel.stufe === 10 && j.kopf) ziel.kopf = j.kopf;
+      /* Steht auf keiner Urkunde, wird beim Abschluss mit dem Text weggeraeumt und ist
+         nur zum Nachsehen da: welche Meldung der Text benutzt hat. */
+      if(j.bezug) ziel.bezug = j.bezug;
       ziel.quelle = 'ki';
       sichern();
-      lokal.loeschen(KIFEHLER_KEY);
     } else {
       kiFehlerMerken(j ? 'Marke ist nicht mehr da' : 'Antwort ohne brauchbaren Text');
     }

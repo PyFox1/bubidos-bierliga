@@ -39,7 +39,8 @@ const antwort = (kopf, text) => ({
     {type:'web_search_tool_result', tool_use_id:'srvtoolu_1', content:[
       {type:'web_search_result', title:'Tagesschau', url:'https://example.invalid/x',
        encrypted_content:'…'}]},
-    {type:'text', text:JSON.stringify(kopf ? {kopf, text} : {text})}
+    {type:'text', text:JSON.stringify(Object.assign({bezug:'Zeitumstellung abgeschafft'},
+      kopf ? {kopf, text} : {text}))}
   ]
 });
 
@@ -114,7 +115,7 @@ await schritt('Die Anweisung verlangt den Nachrichtenbezug', async () => {
    Meldungen, dann darunter die beste Passung. */
 await schritt('Die Meldung muss eine sein, die jeder kennt', async () => {
   const t = letzterLeib.messages[0].content;
-  ['Nachrichten-App', 'Aufmacher', 'genau eine Suche', 'lieber gar keine']
+  ['Nachrichten-App', 'Aufmacher', 'genau eine Suche', 'die halbe Pointe']
     .forEach(w => { if(t.indexOf(w) < 0) throw new Error('„' + w + '" fehlt'); });
   /* Die eine Suche geht auf die Schlagzeilen, nicht auf ein Thema, das zum Bier passt –
      sonst holt sie eine Nische herein, und die Auswahl steht von vornherein schief. */
@@ -141,6 +142,40 @@ await schritt('Der Kern geht als Rangfolge mit raus', async () => {
   const markiert = (t.match(/★/g) || []).length;
   if(markiert < 5) throw new Error('nur ' + markiert + ' markiert');
   return markiert + '× ★ von ' + (t.match(/\n- /g) || []).length + ' Einträgen';
+});
+
+/* Der Nachrichtenbezug fehlte in den Urkunden am Tisch, obwohl der Wortschatz saß —
+   der Text kam also von der API, nur ohne die halbe Pointe. Zwei Gründe steckten in
+   der Anweisung: Sie erlaubte das Weglassen ausdrücklich („lieber gar keine"), und der
+   Wortschatz war mit 38 Einträgen so lang geworden, dass alles davor darin unterging.
+   Deshalb steht der Nachrichtenteil jetzt zuletzt und verlangt statt erlaubt. */
+await schritt('Der Nachrichtenteil steht hinter dem Wortschatz, nicht davor', async () => {
+  const t = letzterLeib.messages[0].content;
+  const wortschatz = t.indexOf('Der Wortschatz der Runde');
+  const nachricht = t.indexOf('echte Nachricht');
+  if(wortschatz < 0 || nachricht < 0) throw new Error('einer der Blöcke fehlt');
+  if(nachricht < wortschatz)
+    throw new Error('die Nachricht steht wieder vor dem Wortschatz und geht darin unter');
+  return 'zuletzt, direkt vor dem JSON';
+});
+
+await schritt('Die Anweisung erlaubt kein Weglassen mehr', async () => {
+  const t = letzterLeib.messages[0].content;
+  if(/lieber gar keine|dann keine|notfalls ohne/i.test(t))
+    throw new Error('das Weglassen ist wieder erlaubt');
+  if(t.indexOf('Ohne die ist der Text nicht fertig') < 0)
+    throw new Error('der Bezug wird nicht mehr verlangt');
+  return 'verbindlich';
+});
+
+/* Der Hebel: Wer die Meldung benennen muss, sucht auch eine. Fällt das Feld aus der
+   Anweisung, ist das Weglassen wieder lautlos möglich. */
+await schritt('Der Bezug muss im JSON mitgeliefert werden', async () => {
+  const t = letzterLeib.messages[0].content;
+  if(t.indexOf('"bezug"') < 0) throw new Error('das Feld wird nicht verlangt');
+  if(!/\{"kopf":"…","text":"…","bezug":"…"\}/.test(t))
+    throw new Error('das JSON-Muster nennt den Bezug nicht');
+  return 'bezug im Muster';
 });
 
 console.log('\n══ Was ankommt ══');
@@ -277,7 +312,8 @@ await schritt('Ein geglückter Text räumt die Notiz wieder weg', async () => {
   await p.route('**/api.anthropic.com/**', r => r.fulfill({status:200,
     contentType:'application/json',
     body:JSON.stringify({content:[{type:'text', text:JSON.stringify({
-      kopf:'Alles gut', text:'Ein Text, der lang genug ist, um angenommen zu werden.'})}]})}));
+      kopf:'Alles gut', text:'Ein Text, der lang genug ist, um angenommen zu werden.',
+      bezug:'Zeitumstellung abgeschafft'})}]})}));
   await aufbau({be:{'1':9, '2':2, '3':1}});
   await p.waitForTimeout(200);
   await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
@@ -407,6 +443,27 @@ await schritt('Die Wartezeit deckt einen normalen Aufruf ab', async () => {
   const ms = await p.evaluate(() => URKUNDE_WARTE);
   if(!(ms >= 20000)) throw new Error('URKUNDE_WARTE steht auf ' + ms + ' ms');
   return Math.round(ms/1000) + ' s';
+});
+
+/* Die Gegenprobe zum Hebel: Kommt ein Text ohne Bezug, ist er brauchbar und bleibt
+   stehen — der Ersatztext wäre schlechter. Aber es fällt auf, statt still zu bleiben. */
+await schritt('Ein Text ohne Bezug bleibt stehen und wird notiert', async () => {
+  await p.route('**/api.anthropic.com/**', r => r.fulfill({status:200,
+    contentType:'application/json',
+    body:JSON.stringify({content:[{type:'text', text:JSON.stringify({
+      kopf:'Ohne alles',
+      text:'Ein Text, der lang genug ist, aber keine Nachricht verwebt.'})}]})}));
+  await p.evaluate(() => lokal.loeschen(KIFEHLER_KEY));
+  await aufbau({be:{'1':9, '2':2, '3':1}});
+  await p.waitForTimeout(200);
+  await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
+  await p.waitForTimeout(700);
+  const m = await marke(10);
+  if(m.quelle !== 'ki') throw new Error('der Text wurde verworfen, Quelle ' + m.quelle);
+  const f = await p.evaluate(() => kiFehlerLesen());
+  if(!f || !/Nachrichtenbezug/.test(f.grund || ''))
+    throw new Error('nichts notiert: ' + JSON.stringify(f));
+  return f.grund;
 });
 
 await schritt('Und wenn gar kein Schlüssel hinterlegt ist, wird nicht gefragt', async () => {
