@@ -572,6 +572,20 @@ await schritt('Die stehenden Wendungen sind als Kern markiert', async () => {
   return x.kern.length + ' von ' + x.n;
 });
 
+/* Nachtrag G47: ein Eintrag außerhalb der drei Quellen, für die Ablehnung von allem Neuen. */
+await schritt('„Ich bleib beim Arschloch" zielt auf eine Gewohnheit, nicht auf einen Menschen',
+  async () => {
+  const x = await p.evaluate(() => {
+    const e = SLANG.find(y => /Ich bleib beim Arschloch/.test(y.w)) || {};
+    return {b:e.b || '', bsp:(e.bsp || []).join(' | ')};
+  });
+  if(!x.b) throw new Error('der Eintrag fehlt');
+  if(!/nie einem Menschen/.test(x.b)) throw new Error('die Bedeutung sagt das nicht: ' + x.b);
+  if(/\bihn\b|\bsie\b|\ber ist\b/i.test(x.bsp))
+    throw new Error('ein Beispiel zielt auf eine Person: ' + x.bsp);
+  return 'Gewohnheit statt Mensch';
+});
+
 await schritt('Zu jeder Stufe gibt es mehrere Ersatztexte', async () => {
   const schlecht = await p.evaluate(() => MARKEN.filter(s =>
     !(URKUNDE_ERSATZ[s] || []).length));

@@ -550,11 +550,14 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   das andere gegen eine Frau. Sie bleiben getauscht, auch seit die übrigen Zitate wörtlich
   dastehen: In dieser Form kennt die Runde sie inzwischen, und die **Ersatztexte zitieren sie
   wörtlich mit** — ein Zurückdrehen bräche also beides auseinander.
-  **Der Kern hat Vorrang.** Mit 37 Einträgen und ein bis zwei je Urkunde käme jede einzelne
-  Wendung nur noch in etwa jeder zwanzigsten dran, und ausgerechnet die, an denen die Runde
-  sich erkennt, gingen in der Masse unter. Deshalb trägt eine Handvoll `kern:true`, die
+  **Der Kern hat Vorrang.** Mit inzwischen 38 Einträgen und ein bis zwei je Urkunde käme jede
+  einzelne Wendung nur noch in etwa jeder zwanzigsten dran, und ausgerechnet die, an denen die
+  Runde sich erkennt, gingen in der Masse unter. Deshalb trägt eine Handvoll `kern:true`, die
   Anweisung markiert sie mit ★ und nimmt bevorzugt daraus; der Rest ist Fundus. Wer einen
   Eintrag ergänzt, entscheidet mit, ob er dazugehört — im Zweifel nicht.
+  **„Ich bleib beim Arschloch"** (G47) ist außerhalb der drei Quellen dazugekommen und steht für
+  eine eigene Figur: die Ablehnung von allem Neuen, das Festhalten an der gewohnten Bestellung,
+  der gewohnten Kneipe, dem gewohnten Ablauf. Zielt auf eine Gewohnheit, nie auf einen Menschen.
   **Was nicht aus einer belegten Quelle stammt, kommt nicht rein.** Die Einträge landen
   wörtlich im Prompt; ein dazuerfundenes Beispiel erzeugt Urkunden, die nach einer Runde
   klingen, die es nicht gibt — schlechter als gar kein Eintrag. Im Zweifel nachfragen statt
