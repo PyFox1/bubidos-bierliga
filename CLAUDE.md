@@ -520,13 +520,32 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   Nachrichtenbezug der Urkunden: derselbe Endpunkt, derselbe Header. Der Schlüssel liegt im
   Datenbestand und damit im Browser jedes Geräts — das ist für fünf Freunde vertretbar, für
   alles andere nicht.
-  **Gegen die echte API geprüft** (G41): Opus 5 mit `web_search_20260209`, `effort: medium`
-  und `max_tokens: 8000` antwortet mit 200, führt zwei Suchen aus und liefert einen echten
-  Nachrichtenbezug. Gemessen dabei: 51.000 Eingabe-Token — die Suchergebnisse machen fast
-  alles davon aus —, 2.423 Ausgabe-Token, davon **1.413 fürs Denken**. Zwei Zahlen zum
-  Merken: Das alte `max_tokens: 1500` hätte mitten im JSON abgeschnitten, und eine Urkunde
-  kostet damit rund **35 Cent**, nicht die anfangs geschätzten acht. Wird das zu viel:
-  `max_uses` der Websuche von 2 auf 1, das halbiert die Eingabe.
+  **Gegen die echte API geprüft und auf Tempo getrimmt.** Der Aufruf brauchte anfangs
+  **55,9 Sekunden** — bei einer Frist von 45 s kam der Abbruch also *zuverlässig* vor der
+  Antwort, landete im `catch`, und der Ersatztext blieb stehen. Die Lehre war aber nicht
+  „Frist hoch", sondern „Aufruf schneller". Dieselbe Anweisung, gegeneinander gestoppt:
+
+  | Bauart | Zeit | Eingabe-Token |
+  |---|---|---|
+  | `effort: medium`, `web_search_20260209`, `max_uses: 2` | 36,8 s | 34.850 |
+  | `effort: low`, `web_search_20250305`, `max_uses: 1` | **15,2 s** | 18.247 |
+
+  Die Bremse war die **neuere Suchvariante**: `_20260209` filtert ihre Treffer mit
+  Code-Ausführung im Hintergrund, dafür fährt eine Sandbox hoch. Für „finde eine Nachricht"
+  ist das rund zwanzig Sekunden für nichts — die Textqualität war in beiden Fällen gleich.
+  Wer hier auf „die neueste Fassung" umstellt, macht den Abend langsamer, ohne dass der Text
+  besser wird; `urkunde-ki.mjs` schlägt darauf an.
+  Kosten damit rund **12 Cent** je Urkunde statt 23. `KI_FRIST` steht auf 90 s — sechsfache
+  Luft auf die gemessenen 15 s, fürs schlechte Wirtshaus-Netz. Und `max_tokens: 8000` bleibt
+  großzügig: Es ist eine Obergrenze, keine Reservierung, und ein zu kleiner Wert hat hier
+  schon einmal die Antwort mitten im JSON abgeschnitten.
+- **Ein stiller Rückfall auf den Ersatztext ist ein Diagnoseproblem, kein Schönheitsfehler.**
+  Zweimal in Folge sah derselbe Ausfall von außen aus wie „die API kann keine Nachrichten" —
+  einmal ein zu kleines `max_tokens`, einmal eine zu kurze Frist, beide Male stumm. Deshalb
+  notiert `kiFehlerMerken()` den Grund lokal (`KIFEHLER_KEY`), und die Einstellungen zeigen
+  ihn unter *Verwaltung → Verbindung*. Bewusst **nicht** auf der Urkunde: Der Ersatztext trägt
+  den Abend, eine Fehlermeldung mitten in der Eilmeldung wäre die falsche Stelle. Ein
+  geglückter Text räumt die Notiz wieder weg.
 - **Ein abfangender Proxy lässt den Aufruf wie einen App-Fehler aussehen.** In einer Sandbox,
   die TLS aufbricht, scheitert der Aufruf **aus dem Browser** nach ein bis zwei Sekunden mit
   `ERR_CERT_AUTHORITY_INVALID`; `urkundeHolen()` schluckt das und lässt den Ersatztext stehen.
@@ -555,15 +574,20 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   dann verschwindet der Knopf. „Wieder einklappen" steht erst da, wenn wirklich etwas ausgeklappt
   ist. Nur die oberste ist farbig abgesetzt, alles darunter trägt `.alt` — sie ist die
   laufende Fassung, nicht bloß die erste Zeile einer Liste.
-  **Ausnahme G41:** Die Tagesmarken stehen bewusst *nicht* in den Änderungen — sie sollen die
-  Runde am Abend überraschen, und wer nachschaut was neu ist, hätte den Witz vorher gelesen.
-  Die Notiz sagt, dass etwas da ist, und nicht was. Anders als sonst gibt es dafür auch
-  **keinen eigenen Paragrafen** in der Betriebsanleitung — die Überraschung soll auch dem
-  entgehen, der von sich aus nachschlägt, nicht nur dem, der die Notizen liest. Ein
-  Erklär-Blatt zeigt hier folglich auf nichts; die Marke steht nur im Quelltext
-  (`tag.marken`, siehe Tagesmarken weiter unten) und in der Anwendung selbst. `urkunde.mjs`
-  prüft, dass weder eine Notiz noch die Anleitung den Witz vorwegnimmt. Das ist die einzige
-  Stelle, an der beides absichtlich schweigt.
+  **Tagesmarken/Urkunde bleiben in den Notizen kryptisch — dauerhaft, nicht nur beim
+  Einstieg (G41).** Die Marken sollen die Runde am Abend überraschen, und wer nachschaut
+  was neu ist, hätte den Witz vorher gelesen. Das gilt nicht nur für den ersten Auftritt:
+  **jede** spätere Änderung an dieser Stelle — und sei es nur ein Bugfix wie in G43 —
+  bekommt in den Notizen entweder gar keine Erwähnung oder einen bewusst vagen Satz, nie
+  Mechanik, Zahlen, Modell- oder Funktionsnamen und nicht einmal das Wort „Urkunde" selbst.
+  G43 hatte das zunächst verpasst (die Notiz nannte Text, Suche und Urkunde direkt) und
+  wurde deshalb nachgezogen. Anders als sonst gibt es dafür auch **keinen eigenen
+  Paragrafen** in der Betriebsanleitung — die Überraschung soll auch dem entgehen, der von
+  sich aus nachschlägt, nicht nur dem, der die Notizen liest. Ein Erklär-Blatt zeigt hier
+  folglich auf nichts; die Marke steht nur im Quelltext (`tag.marken`, siehe Tagesmarken
+  weiter unten) und in der Anwendung selbst. `urkunde.mjs` prüft, dass weder eine Notiz
+  noch die Anleitung den Witz vorwegnimmt. Das ist die einzige Stelle, an der beides
+  absichtlich schweigt.
   Geschrieben wird sonst **für den, der die App bedient**: was er jetzt anders vorfindet oder neu
   kann. Keine Funktions- und Klassennamen, kein `sha`/`ETag`/`Timer`, und vor allem keine
   Floskeln — „diverse Verbesserungen", „Stabilität erhöht" sagen niemandem etwas. Statt

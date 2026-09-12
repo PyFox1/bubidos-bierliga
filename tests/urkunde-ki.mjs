@@ -182,6 +182,73 @@ await schritt('Bei Unsinn statt JSON ebenso', async () => {
   return 'quelle: ersatz';
 });
 
+/* Die Frist war der zweite stille Ausfall in Folge: Der Aufruf brauchte 56 Sekunden,
+   abgebrochen wurde nach 45 – und weil der Abbruch im catch landete, sah es aus wie
+   „die API liefert keinen Nachrichtenbezug". Gemessen dauert er jetzt rund 15 s;
+   die Untergrenze hier lässt reichlich Luft fürs schlechte Wirtshaus-Netz. */
+await schritt('Die Frist ist länger als ein echter Aufruf dauert', async () => {
+  const ms = await p.evaluate(() => KI_FRIST);
+  if(!(ms >= 60000)) throw new Error('KI_FRIST steht auf ' + ms + ' ms');
+  return Math.round(ms/1000) + ' s';
+});
+
+/* Die neuere Suchvariante filtert mit Code-Ausführung im Hintergrund und kostete
+   gemessen rund zwanzig Sekunden extra. Wer hier „auf die neueste Fassung" umstellt,
+   macht den Abend langsamer, ohne dass der Text besser wird. */
+await schritt('Die Suche läuft in der schlanken Bauart und nur einmal', async () => {
+  const q = await p.evaluate(async () => {
+    let gesehen = null;
+    const echt = window.fetch;
+    window.fetch = (u, o) => {
+      if(String(u).indexOf('anthropic') >= 0) gesehen = JSON.parse(o.body);
+      return Promise.reject(new Error('abgeklemmt'));
+    };
+    state.einst.kiSchluessel = 'sk-test';
+    try{ await anKIText('hallo'); }catch(e){}
+    window.fetch = echt;
+    return gesehen;
+  });
+  const w = (q.tools || [])[0] || {};
+  if(w.type !== 'web_search_20250305') throw new Error('Suchvariante: ' + w.type);
+  if(w.max_uses !== 1) throw new Error('max_uses: ' + w.max_uses);
+  if((q.output_config || {}).effort !== 'low')
+    throw new Error('effort: ' + JSON.stringify(q.output_config));
+  return w.type + ', ' + w.max_uses + '× , effort low';
+});
+
+await schritt('Ein Fehlschlag wird für das Nachsehen notiert', async () => {
+  await p.route('**/api.anthropic.com/**', r => r.fulfill({status:500, body:'{}'}));
+  await p.evaluate(() => lokal.loeschen(KIFEHLER_KEY));
+  await aufbau({be:{'1':9, '2':2, '3':1}});
+  await p.waitForTimeout(200);
+  await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
+  await p.waitForTimeout(700);
+  const f = await p.evaluate(() => kiFehlerLesen());
+  if(!f || !f.grund) throw new Error('nichts notiert');
+  /* Und er steht in den Einstellungen, nicht auf der Urkunde – dort wäre er fehl am Platz. */
+  const wo = await p.evaluate(() => {
+    ansicht = 'einst'; verwaltungOffen = true; zeichnen();
+    return document.getElementById('app').innerText;
+  });
+  if(wo.indexOf('Urkundentext zuletzt nicht geholt') < 0)
+    throw new Error('steht nicht in den Einstellungen');
+  return f.grund;
+});
+
+await schritt('Ein geglückter Text räumt die Notiz wieder weg', async () => {
+  await p.route('**/api.anthropic.com/**', r => r.fulfill({status:200,
+    contentType:'application/json',
+    body:JSON.stringify({content:[{type:'text', text:JSON.stringify({
+      kopf:'Alles gut', text:'Ein Text, der lang genug ist, um angenommen zu werden.'})}]})}));
+  await aufbau({be:{'1':9, '2':2, '3':1}});
+  await p.waitForTimeout(200);
+  await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
+  await p.waitForTimeout(700);
+  const f = await p.evaluate(() => kiFehlerLesen());
+  if(f) throw new Error('die Notiz steht noch: ' + JSON.stringify(f));
+  return 'weg';
+});
+
 await schritt('Und wenn gar kein Schlüssel hinterlegt ist, wird nicht gefragt', async () => {
   let gefragt = false;
   await p.route('**/api.anthropic.com/**', r => { gefragt = true; r.abort(); });

@@ -617,7 +617,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-11 20:49 · G42 (GitHub)';
+const FASSUNG = '2026-09-12 06:45 · G43 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -637,6 +637,9 @@ const NOTIZEN = [
      anleitung durchblättert, soll den Witz nicht vorher lesen können. Die Marke merkt sich
      trotzdem alles Nötige im Datenbestand (siehe `tag.marken` weiter oben im Quelltext);
      nur erklärt wird sie nirgends. */
+  {f:'G43', d:'12.09.2026', z:'06:45', punkte:[
+    'Eine Sache von neulich läuft jetzt spürbar runder. Mehr dazu bewusst nicht — wer '
+    + 'sie kennt, merkt es von selbst.']},
   {f:'G42', d:'11.09.2026', z:'20:49', punkte:[
     'Hängt man „?test“ an die Adresse, läuft die App auf einem eigenen Satz Daten. Dort '
     + 'kann man in Ruhe herumprobieren, ohne dass die Tabelle etwas abbekommt oder auf '
@@ -767,6 +770,12 @@ const BASIS_KEY = 'bubidos-basis';
    alle weg – und wer sein Handy erst eine Stunde später wieder aufmacht, erfährt nie,
    dass es sie gab. */
 const URKUNDEN_KEY = 'bubidos-urkunden';
+/* Warum der letzte Urkunden-Aufruf nicht durchkam. Nur auf diesem Gerät und nur zum
+   Nachsehen: Der Ersatztext trägt den Abend auch allein, eine Fehlermeldung mitten in
+   der Urkunde wäre die falsche Stelle. Es gibt ihn, weil derselbe stille Ausfall heute
+   zweimal für Ratereien gesorgt hat — erst ein zu kleines Token-Budget, dann eine zu
+   kurze Frist. Beide Male sah es von außen aus, als könne die API keine Nachrichten. */
+const KIFEHLER_KEY = 'bubidos-kifehler';
 
 const GETRAENKE_PLATZ = null;
 
@@ -2255,6 +2264,16 @@ const KI_SCHEMA = {
    Beispielliste im Prompt steht. Das ist ein paar Cent mehr je Urkunde wert. */
 const KI_MODELL = 'claude-sonnet-5';
 const KI_MODELL_URKUNDE = 'claude-opus-5';
+
+/* Sechsfache Sicherheit auf die gemessenen 15 Sekunden. Hier standen einmal 45 s, und
+   das war zu knapp: Der Aufruf brauchte damals 56 s, der Abbruch kam also zuverlässig
+   vor der Antwort, landete im `catch`, und der Ersatztext blieb stehen — von außen sah
+   das aus wie „die API liefert keinen Nachrichtenbezug".
+   Die Lehre war aber nicht „Frist hoch", sondern „Aufruf schneller": Die eigentliche
+   Bremse saß in der Websuche (siehe `anKIText`). Die Frist ist nur noch das Netz
+   darunter, großzügig bemessen fürs schlechte Wirtshaus-WLAN. Lang darf sie sein, weil
+   niemand darauf wartet — die Urkunde steht mit dem Ersatztext längst auf dem Schirm. */
+const KI_FRIST = 90000;
 const kiSchluessel = () => (state.einst && state.einst.kiSchluessel || '').trim();
 
 async function anKI(bild, anweisung, signal){
@@ -2310,7 +2329,7 @@ async function anKIText(anweisung){
   const schluessel = kiSchluessel();
   if(!schluessel) throw new Error('kein Schlüssel');
   const ab = new AbortController();
-  const uhr = setTimeout(() => ab.abort(), 45000);
+  const uhr = setTimeout(() => ab.abort(), KI_FRIST);
   try{
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method:'POST', signal:ab.signal,
@@ -2328,8 +2347,17 @@ async function anKIText(anweisung){
            es aus wie „die API liefert keinen Nachrichtenbezug". Der Text selbst bleibt
            kurz, dafür sorgt die Anweisung, nicht die Grenze. */
         model:KI_MODELL_URKUNDE, max_tokens:8000,
-        output_config:{effort:'medium'},
-        tools:[{type:'web_search_20260209', name:'web_search', max_uses:2}],
+        /* Beides auf Tempo getrimmt, und beides gemessen. `effort: low` genügt für drei
+           Sätze; die Suche läuft in der **einfachen** Bauart und nur einmal. Die neuere
+           Variante `_20260209` filtert ihre Treffer mit Code-Ausführung im Hintergrund —
+           dafür fährt eine Sandbox hoch, und das kostete rund zwanzig Sekunden für etwas,
+           das hier niemand braucht: Gesucht wird eine Nachricht, keine gefilterte
+           Trefferliste. Gegeneinander gestoppt, dieselbe Anweisung:
+             medium + _20260209 + 2 Suchen → 36,8 s, 34.850 Eingabe-Token
+             low    + _20250305 + 1 Suche  → 15,2 s, 18.247 Eingabe-Token
+           Gleiche Textqualität, halbe Kosten. */
+        output_config:{effort:'low'},
+        tools:[{type:'web_search_20250305', name:'web_search', max_uses:1}],
         messages:[{role:'user', content:anweisung}]
       })
     });
@@ -2410,6 +2438,13 @@ function urkundeAnweisung(tg, m){
       + (m.stufe === 10 ? '{"kopf":"…","text":"…"}' : '{"text":"…"}')
   ].join('\n');
 }
+function kiFehlerMerken(grund){
+  try{ lokal.schreiben(KIFEHLER_KEY,
+    JSON.stringify({t:Date.now(), grund:String(grund).slice(0,200)})); }catch(e){}
+}
+function kiFehlerLesen(){
+  try{ return JSON.parse(lokal.lesen(KIFEHLER_KEY)); }catch(e){ return null; }
+}
 const urkundeLaeuft = new Set();
 async function urkundeHolen(tg, m){
   if(!kiSchluessel()) return;
@@ -2429,8 +2464,17 @@ async function urkundeHolen(tg, m){
       if(ziel.stufe === 10 && j.kopf) ziel.kopf = String(j.kopf).trim();
       ziel.quelle = 'ki';
       sichern();
+      lokal.loeschen(KIFEHLER_KEY);
+    } else {
+      kiFehlerMerken('Antwort ohne brauchbaren Text');
     }
-  }catch(e){ /* Ersatztext bleibt stehen, das ist der ganze Zweck */ }
+  }catch(e){
+    /* Nach außen bleibt der Ersatztext stehen, das ist der ganze Zweck. Aber der Grund
+       wird notiert, sonst sucht man ihn beim nächsten Mal wieder von vorn. */
+    kiFehlerMerken(e && e.name === 'AbortError'
+      ? 'Zeitüberschreitung nach ' + Math.round(KI_FRIST/1000) + ' s'
+      : (e && e.message) || String(e));
+  }
   urkundeLaeuft.delete(m.id);
   zeichnen();
 }
@@ -2944,12 +2988,26 @@ function ansichtEinst(){
         + esc(GH_REPO) + '</b>'
         + (ghFehler === 'netz' ? ' · <b style="color:#E09084">gerade offline</b>' : '')
         + '. Jede Änderung wird ein Commit – gelöscht werden kann nichts.</p>'
+        + urkundeFehlerZeile()
         + '<button class="knopf leer" data-tu="tokenLoesen">Schlüssel von diesem Gerät '
         + 'entfernen</button>'
       : '')
 
     + '<div class="abschnitt">Änderungen</div>'
     + notizBlock();
+}
+
+/* Steht nur da, wenn wirklich etwas schiefging – und verschwindet beim nächsten Text,
+   der durchkommt. Der Ersatztext trägt den Abend ohnehin; hier geht es allein darum,
+   dass man den Grund nachsehen kann, statt ihn zu suchen. */
+function urkundeFehlerZeile(){
+  const f = kiFehlerLesen();
+  if(!f || !f.grund) return '';
+  const d = new Date(f.t || Date.now());
+  const zwei = n => ('0' + n).slice(-2);
+  return '<p class="hinweis" style="margin:6px 2px 0">Urkundentext zuletzt nicht geholt ('
+    + zwei(d.getHours()) + ':' + zwei(d.getMinutes()) + '): <b>' + esc(f.grund)
+    + '</b>. Auf der Urkunde stand solange der vorgefertigte Text.</p>';
 }
 
 /* Die laufende Fassung steht offen da, jeder Tipp holt drei ältere nach, bis die
