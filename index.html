@@ -615,7 +615,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-12 14:29 · G48 (GitHub)';
+const FASSUNG = '2026-09-13 14:49 · G49 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -635,6 +635,9 @@ const NOTIZEN = [
      anleitung durchblättert, soll den Witz nicht vorher lesen können. Die Marke merkt sich
      trotzdem alles Nötige im Datenbestand (siehe `tag.marken` weiter oben im Quelltext);
      nur erklärt wird sie nirgends. */
+  {f:'G49', d:'13.09.2026', z:'14:49', punkte:[
+    'Bei der Sache von neulich kam derselbe Spruch zweimal hintereinander. Jetzt fällt '
+    + 'an einem Wochenende jeder nur noch einmal.']},
   {f:'G48', d:'12.09.2026', z:'14:29', punkte:[
     'Die Sache von neulich nimmt jetzt wieder Bezug auf das, was gerade in der Welt '
     + 'passiert. Das war zuletzt abhandengekommen.']},
@@ -953,7 +956,9 @@ function standDaten(){
 function abgeschlossenAufraeumen(w){
   (w.tage || []).forEach(t => {
     (t.orte || []).forEach(o => { delete o.log; });
-    (t.marken || []).forEach(m => { delete m.text; delete m.kopf; delete m.bezug; });
+    (t.marken || []).forEach(m => {
+      delete m.text; delete m.kopf; delete m.bezug; delete m.wendung;
+    });
   });
 }
 function migrieren(we){
@@ -1535,13 +1540,49 @@ function markenPruefen(){
         m.text = fertig.text;
         if(stufe === 10 && fertig.kopf) m.kopf = fertig.kopf;
         if(fertig.bezug) m.bezug = fertig.bezug;
+        m.wendung = fertig.wendung;
         m.quelle = 'ki';
-      } else frisch.push(m);
+      } else {
+        /* Ohne Vorbereitung wird hier ausgesucht — synchron, bevor der Aufruf losgeht.
+           Ab dem Moment steht die Wendung im Bestand und ist für alle anderen weg. */
+        m.wendung = wendungWaehlen();
+        frisch.push(m);
+      }
       tg.marken.push(m);
     });
   });
   frisch.forEach(m => urkundeHolen(tg, m));
   urkundeVorbereiten(tg);
+}
+
+/* Welche Wendungen an diesem Wochenende schon vergeben sind: die auf den Marken —
+   die trägt der Abgleich zu allen Handys — und die, die gerade vorbereitet werden und
+   noch keine Marke haben. Ohne den zweiten Teil hilft die Liste beim Fall, um den es
+   geht, gar nichts: „Runde für alle" schiebt mehrere Leute im selben Durchlauf über
+   die Schwelle, die Aufrufe laufen gleichzeitig los, und keiner wüsste vom anderen. */
+function wendungenVergeben(){
+  const raus = new Set();
+  urkundeVorrat.forEach(v => { if(v && v.wendung) raus.add(v.wendung); });
+  const we = state.we.find(w => w.id === state.aktivWe);
+  ((we && we.tage) || []).forEach(t => (t.marken || []).forEach(m => {
+    if(m.wendung) raus.add(m.wendung);
+  }));
+  return raus;
+}
+
+/* Die App sucht aus, nicht das Modell. Ließe man dem Modell die Wahl, nähme es jedes
+   Mal die zugkräftigste — zweimal hintereinander „Ja, ja, die Sprüch kenn mer alle"
+   war genau das. Zuerst sind die Kern-Wendungen dran, danach der Fundus; innerhalb
+   der Gruppe gewürfelt, damit ein Wochenende nicht immer gleich anfängt. */
+function wendungWaehlen(){
+  const raus = wendungenVergeben();
+  const frei = SLANG.filter(s => !raus.has(s.w));
+  /* Sind alle 38 durch, fängt es von vorn an: eine Wiederholung ist besser als eine
+     Urkunde ohne den Ton der Runde. */
+  const topf = frei.length ? frei : SLANG;
+  const kern = topf.filter(s => s.kern);
+  const aus = kern.length ? kern : topf;
+  return aus[Math.floor(Math.random() * aus.length)].w;
 }
 
 /* Wie viele BE vor einer Stufe der Text bestellt wird. Zwei, damit auch der nicht an
@@ -1571,11 +1612,16 @@ function urkundeVorbereiten(tg){
       if(be + URKUNDE_VORLAUF + 1e-9 < stufe) return;   // noch zu weit weg
       const id = tg.id + ':' + stufe + ':' + pid;
       if(urkundeVorrat.has(id)) return;
-      urkundeVorrat.set(id, null);
+      /* Die Wendung wird hier reserviert, nicht erst wenn die Antwort da ist: Zwischen
+         Start und Antwort liegen fünfzehn Sekunden, und in denen laufen bei einer Runde
+         für alle die anderen Aufrufe. Der Eintrag im Vorrat hat deshalb von Anfang an
+         die Wendung und bekommt den Text später dazu. */
+      const wendung = wendungWaehlen();
+      urkundeVorrat.set(id, {wendung});
       /* `be: stufe`, nicht der Stand von jetzt: Die Urkunde wird für den Moment
          geschrieben, in dem die Stufe fällt, nicht für den davor. */
-      urkundeTextHolen(tg, {id, stufe, pid, be: stufe})
-        .then(j => { if(j) urkundeVorrat.set(id, j); })
+      urkundeTextHolen(tg, {id, stufe, pid, be: stufe, wendung})
+        .then(j => { if(j) urkundeVorrat.set(id, Object.assign(j, {wendung})); })
         .catch(e => kiFehlerMerken((e && e.message) || String(e)));
     });
   });
@@ -2666,10 +2712,18 @@ function urkundeAnweisung(tg, m){
       + 'Keine Ausrufezeichen, keine Emojis, kein Werbesprech, nicht gönnerhaft. '
       + 'Zwei bis vier Sätze.',
     '',
-    'Der Wortschatz der Runde. Bau ein bis zwei davon ein, nicht mehr. Die mit ★ sind '
-      + 'die stehenden Wendungen, an denen die Runde sich erkennt — nimm bevorzugt daraus:',
-    SLANG.map(s => '- ' + (s.kern ? '★ ' : '') + s.w + ': ' + s.b + ' Beispiele: '
-      + s.bsp.join(', ')).join('\n'),
+    /* Früher stand hier der ganze Wortschatz und das Modell suchte sich etwas aus.
+       Es nahm dann jedes Mal die zugkräftigste — zweimal hintereinander „Ja, ja, die
+       Sprüch kenn mer alle". Jetzt sucht die App aus und schickt genau eine mit; das
+       macht die Anweisung nebenbei um ein Vielfaches kürzer. */
+    'Der Wortschatz der Runde. Für diese Urkunde ist **eine** Wendung ausgesucht, und '
+      + 'genau die baust du ein — keine andere, und auch keine zweite dazu. Sie ist '
+      + 'vergeben, damit an einem Wochenende nicht zweimal dieselbe fällt. Verweb sie '
+      + 'so, dass sie nicht aufgesetzt wirkt:',
+    (() => {
+      const s = SLANG.find(x => x.w === m.wendung) || SLANG[0];
+      return '- ' + s.w + ': ' + s.b + ' Beispiele: ' + s.bsp.join(', ');
+    })(),
     '',
     /* Steht bewusst ganz zuletzt, direkt vor der JSON-Zeile: Der Wortschatz darüber ist
        inzwischen der längste Teil der Anweisung, und was davor stand, ging darin unter. */

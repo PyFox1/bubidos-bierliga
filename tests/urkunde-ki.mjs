@@ -104,8 +104,7 @@ await schritt('Die Anweisung verlangt den Nachrichtenbezug', async () => {
   const t = letzterLeib.messages[0].content;
   ['Nachricht', 'nicht von heute sein', 'letzten', 'weder Quelle noch Schlagzeile']
     .forEach(w => { if(t.indexOf(w) < 0) throw new Error('„' + w + '" fehlt'); });
-  if(t.indexOf('Bierpetereinheiten') < 0) throw new Error('Slang-Beispiele fehlen');
-  return 'Bezug, Zeitfenster und Slang stehen drin';
+  return 'Bezug und Zeitfenster stehen drin';
 });
 
 /* Die Auswahl war lange allein auf Passung getrimmt: „nimm die, die am besten passt".
@@ -134,14 +133,22 @@ await schritt('Erlaubt sind Deutschland, Welt und Fußball – sonst kein Sport'
   return 'drei Gebiete';
 });
 
-await schritt('Der Kern geht als Rangfolge mit raus', async () => {
+/* Zwei Leute rissen nacheinander die Zehn, und über beiden Eilmeldungen stand
+   dieselbe Wendung. Solange der ganze Wortschatz mitging und das Modell aussuchte,
+   nahm es jedes Mal die zugkräftigste. Jetzt sucht die App aus und schickt genau
+   eine mit — das ist die Stelle, an der die Wiederholung verhindert wird. */
+await schritt('Genau eine Wendung geht mit, nicht der ganze Wortschatz', async () => {
+  const x = await p.evaluate(() => ({
+    t: null, n: SLANG.length,
+    liste: SLANG.map(s => s.w)
+  }));
   const t = letzterLeib.messages[0].content;
-  if(t.indexOf('★') < 0) throw new Error('keine Markierung in der Anweisung');
-  if(t.indexOf('nimm bevorzugt daraus') < 0)
-    throw new Error('die Rangfolge wird nicht verlangt');
-  const markiert = (t.match(/★/g) || []).length;
-  if(markiert < 5) throw new Error('nur ' + markiert + ' markiert');
-  return markiert + '× ★ von ' + (t.match(/\n- /g) || []).length + ' Einträgen';
+  const drin = x.liste.filter(w => t.indexOf(w) >= 0);
+  if(drin.length !== 1)
+    throw new Error(drin.length + ' Wendungen in der Anweisung: ' + drin.join(' | '));
+  if(t.indexOf('genau die baust du ein') < 0)
+    throw new Error('die Anweisung verlangt nicht genau diese eine');
+  return '1 von ' + x.n + ': ' + drin[0];
 });
 
 /* Der Nachrichtenbezug fehlte in den Urkunden am Tisch, obwohl der Wortschatz saß —

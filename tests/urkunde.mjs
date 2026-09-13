@@ -606,8 +606,8 @@ await schritt('Nur Stufe 10 bringt Überschriften mit', async () => {
 
 await schritt('Die Anweisung an die API trägt Slang, Auftrag und Nachrichtenbezug', async () => {
   const t = await p.evaluate(() => urkundeAnweisung(state.we[0].tage[0],
-    {id:'901:25:1', pid:'1', stufe:25, be:25, ort:'Augustiner'}));
-  ['zappen', 'Peter', 'Bierpetereinheiten', 'Ehrenurkunde', 'Nachricht', 'JSON',
+    {id:'901:25:1', pid:'1', stufe:25, be:25, ort:'Augustiner', wendung:'Peter'}));
+  ['Peter', 'Bierpetereinheiten', 'Ehrenurkunde', 'Nachricht', 'JSON',
    'letzten', 'Augustiner']
     .forEach(w => { if(t.indexOf(w) < 0) throw new Error('„' + w + '" fehlt'); });
   if(/\{name\}/.test(t)) throw new Error('Platzhalter in der Anweisung');
@@ -712,6 +712,67 @@ await schritt('Die Änderungen verraten die Tagesmarken nicht', async () => {
       if(new RegExp(w, 'i').test(t)) throw new Error('„' + w + '" steht in der Notiz');
     });
   return 'nichts verraten';
+});
+
+console.log('\n══ Jede Wendung nur einmal je Wochenende ══');
+
+/* Zwei Leute rissen nacheinander die Zehn, und über beiden Eilmeldungen stand dieselbe
+   Wendung. Solange der ganze Wortschatz mitging und das Modell aussuchte, nahm es jedes
+   Mal die zugkräftigste. Der harte Fall ist aber die Runde für alle: Sie schiebt mehrere
+   im selben Durchlauf über die Schwelle, die Aufrufe laufen gleichzeitig los, und eine
+   Ausschlussliste im Prompt käme für keinen davon rechtzeitig. Deshalb sucht die App aus
+   und reserviert sofort. */
+await aufbau({be:{'1':9, '2':9, '3':9, '4':3}});
+await p.waitForTimeout(200);
+
+await schritt('Eine Runde für alle vergibt drei verschiedene Wendungen', async () => {
+  await p.evaluate(() => tu.runde());
+  const w = await p.evaluate(() =>
+    (state.we[0].tage[0].marken || []).map(m => m.wendung));
+  if(w.length !== 3) throw new Error('es sind ' + w.length + ' Marken');
+  if(w.some(x => !x)) throw new Error('eine Marke ohne Wendung: ' + JSON.stringify(w));
+  if(new Set(w).size !== 3) throw new Error('doppelt vergeben: ' + w.join(' | '));
+  return w.map(x => x.slice(0, 18)).join(' · ');
+});
+
+await schritt('Zuerst sind die Kern-Wendungen dran', async () => {
+  const schlecht = await p.evaluate(() => {
+    const kern = SLANG.filter(s => s.kern).map(s => s.w);
+    return (state.we[0].tage[0].marken || []).map(m => m.wendung)
+      .filter(w => kern.indexOf(w) < 0);
+  });
+  if(schlecht.length) throw new Error('aus dem Fundus statt dem Kern: ' + schlecht.join(', '));
+  return 'alle drei aus dem Kern';
+});
+
+/* Zwölf Marken an einem Wochenende — vier Leute über alle drei Stufen. Keine zweimal. */
+await schritt('Auch über alle Stufen hinweg wiederholt sich keine', async () => {
+  const w = await p.evaluate(() => {
+    const tg = state.we[0].tage[0];
+    Object.keys(tg.orte[1].getraenke).forEach(id => {
+      tg.orte[1].getraenke[id] = Array(25).fill('normal:05');
+    });
+    markenPruefen();
+    return (tg.marken || []).map(m => m.wendung);
+  });
+  if(w.length < 12) throw new Error('nur ' + w.length + ' Marken');
+  if(w.some(x => !x)) throw new Error('eine Marke ohne Wendung');
+  if(new Set(w).size !== w.length)
+    throw new Error(w.length + ' Marken, aber nur ' + new Set(w).size + ' Wendungen');
+  return w.length + ' Marken, alle verschieden';
+});
+
+await schritt('Beim Abschließen fällt die Wendung mit dem Text weg', async () => {
+  const x = await p.evaluate(() => {
+    state.we[0].zu = true;
+    migrieren(state.we);
+    const m = state.we[0].tage[0].marken[0];
+    return {text:m.text, wendung:m.wendung, stufe:m.stufe, pid:m.pid};
+  });
+  if(x.text !== undefined) throw new Error('der Text steht noch da');
+  if(x.wendung !== undefined) throw new Error('die Wendung steht noch da');
+  if(!x.stufe || !x.pid) throw new Error('die Marke selbst ist weg');
+  return 'Text und Wendung weg, Stufe ' + x.stufe + ' bleibt';
 });
 
 console.log(fehler.length ? '\nFehler:\n' + fehler.join('\n') : '\nKeine Seitenfehler.');

@@ -573,11 +573,26 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   das andere gegen eine Frau. Sie bleiben getauscht, auch seit die übrigen Zitate wörtlich
   dastehen: In dieser Form kennt die Runde sie inzwischen, und die **Ersatztexte zitieren sie
   wörtlich mit** — ein Zurückdrehen bräche also beides auseinander.
-  **Der Kern hat Vorrang.** Mit inzwischen 38 Einträgen und ein bis zwei je Urkunde käme jede
-  einzelne Wendung nur noch in etwa jeder zwanzigsten dran, und ausgerechnet die, an denen die
-  Runde sich erkennt, gingen in der Masse unter. Deshalb trägt eine Handvoll `kern:true`, die
-  Anweisung markiert sie mit ★ und nimmt bevorzugt daraus; der Rest ist Fundus. Wer einen
-  Eintrag ergänzt, entscheidet mit, ob er dazugehört — im Zweifel nicht.
+  **Die App sucht die Wendung aus, nicht das Modell — genau eine je Urkunde** (`wendungWaehlen()`,
+  G49). Zwei Leute rissen nacheinander die Zehn, und über beiden Eilmeldungen stand „Ja, ja,
+  die Sprüch kenn mer alle". Solange der ganze Wortschatz mitging und das Modell wählte, nahm
+  es jedes Mal die zugkräftigste — verständlich, aber am Tisch ist die Wiederholung der Tod
+  des Witzes. Die Regel ist deshalb: **je Wochenende fällt jede Wendung höchstens einmal.**
+  Der Ausschluss steht an der Marke (`wendung`), damit der Abgleich ihn zu allen Handys trägt;
+  `abgeschlossenAufraeumen()` wirft ihn mit dem Text weg.
+  Eine Ausschlussliste im Prompt hätte nicht gereicht, und das ist der Punkt, an dem es
+  interessant wird: **„Runde für alle" schiebt mehrere Leute im selben `markenPruefen()`-
+  Durchlauf über die Vorbereitungsschwelle.** Die Aufrufe laufen gleichzeitig los, keiner
+  hätte vom anderen gewusst, und alle drei bekämen dieselbe Wendung. Deshalb wird **synchron
+  reserviert**, bevor der Aufruf startet: `urkundeVorbereiten()` legt die Wendung sofort in
+  den `urkundeVorrat`-Eintrag, der Text kommt später dazu. `wendungenVergeben()` liest beide
+  Quellen — Marken und Vorrat.
+  Zuerst sind die `kern`-Wendungen dran, dann der Fundus; innerhalb der Gruppe gewürfelt,
+  damit ein Wochenende nicht immer gleich anfängt. Sind alle 38 durch, fängt es von vorn an —
+  eine Wiederholung ist besser als eine Urkunde ohne den Ton der Runde.
+  Nebeneffekt, und kein kleiner: Die Anweisung trägt statt 38 Einträgen nur noch einen. Das
+  ist genau der Block, der in G48 den Nachrichtenteil erdrückt hat.
+  Wer einen Eintrag ergänzt, entscheidet mit, ob er `kern` ist — im Zweifel nicht.
   **„Ich bleib beim Arschloch"** (G47) ist außerhalb der drei Quellen dazugekommen und steht für
   eine eigene Figur: die Ablehnung von allem Neuen, das Festhalten an der gewohnten Bestellung,
   der gewohnten Kneipe, dem gewohnten Ablauf. Zielt auf eine Gewohnheit, nie auf einen Menschen.
