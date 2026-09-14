@@ -514,6 +514,12 @@ table.rechnung td.schlecht{color:#E09084}
   color:var(--malz);border:1px solid var(--malz);border-radius:3px;padding:2px 7px;margin:0 0 11px}
 .u-meld-in h3{font-family:var(--display);font-size:26px;line-height:1.06;
   text-transform:uppercase;margin:0 0 10px;letter-spacing:.01em}
+/* Die Mängelanzeige ist keine Auszeichnung. Dieselbe Fläche wie die Eilmeldung, damit
+   sie sich nicht vordrängt – aber der Chip trägt Rot statt Malz und die Karte bekommt
+   oben eine rote Kante. In fortgeschrittener Stunde erkennt man die Farbe schneller
+   als die Überschrift. */
+.u-mangel .u-meld-karte{border-top:3px solid var(--rot)}
+.u-mangel .u-chip{color:var(--rot);border-color:var(--rot)}
 
 .u-blende.s2{place-items:center;padding:16px}
 .u-karte{width:100%;max-width:400px;max-height:96vh;overflow-y:auto;background:var(--deckel);
@@ -962,15 +968,21 @@ function standDaten(){
    einem Megabyte, und gebraucht wird der Text nur, bis ihn jedes Handy einmal gesehen
    hat – das ist spätestens am Ende des Wochenendes vorbei. */
 function abgeschlossenAufraeumen(w){
-  (w.tage || []).forEach(t => {
-    (t.orte || []).forEach(o => { delete o.log; });
-    (t.marken || []).forEach(m => {
-      delete m.text; delete m.kopf; delete m.bezug; delete m.wendung;
-    });
+  (w.tage || []).forEach(t => (t.orte || []).forEach(o => { delete o.log; }));
+  (w.marken || []).forEach(m => {
+    delete m.text; delete m.kopf; delete m.bezug; delete m.wendung;
   });
 }
 function migrieren(we){
   (we || []).forEach(w => {
+    /* Marken lagen bis G51 am Tag. Kommt so eine über den Abgleich von einem Handy
+       herein, das die alte Fassung fährt, würde sie sonst nie wieder angesehen –
+       weder gezeigt noch aufgeräumt. Einmal hochziehen und gut. */
+    (w.tage || []).forEach(t => {
+      if(!t.marken || !t.marken.length) return;
+      w.marken = markenVereinen(w.marken, t.marken);
+      delete t.marken;
+    });
     if(w.zu) abgeschlossenAufraeumen(w);
     (w.tage || []).forEach(t => (t.orte || []).forEach(o => {
       Object.keys(o.getraenke || {}).forEach(id => {
@@ -1103,12 +1115,13 @@ function zusammenfuehren(basis, meins, fremd){
       if(!hier && !vorher) mw.dabei.push(id);
     });
 
+    mw.marken = markenVereinen(mw.marken, fw.marken);
+
     mw.tage = (mw.tage || []).map(t => Object.assign({}, t));
     (fw.tage || []).forEach(ft => {
       const mt = mw.tage.find(t => t.id === ft.id);
       if(!mt){ if(!drin(bw && bw.tage, ft.id)) mw.tage.push(ft); return; }
       const bt = ((bw && bw.tage) || []).find(t => t.id === ft.id);
-      mt.marken = markenVereinen(mt.marken, ft.marken);
 
       mt.orte = (mt.orte || []).map(o => Object.assign({}, o));
       (ft.orte || []).forEach(fo => {
@@ -1248,7 +1261,12 @@ const letzteGabeFuer = (ort, pid) => {
    Gestaffelt wird auch die Form, nicht nur der Text: 10 kommt als Blatt von unten,
    18 als Karte in der Mitte, 25 nimmt den ganzen Bildschirm. Das erkennt man auch
    in fortgeschrittener Stunde noch. */
-const MARKEN = [10, 18, 25];
+/* Gezählt wird das **Wochenende**, nicht mehr der Tag. Zehn an einem Tag ist selten,
+   zehn am Wochenende hat irgendwann jeder — deshalb ist die Zehn keine Auszeichnung
+   mehr, sondern eine Mahnung an die, die sie als Einzige *nicht* haben. Siehe
+   `mangelKandidaten()`. Ausgezeichnet wird erst ab 18. */
+const MARKEN_STUFEN = [18, 25];
+const MANGEL_STUFE  = 10;
 
 /* Der Wortschatz der Runde. Er geht in die Anweisung an die API und in die
    Ersatztexte, damit beide gleich klingen. Erweitern heißt: eine Zeile dazu.
@@ -1446,32 +1464,34 @@ const SLANG = [
    Immer eine Person, nie mehrere – seit jeder seine eigene Urkunde bekommt, gibt es
    den Fall „Korbi und Fifu hat" nicht mehr. */
 const URKUNDE_ERSATZ = {
-  10: [
-    {kopf:'{name} zappt sich zweistellig',
-     text:'Zehn Bierpetereinheiten an einem Tag. Ab hier ist das keine Verkostung mehr, '
-        + 'sondern eine Haltung.'},
-    {kopf:'Die Zehn ist gefallen',
-     text:'{name} hat zehn Biereinheiten ordnungspetergemäß hinterlegt. Angekündigt war eine. '
-        + 'Ja, ja, die Sprüch kenn mer alle.'},
-    {kopf:'Zweistellig, und nicht einmal spät',
-     text:'Zehn Biereinheiten für {name}, der heute mehr gezappt hat wie er gepisst hat. Was '
-        + 'als Feierabendbier begann, ist inzwischen ein Vorhaben.'}
+  /* Die Zehn war einmal ein Lob. Jetzt ist sie ein Vorwurf: Der Spott gilt der Bilanz,
+     und eine Bilanz ist das hier wirklich — die anderen sind durch, dieser eine nicht. */
+  mangel: [
+    {kopf:'Mängelanzeige gegen {name}',
+     text:'Die Runde steht bei zehn Biereinheiten, {name} bei {be}. Das ist keine Bilanz, '
+        + 'das ist Dreck, Dreck, Original Dreck.'},
+    {kopf:'{name} fehlt die Zehn',
+     text:'Zehn Biereinheiten sind die Marke. Alle anderen haben sie ordnungspetergemäß '
+        + 'hinterlegt, {name} steht bei {be}. Ja, ja, die Sprüch kenn mer alle.'},
+    {kopf:'Nachsitzen für {name}',
+     text:'Der Rest ist durch, {name} nicht: {be} von zehn. Bei dieser Bilanz kommt dir '
+        + 'der Mock hoch.'}
   ],
   18: [
-    {text:'Achtzehn Biereinheiten an einem einzigen Tag, ordnungspetergemäß erfasst und gegen '
+    {text:'Achtzehn Biereinheiten an einem Wochenende, ordnungspetergemäß erfasst und gegen '
         + 'jede Nachprüfung gefeit. {name} zappt in einer Taktung, die andernorts '
         + 'genehmigungspflichtig wäre.'},
-    {text:'Achtzehn. {name} hat die Grenze zwischen Abend und Vorhaben überschritten. '
+    {text:'Achtzehn. {name} hat die Grenze zwischen Wochenende und Vorhaben überschritten. '
         + 'Wer jetzt noch mithalten will, dem kommt beim bloßen Gedanken der Mock hoch.'},
     {text:'Achtzehn Biereinheiten, erfasst, geprüft, nicht wegzudiskutieren. {name} zappt seit '
         + 'Stunden so gleichmäßig durch, dass andere Leute Training dazu sagen würden.'}
   ],
   25: [
     {text:'Ab hier hört die Statistik auf und die Legendenpeterbildung fängt an. Fünfundzwanzig '
-        + 'Biereinheiten an einem Tag, und {name} steht, Stand jetzt, immer noch.'},
+        + 'Biereinheiten an einem Wochenende, und {name} steht, Stand jetzt, immer noch.'},
     {text:'Fünfundzwanzig Biereinheiten. Es gibt keine Stufe darüber, weil beim Festlegen niemand '
         + 'ernsthaft damit gerechnet hat. {name} hat sie trotzdem gefunden.'},
-    {text:'Fünfundzwanzig. Was {name} heute weggezappt hat, wird in dieser Runde noch in Jahren '
+    {text:'Fünfundzwanzig. Was {name} dieses Wochenende weggezappt hat, wird in dieser Runde noch in Jahren '
         + 'als Maßeinheit herhalten müssen. Dis is er, dis is der Mann fürs Leben.'}
   ]
 };
@@ -1492,6 +1512,42 @@ const tagLeute = tg => [...new Set((tg.orte || []).flatMap(o => Object.keys(o.ge
   .filter(pid => state.spieler.some(x => String(x.id) === String(pid)))
   .map(String);
 
+/* Gezählt wird jetzt das ganze Wochenende. Der Tag bleibt die Einheit der **Wertung**
+   (§ 3) — für die Marken ist er es nicht mehr. */
+const beAmWe  = (w, pid) => (w.tage || []).reduce((s,t) => s + beAmTag(t, pid), 0);
+const weLeute = w => [...new Set((w.tage || []).flatMap(t => tagLeute(t)))];
+const markeId = (w, art, stufe, pid) => w.id + ':' + art + ':' + stufe + ':' + pid;
+
+/* Wer die Zehn als Einziger (oder zu zweit) noch nicht hat, während die Mehrheit
+   durch ist. Drei Fälle, und nur einer davon gibt eine Mängelanzeige:
+   - **niemand mehr drunter** → nichts. Alle durch ist kein Anlass für irgendwas.
+   - **drei oder mehr drunter** → nichts. Da ist das Wochenende schlicht noch nicht
+     weit genug; das wäre kein Vorwurf, sondern eine Uhrzeit.
+   - **einer oder zwei drunter, und die drüber sind in der Mehrzahl** → die kriegen sie.
+   Die Mehrheitsbedingung ist nicht Zierde: Zu dritt hieße „zwei von drei haben's nicht"
+   sonst Nachsitzen für die Hälfte der Runde, und zu viert wäre zwei gegen zwei ein
+   Unentschieden. Gerechnet wird über die, die am Wochenende wirklich vorkommen —
+   `we.dabei` führt auch, wer nie einen Schlüssel bekommen hat. */
+function mangelKandidaten(w){
+  const leute = weLeute(w);
+  const drunter = leute.filter(pid => beAmWe(w, pid) + 1e-9 < MANGEL_STUFE);
+  if(!drunter.length || drunter.length > 2) return [];
+  if(leute.length - drunter.length <= drunter.length) return [];
+  return drunter;
+}
+
+/* Wo die Person im Wochenende zuletzt stand – für das Bild zum Aufheben. Rückwärts
+   durch die Tage, weil sie am letzten vorkommen sollte, an dem sie vorkommt. */
+function personStand(w, pid){
+  const tage = w.tage || [];
+  for(let i = tage.length - 1; i >= 0; i--){
+    const wo = personOrt(tage[i], pid);
+    if(wo.nr) return {tag: tage[i], ort: wo.name, ortNr: wo.nr};
+  }
+  const letzt = tage[tage.length - 1];
+  return {tag: letzt || null, ort:'', ortNr:0};
+}
+
 /* Wo diese Person an diesem Tag zuletzt stand. Nicht `aktuell()`: Nach einer Aufteilung
    tippt ein Handy im Neubau das Bier für jemanden, der noch im Wirtshaus sitzt – auf der
    Urkunde muss das Wirtshaus stehen. */
@@ -1509,11 +1565,16 @@ function personOrt(tg, pid){
    getragen werden. */
 function markenAufraeumen(){
   (state.we || []).forEach(w => {
-    if(w.zu) return;
-    (w.tage || []).forEach(tg => {
-      if(!tg.marken || !tg.marken.length) return;
-      tg.marken = tg.marken.filter(m =>
-        m.pid !== undefined && beAmTag(tg, m.pid) + 1e-9 >= m.stufe);
+    if(w.zu || !w.marken || !w.marken.length) return;
+    /* Die Mängelanzeige geht nach zwei Seiten wieder weg, und beide sind richtig: Der
+       Gescholtene holt auf — dann ist sie erledigt —, oder ein Dritter fällt zurück,
+       dann ist es keine Minderheit mehr und der Vorwurf trägt nicht. Ein Stups, kein
+       Urteil: Wer die Zehn noch reißt, ist sie los. */
+    const mangel = new Set(mangelKandidaten(w).map(String));
+    w.marken = w.marken.filter(m => {
+      if(m.pid === undefined) return false;
+      if(m.art === 'mangel') return mangel.has(String(m.pid));
+      return beAmWe(w, m.pid) + 1e-9 >= m.stufe;
     });
   });
 }
@@ -1522,46 +1583,59 @@ function markenAufraeumen(){
    holen fünf Handys fünfmal denselben Text. Mehrfaches Aufrufen schadet nicht: Steht
    die Marke schon, passiert nichts. */
 function markenPruefen(){
-  const {we, tg} = aktuell();
+  const we = state.we.find(w => w.id === state.aktivWe);
   markenAufraeumen();
-  if(!we || !tg || we.zu) return;
-  if(!tg.marken) tg.marken = [];
+  if(!we || we.zu) return;
+  if(!we.marken) we.marken = [];
   const frisch = [];
-  tagLeute(tg).forEach(pid => {
-    const be = beAmTag(tg, pid);
-    MARKEN.forEach(stufe => {
+
+  const anlegen = (art, stufe, pid, gross, einheit) => {
+    const id = markeId(we, art, stufe, pid);
+    if(we.marken.some(m => m.id === id)) return;
+    const p = state.spieler.find(x => String(x.id) === String(pid));
+    const name = p ? p.name : 'Unbekannt';
+    const be = beAmWe(we, pid);
+    const v = ersatzWahl(URKUNDE_ERSATZ[art === 'stufe' ? stufe : art], id);
+    const wo = personStand(we, pid);
+    const fuell = t => String(t).replace(/\{name\}/g, name).replace(/\{be\}/g, zahl(be, 1));
+    const m = {id, art, stufe, pid, be: Math.round(be*100)/100, t:Date.now(),
+               quelle:'ersatz', zahl: gross, einheit,
+               ort: wo.ort, ortNr: wo.ortNr, tag: (wo.tag && wo.tag.label) || '',
+               text: fuell(v.text)};
+    if(v.kopf) m.kopf = fuell(v.kopf);
+    /* Liegt der Text schon vorbereitet, ist die Marke von Geburt an fertig: Sie geht
+       mit demselben Tipp auf, der das Bier eingetragen hat, ohne Aufruf und ohne
+       Warten. Das ist der Normalfall, der Rest darunter ist der Rückfall. */
+    const fertig = urkundeVorrat.get(id);
+    if(fertig && fertig.text){
+      m.text = fertig.text;
+      if(fertig.kopf) m.kopf = fertig.kopf;
+      if(fertig.bezug) m.bezug = fertig.bezug;
+      m.wendung = fertig.wendung;
+      m.quelle = 'ki';
+    } else {
+      /* Ohne Vorbereitung wird hier ausgesucht — synchron, bevor der Aufruf losgeht.
+         Ab dem Moment steht die Wendung im Bestand und ist für alle anderen weg. */
+      m.wendung = wendungWaehlen();
+      frisch.push(m);
+    }
+    we.marken.push(m);
+  };
+
+  weLeute(we).forEach(pid => {
+    const be = beAmWe(we, pid);
+    MARKEN_STUFEN.forEach(stufe => {
       if(be + 1e-9 < stufe) return;
-      const id = tg.id + ':' + stufe + ':' + pid;
-      if(tg.marken.some(m => m.id === id)) return;
-      const p = state.spieler.find(x => String(x.id) === String(pid));
-      const name = p ? p.name : 'Unbekannt';
-      const v = ersatzWahl(URKUNDE_ERSATZ[stufe], id);
-      const wo = personOrt(tg, pid);
-      const m = {id, stufe, pid, be: Math.round(be*100)/100, t:Date.now(), quelle:'ersatz',
-                 ort: wo.name, ortNr: wo.nr,
-                 text: v.text.replace(/\{name\}/g, name)};
-      if(v.kopf) m.kopf = v.kopf.replace(/\{name\}/g, name);
-      /* Liegt der Text schon vorbereitet, ist die Marke von Geburt an fertig: Sie geht
-         mit demselben Tipp auf, der das Bier eingetragen hat, ohne Aufruf und ohne
-         Warten. Das ist der Normalfall, der Rest darunter ist der Rückfall. */
-      const fertig = urkundeVorrat.get(id);
-      if(fertig && fertig.text){
-        m.text = fertig.text;
-        if(stufe === 10 && fertig.kopf) m.kopf = fertig.kopf;
-        if(fertig.bezug) m.bezug = fertig.bezug;
-        m.wendung = fertig.wendung;
-        m.quelle = 'ki';
-      } else {
-        /* Ohne Vorbereitung wird hier ausgesucht — synchron, bevor der Aufruf losgeht.
-           Ab dem Moment steht die Wendung im Bestand und ist für alle anderen weg. */
-        m.wendung = wendungWaehlen();
-        frisch.push(m);
-      }
-      tg.marken.push(m);
+      anlegen('stufe', stufe, pid, String(stufe), 'Biereinheiten am Wochenende');
     });
   });
-  frisch.forEach(m => urkundeHolen(tg, m));
-  urkundeVorbereiten(tg);
+  /* Die Zehn zählt andersherum: nicht wer sie hat, sondern wer sie als Einziger nicht
+     hat. Deshalb steht sie hier und nicht in der Schleife darüber. */
+  mangelKandidaten(we).forEach(pid =>
+    anlegen('mangel', MANGEL_STUFE, pid, zahl(beAmWe(we, pid), 1), 'statt zehn Biereinheiten'));
+
+  frisch.forEach(m => urkundeHolen(we, m));
+  urkundeVorbereiten(we);
 }
 
 /* Welche Wendungen an diesem Wochenende schon vergeben sind: die auf den Marken —
@@ -1573,9 +1647,7 @@ function wendungenVergeben(){
   const raus = new Set();
   urkundeVorrat.forEach(v => { if(v && v.wendung) raus.add(v.wendung); });
   const we = state.we.find(w => w.id === state.aktivWe);
-  ((we && we.tage) || []).forEach(t => (t.marken || []).forEach(m => {
-    if(m.wendung) raus.add(m.wendung);
-  }));
+  ((we && we.marken) || []).forEach(m => { if(m.wendung) raus.add(m.wendung); });
   return raus;
 }
 
@@ -1631,14 +1703,17 @@ const urkundeVorrat = new Map();
    (eine Halbe dauert am Tisch Minuten), und dann liegt der Text da, wenn er gebraucht
    wird. Läuft wie `markenPruefen()` nur beim Eintragen und nicht beim Abgleich, sonst
    bestellten fünf Handys denselben Text fünfmal. */
-function urkundeVorbereiten(tg){
+function urkundeVorbereiten(we){
   if(!kiSchluessel()) return;
-  tagLeute(tg).forEach(pid => {
-    const be = beAmTag(tg, pid);
-    MARKEN.forEach(stufe => {
+  weLeute(we).forEach(pid => {
+    const be = beAmWe(we, pid);
+    /* Nur die Stufen. Die Mängelanzeige braucht keine Vorbereitung: Sie wird von einem
+       *anderen* ausgelöst — der Gescholtene wartet auf gar nichts, und die fünfzehn
+       Sekunden sieht niemand. */
+    MARKEN_STUFEN.forEach(stufe => {
       if(be + 1e-9 >= stufe) return;                    // schon gerissen
       if(be + URKUNDE_VORLAUF + 1e-9 < stufe) return;   // noch zu weit weg
-      const id = tg.id + ':' + stufe + ':' + pid;
+      const id = markeId(we, 'stufe', stufe, pid);
       if(urkundeVorrat.has(id)) return;
       /* Die Wendung wird hier reserviert, nicht erst wenn die Antwort da ist: Zwischen
          Start und Antwort liegen fünfzehn Sekunden, und in denen laufen bei einer Runde
@@ -1648,7 +1723,7 @@ function urkundeVorbereiten(tg){
       urkundeVorrat.set(id, {wendung});
       /* `be: stufe`, nicht der Stand von jetzt: Die Urkunde wird für den Moment
          geschrieben, in dem die Stufe fällt, nicht für den davor. */
-      urkundeTextHolen(tg, {id, stufe, pid, be: stufe, wendung})
+      urkundeTextHolen(we, {id, art:'stufe', stufe, pid, be: stufe, wendung})
         .then(j => { if(j) urkundeVorrat.set(id, Object.assign(j, {wendung})); })
         .catch(e => kiFehlerMerken((e && e.message) || String(e)));
     });
@@ -1695,12 +1770,12 @@ function urkundeWartePlanen(){
   if(!we || we.zu || !kiSchluessel()) return;
   const gesehen = urkundenGesehen();
   let frueh = null;
-  (we.tage || []).forEach(t => (t.marken || []).forEach(m => {
+  (we.marken || []).forEach(m => {
     if(!m.text || gesehen.indexOf(m.id) >= 0) return;
     if(urkundeReif(m) || urkundeLaeuft.has(m.id)) return;
     const rest = (m.t || 0) + URKUNDE_WARTE - Date.now();
     if(frueh === null || rest < frueh) frueh = rest;
-  }));
+  });
   if(frueh === null) return;
   urkundeWarteTimer = setTimeout(() => { urkundeWarteTimer = null; zeichnen(); },
     Math.max(frueh, 0) + 40);
@@ -1712,7 +1787,7 @@ function offeneUrkunde(){
   const we = state.we.find(w => w.id === state.aktivWe);
   if(!we || we.zu) return null;
   const gesehen = urkundenGesehen();
-  const alle = (we.tage || []).flatMap(t => (t.marken || []).map(m => ({m, tg:t})));
+  const alle = (we.marken || []).map(m => ({m, we}));
   /* Nach `pid` als letztes, damit die Reihenfolge feststeht: Eine Runde für alle legt
      mehrere Marken in derselben Millisekunde an, und auf jedem Handy dieselbe zuerst. */
   alle.sort((a,b) => (a.m.t || 0) - (b.m.t || 0) || a.m.stufe - b.m.stufe
@@ -2699,40 +2774,61 @@ function jsonAusText(s){
   return i >= 0 && j > i ? versuch(s.slice(i, j+1)) : null;
 }
 function markeFinden(id){
-  for(const w of (state.we || []))
-    for(const t of (w.tage || [])){
-      const m = (t.marken || []).find(x => x.id === id);
-      if(m) return m;
-    }
+  for(const w of (state.we || [])){
+    const m = (w.marken || []).find(x => x.id === id);
+    if(m) return m;
+  }
   return null;
 }
-function urkundeAnweisung(tg, m){
-  const we = state.we.find(w => (w.tage || []).some(t => t.id === tg.id));
+/* Welche Arten oben eine Überschrift tragen. Die Stufen nicht: Da steht die Zahl groß
+   darüber, ein Kopf wäre die dritte Zeile, die dasselbe sagt. */
+const MARKE_MIT_KOPF = new Set(['mangel']);
+
+function urkundeAnweisung(we, m){
   const p = state.spieler.find(x => String(x.id) === String(m.pid));
   const wer = (p ? p.name : 'Unbekannt') + ' (' + zahl(m.be || 0, 1) + ')';
-  const andere = tagLeute(tg)
+  const andere = weLeute(we)
     .filter(id => String(id) !== String(m.pid))
     .map(id => {
       const q = state.spieler.find(x => String(x.id) === String(id));
-      return q ? q.name + ' ' + zahl(beAmTag(tg, id), 1) : null;
+      return q ? q.name + ' ' + zahl(beAmWe(we, id), 1) : null;
     }).filter(Boolean);
-  const auftrag = {
-    10:'Schreib eine kurze Meldung im Ton einer Eilmeldung. Gib zusätzlich eine '
-      + 'Überschrift von höchstens sieben Wörtern.',
-    18:'Schreib den Fließtext einer Urkunde. Zahl und Name stehen bereits groß darüber, '
-      + 'zähl sie nicht noch einmal auf.',
-    25:'Schreib den Fließtext einer Ehrenurkunde, der höchsten Stufe, die es gibt. Etwas '
-      + 'feierlicher als sonst, aber weiterhin trocken.'
-  }[m.stufe];
-  return [
-    'Du schreibst eine Urkunde für eine private Bier-Rangliste unter fünf Freunden.',
-    '',
-    'Anlass: ' + wer + ' hat heute die Marke von ' + m.stufe
+
+  /* Die Mängelanzeige dreht den Anlass um: Nicht was einer geschafft hat, sondern was
+     er als Einziger nicht hat. Der Spott gilt ausdrücklich der Bilanz — die ist hier
+     wirklich eine, die anderen sind durch. Gegen den Menschen ginge er daneben: Das
+     Blatt trägt einen Namen und wird weitergeschickt. */
+  const anlass = m.art === 'mangel'
+    ? 'Anlass: Die Runde hat die Marke von ' + MANGEL_STUFE + ' Biereinheiten hinter '
+      + 'sich, ' + wer + ' nicht. In Klammern steht sein Stand. Eine Biereinheit ist '
+      + 'eine Halbe Helles.'
+    : 'Anlass: ' + wer + ' hat an diesem Wochenende die Marke von ' + m.stufe
       + ' Biereinheiten gerissen. In Klammern steht der aktuelle Stand. Eine '
-      + 'Biereinheit ist eine Halbe Helles.',
-    'Wochenende: ' + ((we && we.titel) || 'ohne Titel') + ', ' + (tg.label || 'Tag')
+      + 'Biereinheit ist eine Halbe Helles.';
+
+  const auftrag = m.art === 'mangel'
+    ? 'Schreib eine Mängelanzeige im Ton einer Eilmeldung: kurz, trocken, spöttisch. '
+      + 'Gib zusätzlich eine Überschrift von höchstens sieben Wörtern. Der Spott gilt '
+      + 'der **Bilanz**, nie dem Menschen — sechs von zehn ist eine schlechte Bilanz, '
+      + 'und genau darüber wird gespottet. Nicht mitleidig und nicht versöhnlich, aber '
+      + 'auch nicht verletzend: Das ist ein Blatt unter Freunden, und wer aufholt, ist '
+      + 'es wieder los.'
+    : {
+        18:'Schreib den Fließtext einer Urkunde. Zahl und Name stehen bereits groß darüber, '
+          + 'zähl sie nicht noch einmal auf.',
+        25:'Schreib den Fließtext einer Ehrenurkunde, der höchsten Stufe, die es gibt. Etwas '
+          + 'feierlicher als sonst, aber weiterhin trocken.'
+      }[m.stufe];
+
+  return [
+    'Du schreibst ' + (m.art === 'mangel' ? 'eine Mängelanzeige' : 'eine Urkunde')
+      + ' für eine private Bier-Rangliste unter fünf Freunden.',
+    '',
+    anlass,
+    'Wochenende: ' + ((we && we.titel) || 'ohne Titel') + ', ' + (m.tag || 'Tag')
       + (m.ort ? ', gerade in: ' + m.ort : '') + '.'
-      + (andere.length ? ' Die anderen heute: ' + andere.join(', ') + ' Biereinheiten.' : ''),
+      + (andere.length ? ' Die anderen an diesem Wochenende: ' + andere.join(', ')
+          + ' Biereinheiten.' : ''),
     '',
     auftrag,
     '',
@@ -2753,14 +2849,15 @@ function urkundeAnweisung(tg, m){
       + 'Zitat. Lieber etwas kantig als glattgebügelt. Die Beispiele zeigen die '
       + 'Spannweite, in der sie sich beugen lässt:',
     (() => {
-      const s = SLANG.find(x => x.w === m.wendung) || SLANG[0];
-      return '- ' + s.w + ': ' + s.b + ' Beispiele: ' + s.bsp.join(', ');
+      const q = SLANG.find(x => x.w === m.wendung) || SLANG[0];
+      return '- ' + q.w + ': ' + q.b + ' Beispiele: ' + q.bsp.join(', ');
     })(),
     '',
     /* Steht bewusst ganz zuletzt, direkt vor der JSON-Zeile: Der Wortschatz darüber ist
        inzwischen der längste Teil der Anweisung, und was davor stand, ging darin unter. */
     'Und jetzt das, woran der Text hängt: In ihn gehört eine **echte Nachricht**, so '
-      + 'verwoben, dass Trinkleistung und Nachricht sich gegenseitig kommentieren. Ohne '
+      + 'verwoben, dass ' + (m.art === 'mangel' ? 'Rückstand' : 'Trinkleistung')
+      + ' und Nachricht sich gegenseitig kommentieren. Ohne '
       + 'die ist der Text nicht fertig. Das ist keine Kür, sondern die halbe Pointe.',
     'Du hast genau eine Suche. Nimm sie für die großen Meldungen dieser Tage — nicht für '
       + 'eine Nachricht, die zum Bier passt. Erst schauen, was oben steht, dann daraus '
@@ -2781,7 +2878,8 @@ function urkundeAnweisung(tg, m){
       + 'wirklich einer ist und nicht bloß ein Gefühl von Aktualität.',
     '',
     'Antworte ausschließlich mit JSON, ohne Vorrede: '
-      + (m.stufe === 10 ? '{"kopf":"…","text":"…","bezug":"…"}' : '{"text":"…","bezug":"…"}')
+      + (MARKE_MIT_KOPF.has(m.art) ? '{"kopf":"…","text":"…","bezug":"…"}'
+                                   : '{"text":"…","bezug":"…"}')
   ].join('\n');
 }
 function kiFehlerMerken(grund){
@@ -2793,8 +2891,8 @@ function kiFehlerLesen(){
 }
 /* Der eine Weg zum Text — die Vorbereitung geht ihn genauso wie der Rückfall darunter.
    Gibt `null` zurück, wenn nichts Brauchbares kam; Fehler wirft er weiter. */
-async function urkundeTextHolen(tg, m){
-  const bloecke = await anKIText(urkundeAnweisung(tg, m));
+async function urkundeTextHolen(we, m){
+  const bloecke = await anKIText(urkundeAnweisung(we, m));
   let j = null;
   for(let i = bloecke.length - 1; i >= 0 && !j; i--) j = jsonAusText(bloecke[i]);
   if(!j) j = jsonAusText(bloecke.join('\n'));
@@ -2820,18 +2918,18 @@ async function urkundeTextHolen(tg, m){
 const urkundeLaeuft = new Set();
 /* Der Rückfall: Die Stufe fiel, bevor der vorbereitete Text da war — weil jemand in
    einem Sprung mehrere BE eingetragen hat oder der Abend gerade erst anfing. */
-async function urkundeHolen(tg, m){
+async function urkundeHolen(we, m){
   if(!kiSchluessel()) return;
   urkundeLaeuft.add(m.id);
   zeichnen();
   try{
-    const j = await urkundeTextHolen(tg, m);
+    const j = await urkundeTextHolen(we, m);
     /* Zwischendurch kann ein Abgleich `state.we` ausgetauscht haben – dann zeigt `m`
        auf ein Objekt, das niemand mehr sieht. Deshalb über die Kennung neu suchen. */
     const ziel = j ? markeFinden(m.id) : null;
     if(ziel){
       ziel.text = j.text;
-      if(ziel.stufe === 10 && j.kopf) ziel.kopf = j.kopf;
+      if(MARKE_MIT_KOPF.has(ziel.art) && j.kopf) ziel.kopf = j.kopf;
       /* Steht auf keiner Urkunde, wird beim Abschluss mit dem Text weggeraeumt und ist
          nur zum Nachsehen da: welche Meldung der Text benutzt hat. */
       if(j.bezug) ziel.bezug = j.bezug;
@@ -4373,7 +4471,7 @@ function bildZeilen(ctx, text, maxB){
   if(zeile) raus.push(zeile);
   return raus;
 }
-async function urkundeBild(m, tg, pid){
+async function urkundeBild(m, we, pid){
   /* `document.fonts.ready` allein genügt nicht: Ein Canvas löst kein Nachladen einer
      Schrift aus, und ohne diese Zeile fällt das Blatt still auf die Systemschrift
      zurück – auf dem Bildschirm steht Anton, im gesicherten Bild nicht. */
@@ -4386,10 +4484,12 @@ async function urkundeBild(m, tg, pid){
       document.fonts.load('500 25px "DM Mono"')
     ]);
   }catch(e){}
-  const we = state.we.find(w => (w.tage || []).some(t => t.id === tg.id));
   const p = state.spieler.find(x => String(x.id) === String(pid));
-  const ehre = m.stufe === 25;
-  const gold = '#B87513', tinte = '#22262B', weich = '#6C6659', rot = '#9E3226';
+  const ehre  = m.art === 'stufe' && m.stufe === 25;
+  const tadel = m.art === 'mangel';
+  const gold0 = '#B87513', tinte = '#22262B', weich = '#6C6659', rot = '#9E3226';
+  /* Der Beleg trägt Rot statt Malz — dasselbe Blatt, anderer Anlass. */
+  const gold = tadel ? rot : gold0;
   const mitte = BILD_B/2, rand = 120, maxB = BILD_B - 2*rand;
 
   const c = document.createElement('canvas');
@@ -4411,19 +4511,20 @@ async function urkundeBild(m, tg, pid){
   sperr('7px');
   ctx.fillStyle = ehre ? gold : weich;
   ctx.font = '500 25px "DM Mono", ui-monospace, monospace';
-  ctx.fillText(ehre ? 'EHRENURKUNDE · HÖCHSTE STUFE' : 'BUBIDOS BIERLIGA · URKUNDE', mitte, y);
+  ctx.fillText(ehre ? 'EHRENURKUNDE · HÖCHSTE STUFE'
+    : tadel ? 'BUBIDOS BIERLIGA · MÄNGELANZEIGE' : 'BUBIDOS BIERLIGA · URKUNDE', mitte, y);
 
   sperr('0px');
   y += ehre ? 210 : 195;
   ctx.fillStyle = gold;
   ctx.font = (ehre ? '215px' : '190px') + ' Anton, Impact, sans-serif';
-  ctx.fillText(String(m.stufe), mitte, y);
+  ctx.fillText(String(m.zahl || m.stufe), mitte, y);
 
   y += 62;
   sperr('6px');
   ctx.fillStyle = weich;
   ctx.font = '500 23px "DM Mono", ui-monospace, monospace';
-  ctx.fillText('BIEREINHEITEN AN EINEM TAG', mitte, y);
+  ctx.fillText(String(m.einheit || 'Biereinheiten am Wochenende').toUpperCase(), mitte, y);
 
   sperr('1px');
   y += 108;
@@ -4474,7 +4575,7 @@ async function urkundeBild(m, tg, pid){
 
   const d = new Date(m.t || Date.now());
   const zwei = n => String(n).padStart(2, '0');
-  const wo = [(we && we.titel) || '', tg.label || '',
+  const wo = [(we && we.titel) || '', m.tag || '',
               m.ortNr ? m.ortNr + '. Location: ' + m.ort : m.ort].filter(Boolean).join(' · ');
   ctx.textAlign = 'center';
   ctx.fillStyle = gold;
@@ -4494,16 +4595,17 @@ async function urkundeBild(m, tg, pid){
   sperr('0px');
   return c;
 }
-async function urkundeBildTeilen(m, tg, pid){
+async function urkundeBildTeilen(m, we, pid){
   try{
-    const c = await urkundeBild(m, tg, pid);
+    const c = await urkundeBild(m, we, pid);
     const blob = await new Promise(r => c.toBlob(r, 'image/png'));
     if(!blob) throw new Error('kein Bild');
     const p = state.spieler.find(x => String(x.id) === String(pid));
     const kurz = (p ? p.name : 'urkunde').toLowerCase()
       .replace(/[äöüß]/g, s => ({'ä':'ae','ö':'oe','ü':'ue','ß':'ss'}[s]))
       .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'urkunde';
-    const dateiname = 'urkunde-' + kurz + '-' + m.stufe + 'be.png';
+    const dateiname = (m.art === 'mangel' ? 'maengelanzeige-' : 'urkunde-')
+      + kurz + '-' + m.stufe + 'be.png';
     const datei = new File([blob], dateiname, {type:'image/png'});
     if(navigator.canShare && navigator.canShare({files:[datei]})){
       await navigator.share({files:[datei], title:'Urkunde'});
@@ -4523,7 +4625,7 @@ async function urkundeBildTeilen(m, tg, pid){
 /* Drei Stufen, drei Formen. Die 25 lässt sich bewusst nicht durch einen Tipp daneben
    wegwischen – wer so weit gekommen ist, darf den Knopf drücken. */
 function ansichtUrkunde(x){
-  const {m, tg} = x;
+  const {m} = x;
   const p = state.spieler.find(y => String(y.id) === String(m.pid));
   const name = p ? p.name : 'Unbekannt';
   const uhr = new Date(m.t || Date.now());
@@ -4531,21 +4633,25 @@ function ansichtUrkunde(x){
   const andenken = '<div class="u-andenken"><p>' + esc(name)
     + ', sichere dir das als Andenken.</p><div class="u-sicherreihe">'
     + '<button class="u-sichern" data-tu="urkundeSichern" data-pid="'
-    + esc(String(m.pid)) + '">Urkunde sichern</button>'
+    + esc(String(m.pid)) + '">' + (m.art === 'mangel' ? 'Beleg sichern' : 'Urkunde sichern')
+    + '</button>'
     + '</div></div>';
 
-  if(m.stufe === 10) return ''
-    + '<div class="blende u-blende s1" data-tu="urkundeHintergrund"><div class="u-meld">'
-    + '<div class="u-meld-karte" role="dialog" aria-label="Tagesmarke">'
-    + '<div class="u-band"><span>Eilmeldung</span><span>'
+  /* Die Mängelanzeige sieht bewusst nicht aus wie eine Auszeichnung: dieselbe Fläche
+     wie die Eilmeldung, aber roter Akzent statt Malz. In fortgeschrittener Stunde
+     erkennt man die Farbe schneller als die Überschrift. */
+  if(m.art === 'mangel') return ''
+    + '<div class="blende u-blende s1 u-mangel" data-tu="urkundeHintergrund"><div class="u-meld">'
+    + '<div class="u-meld-karte" role="dialog" aria-label="Mängelanzeige">'
+    + '<div class="u-band"><span>Mängelanzeige</span><span>'
       + zwei(uhr.getHours()) + ':' + zwei(uhr.getMinutes()) + ' · '
-      + esc(tg.label || 'Tag') + '</span></div>'
+      + esc(m.tag || 'Tag') + '</span></div>'
     + '<div class="u-meld-in">'
-    + '<span class="u-chip">10 BE · Tagesmarke</span>'
-    + '<h3>' + esc(m.kopf || (name + ' zappt sich zweistellig')) + '</h3>'
+    + '<span class="u-chip">' + esc(m.zahl || '0,0') + ' von ' + MANGEL_STUFE + ' BE</span>'
+    + '<h3>' + esc(m.kopf || ('Mängelanzeige gegen ' + name)) + '</h3>'
     + '<p class="u-text">' + esc(m.text) + '</p>'
     + andenken
-    + '<button class="u-knopf" data-tu="urkundeWeg">Passt</button>'
+    + '<button class="u-knopf" data-tu="urkundeWeg">Zur Kenntnis genommen</button>'
     + '</div></div></div></div>';
 
   if(m.stufe === 18) return ''
@@ -4553,8 +4659,8 @@ function ansichtUrkunde(x){
     + '<div class="u-karte" role="dialog" aria-label="Urkunde">'
     + '<div class="raute"></div><div class="u-karte-in">'
     + '<p class="u-kopf">Bubidos Bierliga · Urkunde</p>'
-    + '<div class="u-zahl">18</div>'
-    + '<div class="u-einheit">Biereinheiten an einem Tag</div>'
+    + '<div class="u-zahl">' + esc(m.zahl || '18') + '</div>'
+    + '<div class="u-einheit">' + esc(m.einheit || 'Biereinheiten am Wochenende') + '</div>'
     + '<h2 class="u-name">' + esc(name) + '</h2>'
     + '<p class="u-text">' + esc(m.text) + '</p>'
     + andenken
@@ -4568,8 +4674,8 @@ function ansichtUrkunde(x){
     + '<div class="u-ehre-mitte">'
     + '<p class="u-kopf">Ehrenurkunde</p>'
     + '<p class="u-unterkopf">Höchste Stufe · Bubidos Bierliga</p>'
-    + '<div class="u-zahl">25</div>'
-    + '<div class="u-einheit">Biereinheiten an einem Tag</div>'
+    + '<div class="u-zahl">' + esc(m.zahl || '25') + '</div>'
+    + '<div class="u-einheit">' + esc(m.einheit || 'Biereinheiten am Wochenende') + '</div>'
     + '<h2 class="u-name">' + esc(name) + '</h2>'
     + '<div class="u-linie"></div>'
     + '<p class="u-text">' + esc(m.text) + '</p>'
@@ -5256,7 +5362,7 @@ const tu = {
   },
   urkundeSichern(el){
     const u = offeneUrkunde();
-    if(u) urkundeBildTeilen(u.m, u.tg, el.dataset.pid);
+    if(u) urkundeBildTeilen(u.m, u.we, el.dataset.pid);
   },
   /* Nur ein Tipp auf die Blende selbst hakt ab – der globale Klick-Empfänger lässt
      alles auf `Hintergrund` Endende nur durch, wenn daneben getippt wurde. Sonst
