@@ -615,7 +615,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-13 14:49 · G49 (GitHub)';
+const FASSUNG = '2026-09-14 17:09 · G50 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -635,6 +635,9 @@ const NOTIZEN = [
      anleitung durchblättert, soll den Witz nicht vorher lesen können. Die Marke merkt sich
      trotzdem alles Nötige im Datenbestand (siehe `tag.marken` weiter oben im Quelltext);
      nur erklärt wird sie nirgends. */
+  {f:'G50', d:'14.09.2026', z:'17:09', punkte:[
+    'Bei der Sache von neulich klang der Spruch der Runde zuletzt wie alles andere. '
+    + 'Jetzt steht er wieder so da, dass man ihn wiedererkennt.']},
   {f:'G49', d:'13.09.2026', z:'14:49', punkte:[
     'Bei der Sache von neulich kam derselbe Spruch zweimal hintereinander. Jetzt fällt '
     + 'an einem Wochenende jeder nur noch einmal.']},
@@ -1290,7 +1293,7 @@ const SLANG = [
      + 'Leistung, nie über die eines anderen.',
    kern:true,
    bsp:['Ich hab mehr gezappt wie ich gepisst hab',
-        'mehr Halbe wie Schritte']},
+        'Ich hab heut mehr gezappt wie geschlafen']},
   {w:'Dreck, Dreck, Original Dreck', b:'Vernichtendes Urteil in drei Stufen, wobei das '
      + 'dritte „Original“ die Steigerung trägt. Gilt ausschließlich einer Sache — dem '
      + 'alkoholfreien Bier, der lauwarmen Halben, dem Glas mit Rand. Nie einem Menschen.',
@@ -1335,14 +1338,15 @@ const SLANG = [
   {w:'da unten brennt mir gleich alles weg', b:'Drängeln mit erfundener Dringlichkeit. In der '
      + 'Runde ist das Glas gemeint, das warm wird, oder die Runde, die zu lange braucht.',
    bsp:['Beeil dich mal, da unten brennt mir gleich alles weg',
-        'Beeil dich, sonst brennt mir die Halbe weg']},
+        'Trink aus, da unten brennt mir sonst alles weg']},
   {w:'Erzähl des ned rum, des bleibt unner uns', b:'Bitte um Verschwiegenheit mit schlechtem '
      + 'Gewissen. Geht um die eigene Leistung.',
    bsp:['Erzähl des ned rum, dass ich so hart gezappt hab',
         'Des bleibt unner uns, ich hab eh e schlechtes Gewissen']},
   {w:'so geil, so schee, so romandisch', b:'Schwärmerei in Serie, in der sich die Adjektive '
      + 'überschlagen. Gilt einem Abend, einem Bier, einer Kneipe.',
-   bsp:['So geil, so schee, so romandisch war der Abend', 'Des is mein Traumbier, so schee']},
+   bsp:['So geil, so schee, so romandisch war der Abend',
+        'So schee, so romandisch, so ein Traumbier']},
   {w:'So ein Orgasmus hatte ich noch nie', b:'Superlativ über ein Erlebnis, das alles '
      + 'Bisherige übertreffen soll. Leitet die Pointe ein, die meist mit „des isser“ weitergeht.',
    bsp:['So ein Orgasmus hatte ich noch nie, des isser', 'So eine Halbe hatte ich noch nie']},
@@ -1351,7 +1355,7 @@ const SLANG = [
    bsp:['Oh, mach doch, wenn’s dich net stört', 'Noch eine? Mach doch, wenn’s dich net stört']},
   {w:'Die wollen das so', b:'Rechtfertigung durch eine angeblich fremde Erwartung. Gilt der '
      + 'Regel, der Tabelle, dem Brauch.',
-   bsp:['Die Tabelle will das so', 'Die wollen das so, sagt die Regel']},
+   bsp:['Die wollen das so, sagt die Regel', 'Die Tabelle, die wollen das so']},
   {w:'An deiner Schneck da unne rumzuschupper, des es andersda wie bei annern Fraun',
    b:'Behauptung der Unvergleichbarkeit: Bei dem einen ist alles anders als bei allen '
      + 'anderen. Die Bauart ist „des es andersda wie bei annern“ und wird auf die Kneipe, '
@@ -1568,6 +1572,25 @@ function wendungenVergeben(){
     if(m.wendung) raus.add(m.wendung);
   }));
   return raus;
+}
+
+/* Trägt ein Text die Wendung erkennbar, oder nur ihre Bauart? Das ist keine Spitzfindigkeit:
+   Aus „mehr gezappt wie ich gepisst hab" wurde am Tisch „Ich hab heut mehr Halbe wie
+   Schritte" — die Form stimmte, das Zitat war weg, und niemand erkannte den Wortschatz
+   wieder. Verglichen werden deshalb die **kennzeichnenden** Wörter; Füllwörter zählen
+   nicht, sonst ginge genau dieser Satz über das „mehr" als Treffer durch. Gestammt auf
+   vier Zeichen, damit gebeugte Formen zählen (zappen → zappt → weggezappt). */
+const WENDUNG_FUELLER = new Set(['mehr','wie','ich','hab','das','des','die','der','den',
+  'dem','und','ist','sich','dass','ned','nicht','alles','gleich','mir','dir','sie','ihr',
+  'ihm','ein','eine','einen','noch','schon','doch','mal','net','so','uns','aber','dann']);
+function wendungKennwoerter(w){
+  return String(w).toLowerCase().replace(/[^a-zäöüß ]/g, ' ').split(/\s+/)
+    .filter(x => x.length >= 3 && !WENDUNG_FUELLER.has(x));
+}
+function wendungErkennbar(text, w){
+  const wo = String(text).toLowerCase();
+  const k = wendungKennwoerter(w);
+  return !k.length || k.some(x => wo.indexOf(x.slice(0, 4)) >= 0);
 }
 
 /* Die App sucht aus, nicht das Modell. Ließe man dem Modell die Wahl, nähme es jedes
@@ -2718,8 +2741,12 @@ function urkundeAnweisung(tg, m){
        macht die Anweisung nebenbei um ein Vielfaches kürzer. */
     'Der Wortschatz der Runde. Für diese Urkunde ist **eine** Wendung ausgesucht, und '
       + 'genau die baust du ein — keine andere, und auch keine zweite dazu. Sie ist '
-      + 'vergeben, damit an einem Wochenende nicht zweimal dieselbe fällt. Verweb sie '
-      + 'so, dass sie nicht aufgesetzt wirkt:',
+      + 'vergeben, damit an einem Wochenende nicht zweimal dieselbe fällt.',
+    'Sie muss im Text **wiederzuerkennen** sein. Es genügt nicht, die Bauart '
+      + 'nachzubilden — die kennzeichnenden Wörter selbst müssen im Satz stehen, sonst '
+      + 'liest sich der Text für die Runde wie jeder andere und niemand erkennt das '
+      + 'Zitat. Lieber etwas kantig als glattgebügelt. Die Beispiele zeigen die '
+      + 'Spannweite, in der sie sich beugen lässt:',
     (() => {
       const s = SLANG.find(x => x.w === m.wendung) || SLANG[0];
       return '- ' + s.w + ': ' + s.b + ' Beispiele: ' + s.bsp.join(', ');
@@ -2773,8 +2800,15 @@ async function urkundeTextHolen(tg, m){
      kommt ein Text ohne ihn, fehlt die halbe Pointe, und das stünde sonst nirgends.
      Genau die Sorte stiller Ausfall, für die es die Notiz gibt. */
   const bezug = j.bezug ? String(j.bezug).trim() : '';
-  if(bezug) lokal.loeschen(KIFEHLER_KEY);
-  else kiFehlerMerken('Text kam ohne Nachrichtenbezug');
+  /* Dasselbe für die Wendung: Steht sie nicht erkennbar im Text, ist der Text brauchbar,
+     aber der Ton der Runde fehlt — und das fiel bisher nur dem auf, der die Urkunde las
+     und nichts wiedererkannte. */
+  const maengel = [];
+  if(!bezug) maengel.push('ohne Nachrichtenbezug');
+  if(m.wendung && !wendungErkennbar(text, m.wendung))
+    maengel.push('ohne erkennbare Wendung („' + m.wendung + '")');
+  if(maengel.length) kiFehlerMerken('Text kam ' + maengel.join(' und '));
+  else lokal.loeschen(KIFEHLER_KEY);
   return {text, kopf: j.kopf ? String(j.kopf).trim() : '', bezug};
 }
 

@@ -593,6 +593,32 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   Nebeneffekt, und kein kleiner: Die Anweisung trägt statt 38 Einträgen nur noch einen. Das
   ist genau der Block, der in G48 den Nachrichtenteil erdrückt hat.
   Wer einen Eintrag ergänzt, entscheidet mit, ob er `kern` ist — im Zweifel nicht.
+  **Jedes Beispiel muss die Wendung erkennbar tragen** (`wendungErkennbar()`, G50). Der
+  Rückschlag kam prompt: Über einer Eilmeldung stand „Ich hab heut mehr Halbe wie Schritte" —
+  die Bauart von *„mehr gezappt wie ich gepisst hab"*, aber ohne ein einziges Wort daraus. Am
+  Tisch war vom Wortschatz nichts wiederzuerkennen, und die Meldung las sich wie jede andere.
+  Der Satz stand so als `bsp` im Eintrag: eine entkernte Umschreibung, die nur noch die Form
+  bewahrte. Drei Ursachen, und alle drei sind gleich lehrreich:
+  - **Das Beispiel selbst.** Vier `bsp` gaben den Wortlaut preis und sind nachgeschärft. Die
+    Faustregel: Ein Beispiel zeigt, wie sich eine Wendung **beugen** lässt (zappen → zappt →
+    weggezappt), nicht, wie man sie **umschreibt**. Wer nur die Struktur übrig lässt, hat einen
+    Eintrag, der nach niemandem klingt — dieselbe Falle wie beim Glätten der Mundart, nur eine
+    Ebene tiefer.
+  - **G49 hat den Einsatz erhöht.** Solange alle 38 Einträge mitgingen, konnte das Modell sich
+    das passendste Beispiel aussuchen; ein schwaches fiel nicht auf. Seit nur noch **eine**
+    Wendung mitgeht, trägt jedes einzelne Beispiel das volle Gewicht. Wer die Auswahl in die
+    App holt, erbt die Pflicht, dass jeder Eintrag für sich trägt.
+  - **Die Anweisung sagte nur die Hälfte.** Dort stand „verweb sie so, dass sie nicht aufgesetzt
+    wirkt" — eine Aufforderung zum Glätten ohne Gegengewicht. Jetzt steht daneben, dass sie
+    **wiederzuerkennen** sein muss und die kennzeichnenden Wörter selbst im Satz stehen:
+    lieber etwas kantig als glattgebügelt.
+  `wendungErkennbar()` vergleicht die **kennzeichnenden** Wörter, nicht den ganzen Wortlaut:
+  Füllwörter (`WENDUNG_FUELLER`) zählen nicht, sonst ginge „mehr Halbe wie Schritte" über das
+  „mehr" als Treffer durch; gestammt wird auf vier Zeichen, damit gebeugte Formen zählen.
+  Dieselbe Funktion prüft **beide Seiten**: `urkunde.mjs` hält damit jedes Beispiel im Wörterbuch
+  fest, und `urkundeTextHolen()` prüft damit den fertigen Text. Fehlt die Wendung dort, bleibt
+  er stehen — ein brauchbarer Text ohne Zitat schlägt den Ersatztext —, aber `kiFehlerMerken()`
+  notiert es, wie beim fehlenden `bezug`. Lieber eine Anzeige als ein Rätsel.
   **„Ich bleib beim Arschloch"** (G47) ist außerhalb der drei Quellen dazugekommen und steht für
   eine eigene Figur: die Ablehnung von allem Neuen, das Festhalten an der gewohnten Bestellung,
   der gewohnten Kneipe, dem gewohnten Ablauf. Zielt auf eine Gewohnheit, nie auf einen Menschen.

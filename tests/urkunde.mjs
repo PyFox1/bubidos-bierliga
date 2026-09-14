@@ -714,6 +714,37 @@ await schritt('Die Änderungen verraten die Tagesmarken nicht', async () => {
   return 'nichts verraten';
 });
 
+/* Der Fall, der das ausgelöst hat: Über einer Eilmeldung stand „Ich hab heut mehr Halbe
+   wie Schritte" — die Bauart von „mehr gezappt wie ich gepisst hab", aber ohne ein
+   einziges Wort daraus. Am Tisch war vom Wortschatz nichts wiederzuerkennen. Schuld war
+   das Beispiel selbst: Es stand so im Eintrag und war eine entkernte Umschreibung.
+   Seit G49 geht nur noch **eine** Wendung mit — damit trägt jedes einzelne Beispiel
+   ungleich mehr Gewicht als früher, wo das Modell sich das passendste aussuchen konnte. */
+await schritt('Jedes Beispiel trägt die Wendung erkennbar', async () => {
+  const schlecht = await p.evaluate(() => SLANG.flatMap(s =>
+    s.bsp.filter(b => !wendungErkennbar(b, s.w)).map(b => s.w + ' → ' + b)));
+  if(schlecht.length)
+    throw new Error(schlecht.length + ' entkernt: ' + schlecht.join(' | '));
+  const n = await p.evaluate(() => SLANG.reduce((a, s) => a + s.bsp.length, 0));
+  return n + ' Beispiele geprüft';
+});
+
+/* Die Erkennung darf nicht über Füllwörter anspringen — daran ist der Fall ja vorbei-
+   gerutscht: „mehr Halbe wie Schritte" teilt sich mit dem Original das „mehr". */
+await schritt('Füllwörter allein zählen nicht als Wiedererkennung', async () => {
+  const x = await p.evaluate(() => ({
+    entkernt: wendungErkennbar('Ich hab heut mehr Halbe wie Schritte',
+      'mehr gezappt wie ich gepisst hab'),
+    echt: wendungErkennbar('Ich hab heut mehr gezappt wie geschlafen',
+      'mehr gezappt wie ich gepisst hab'),
+    gebeugt: wendungErkennbar('hat den ganzen Abend durchgezappt', 'zappen')
+  }));
+  if(x.entkernt) throw new Error('die entkernte Fassung gilt als erkennbar');
+  if(!x.echt) throw new Error('die echte Fassung gilt nicht als erkennbar');
+  if(!x.gebeugt) throw new Error('gebeugte Formen zählen nicht mit');
+  return 'entkernt nein, gebeugt ja';
+});
+
 console.log('\n══ Jede Wendung nur einmal je Wochenende ══');
 
 /* Zwei Leute rissen nacheinander die Zehn, und über beiden Eilmeldungen stand dieselbe

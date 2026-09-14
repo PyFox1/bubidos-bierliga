@@ -316,10 +316,15 @@ await schritt('Ein Fehlschlag wird für das Nachsehen notiert', async () => {
 });
 
 await schritt('Ein geglückter Text räumt die Notiz wieder weg', async () => {
+  /* Die Wendung wird gewürfelt — für diesen Test festgenagelt, damit der Mock-Text sie
+     auch wirklich tragen kann. Ohne das prüfte der Test nur noch den Zufall. */
+  await p.evaluate(() => {
+    window.wendungEcht = wendungWaehlen; window.wendungWaehlen = () => 'zappen';
+  });
   await p.route('**/api.anthropic.com/**', r => r.fulfill({status:200,
     contentType:'application/json',
     body:JSON.stringify({content:[{type:'text', text:JSON.stringify({
-      kopf:'Alles gut', text:'Ein Text, der lang genug ist, um angenommen zu werden.',
+      kopf:'Alles gut', text:'Ein Text, lang genug, und er hat ordentlich gezappt.',
       bezug:'Zeitumstellung abgeschafft'})}]})}));
   await aufbau({be:{'1':9, '2':2, '3':1}});
   await p.waitForTimeout(200);
@@ -328,6 +333,30 @@ await schritt('Ein geglückter Text räumt die Notiz wieder weg', async () => {
   const f = await p.evaluate(() => kiFehlerLesen());
   if(f) throw new Error('die Notiz steht noch: ' + JSON.stringify(f));
   return 'weg';
+});
+
+/* Der Fall vom Tisch: Der Text kam durch, trug auch einen Nachrichtenbezug — aber von
+   der Wendung war nichts wiederzuerkennen. Er bleibt stehen, ein brauchbarer Text ohne
+   Zitat schlägt den Ersatztext. Stumm bleibt es nicht mehr. */
+await schritt('Ein Text ohne erkennbare Wendung wird notiert', async () => {
+  await p.route('**/api.anthropic.com/**', r => r.fulfill({status:200,
+    contentType:'application/json',
+    body:JSON.stringify({content:[{type:'text', text:JSON.stringify({
+      kopf:'Glattgebügelt',
+      text:'Ein Text, lang genug, mit Nachricht, aber ohne jedes Zitat der Runde.',
+      bezug:'Zeitumstellung abgeschafft'})}]})}));
+  await p.evaluate(() => lokal.loeschen(KIFEHLER_KEY));
+  await aufbau({be:{'1':9, '2':2, '3':1}});
+  await p.waitForTimeout(200);
+  await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
+  await p.waitForTimeout(700);
+  const m = await marke(10);
+  if(m.quelle !== 'ki') throw new Error('der Text wurde verworfen, Quelle ' + m.quelle);
+  const f = await p.evaluate(() => kiFehlerLesen());
+  if(!f || !/Wendung/.test(f.grund || ''))
+    throw new Error('nichts notiert: ' + JSON.stringify(f));
+  await p.evaluate(() => { window.wendungWaehlen = window.wendungEcht; });
+  return f.grund;
 });
 
 console.log('\n══ Vorbereitet, bevor die Stufe fällt ══');
