@@ -108,7 +108,9 @@ await schritt('Antippen wählt weiterhin ab und wieder an', async () => {
 console.log('\n══ Wer geht mit? ══');
 
 await aufbau();
-await p.evaluate(() => { benennen = {ortId:11, mit:[1,2,3]}; zeichnen(); });
+/* Über den Knopf statt über ein von Hand gebautes `benennen`: So hängt der Test nicht
+   an der inneren Form des Objekts, und er prüft, was der Finger wirklich auslöst. */
+await p.evaluate(() => tu.ortNeu());
 await p.waitForTimeout(250);
 
 await schritt('Auch dort sind es Kästchen', async () => {

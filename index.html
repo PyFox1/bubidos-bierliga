@@ -615,7 +615,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-14 17:09 · G50 (GitHub)';
+const FASSUNG = '2026-09-14 17:41 · G51 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -635,6 +635,11 @@ const NOTIZEN = [
      anleitung durchblättert, soll den Witz nicht vorher lesen können. Die Marke merkt sich
      trotzdem alles Nötige im Datenbestand (siehe `tag.marken` weiter oben im Quelltext);
      nur erklärt wird sie nirgends. */
+  {f:'G51', d:'14.09.2026', z:'17:41', punkte:[
+    '+ Tag und + Location fragen jetzt erst und legen dann an. Vorher stand der neue Tag '
+    + 'beziehungsweise die neue Station schon auf allen Handys, bevor überhaupt jemand '
+    + '„Passt“ getippt hatte. Wer sich vertippt, kommt über das Kreuz oben rechts wieder '
+    + 'heraus, und dann ist nichts geschehen — auch bei den anderen nicht.']},
   {f:'G50', d:'14.09.2026', z:'17:09', punkte:[
     'Bei der Sache von neulich klang der Spruch der Runde zuletzt wie alles andere. '
     + 'Jetzt steht er wieder so da, dass man ihn wiedererkennt.']},
@@ -3462,10 +3467,13 @@ function ansichtInfo(){
     + 'Stärke und Größe auf, ein Tipp schließt sie wieder — die Auswahl bleibt stehen, bis ihr sie '
     + 'ändert. Dann beim Namen auf <strong>+</strong>. <strong>−</strong> nimmt zurück.</li>'
     + '<li>Nach dem Namen der Station wird überall gefragt: beim Eröffnen des Wochenendes im '
-    + 'Formular, bei <strong>+ Tag</strong> und bei <strong>+ Location</strong> jeweils gleich '
-    + 'danach. Eingeben oder einfach bestätigen — ohne Eingabe bleibt es bei „Location 1, 2, 3“, '
-    + 'je Tag neu gezählt. Bei <strong>+ Location</strong> steht darunter <strong>Wer geht mit?</strong>, '
-    + 'voreingestellt alle, die gerade an der Station sitzen.</li>'
+    + 'Formular, bei <strong>+ Tag</strong> und bei <strong>+ Location</strong> jeweils, '
+    + '<em>bevor</em> etwas angelegt wird. Eingeben oder einfach bestätigen — ohne Eingabe bleibt '
+    + 'es bei „Location 1, 2, 3“, je Tag neu gezählt. Bei <strong>+ Location</strong> steht '
+    + 'darunter <strong>Wer geht mit?</strong>, voreingestellt alle, die gerade an der Station '
+    + 'sitzen. Erst <strong>Passt</strong> legt Tag beziehungsweise Station an und schickt sie an '
+    + 'die anderen Geräte; das <strong>×</strong> oben rechts bricht ab, und dann ist nichts '
+    + 'geschehen — auch bei den anderen nicht.</li>'
     + '<li><strong>Wenn sich die Runde aufteilt:</strong> Zieht ein Teil schon in den Neubau, während '
     + 'der Rest noch in der alten Bar sitzt, schaltet man unter „Wer geht mit?“ die Zurückbleibenden ab. '
     + 'Die neue Station gilt dann nur für dieses Gerät — die anderen Handys bleiben an der alten stehen '
@@ -3920,26 +3928,38 @@ function ansichtRechnung(){
     + '</div></div></div>';
 }
 
-/* Das Blatt gehört zu der Station, für die es aufgemacht wurde – nicht zu der, auf
-   der das Gerät gerade steht. Ein Abgleich im Hintergrund kann den eigenen Standort
-   aufheben (etwa wenn drüben ein neuer Tag aufgemacht wird), und dann würde „Passt"
-   sonst die falsche Location umbenennen und Leute aus ihr löschen. */
+/* Wo die Runde stand, als der Knopf getippt wurde – nicht, wo das Gerät gerade steht.
+   Ein Abgleich im Hintergrund kann den eigenen Standort aufheben (etwa wenn drüben ein
+   neuer Tag aufgemacht wird), und dann hängte „Passt" die neue Station an den falschen
+   Tag oder nähme die Leute vom falschen Tresen mit. Deshalb steht in `benennen.von` die
+   Herkunft als Kennung und wird bei jeder Zeichnung frisch aufgelöst. */
 function benennenOrt(){
-  const we = benennen ? state.we.find(w => w.id === state.aktivWe) : null;
+  const we = benennen && benennen.von ? state.we.find(w => w.id === state.aktivWe) : null;
   if(!we) return {};
-  for(const tg of we.tage){
-    const ort = tg.orte.find(o => o.id === benennen.ortId);
-    if(ort) return {tg, ort};
-  }
-  return {};
+  const tg = we.tage.find(t => t.id === benennen.von.tag);
+  if(!tg) return {};
+  const ort = tg.orte.find(o => o.id === benennen.von.ort);
+  return ort ? {we, tg, ort} : {};
+}
+
+/* Wie die neue Station heißen würde, wenn niemand etwas eintippt. Steht an zwei
+   Stellen – im Eingabefeld und beim Anlegen – und muss dieselbe sein. */
+function benennenVorschlag(tg){
+  return benennen && benennen.neu === 'tag' ? 'Location 1'
+       : 'Location ' + ((tg ? tg.orte.length : 0) + 1);
 }
 
 function ansichtBenennen(){
-  const {tg, ort} = benennenOrt();
-  if(!ort) return '';
-  const nr = tg ? tg.orte.findIndex(o => o.id === ort.id) + 1 : 1;
-  const mit = benennen && benennen.mit;
-  const hier = Object.keys(ort.getraenke);
+  const {we, tg} = benennenOrt();
+  if(!tg) return '';
+  const neuerTag = benennen.neu === 'tag';
+  /* Angelegt ist noch nichts – alle Zahlen sind Vorschau auf das, was „Passt" machen würde. */
+  const nr   = neuerTag ? 1 : tg.orte.length + 1;
+  const kopf = neuerTag ? (we.tage.length + 1) + '. Tag' : tg.label;
+  const mit  = benennen.mit;
+  /* Nicht alle Schlüssel der alten Station, sondern die, die `ortNeu()` überhaupt
+     angeboten hat: Wer an diesem Tag schon weitergezogen ist, sitzt nicht mehr am Tisch. */
+  const hier = benennen.wer || [];
   const an = id => mit.some(x => String(x) === String(id));
   const nameZu = id => { const q = state.spieler.find(x => String(x.id) === String(id));
     return q ? q.name : '—'; };
@@ -3962,15 +3982,16 @@ function ansichtBenennen(){
     : '';
   return '<div class="blende" data-tu="benennenHintergrund"><div class="blatt">'
     + '<div class="karte" role="dialog" aria-label="Location benennen">'
-    + '<h3>Wo seid ihr jetzt?</h3>'
+    + '<button class="kreuz" data-tu="benennenAb" aria-label="Abbrechen">&times;</button>'
+    + '<h3 style="padding-right:44px">Wo seid ihr jetzt?</h3>'
     + '<p class="mini" style="margin:2px 0 14px">'
-    + (nr === 1 ? esc(tg ? tg.label : 'Neuer Tag') + ', erste Station. '
+    + (nr === 1 ? esc(kopf) + ', erste Station. '
                 : 'Station ' + nr + ' an diesem Tag. ')
     + 'Ohne Eingabe bleibt es beim Standardnamen.</p>'
     + '<div class="feld"><input id="ortNameNeu" value="'
-    + esc(benennen && benennen.name !== undefined ? benennen.name : ort.name) + '" '
+    + esc(benennen.name !== undefined ? benennen.name : benennenVorschlag(tg)) + '" '
     + 'placeholder="Name der Location" autocomplete="off"'
-    + (benennen && benennen.name !== undefined ? '' : ' autofocus') + '></div>'
+    + (benennen.name !== undefined ? '' : ' autofocus') + '></div>'
     + teilung
     + '<button class="knopf voll" data-tu="benennenFertig">'
     + (bleibt.length ? 'Passt, wir teilen uns auf' : 'Passt') + '</button>'
@@ -4886,18 +4907,14 @@ const tu = {
     const tg = we.tage.find(t => t.id === +el.dataset.id);
     if(tg) zieheZu(tg.id, tg.orte[0] ? tg.orte[0].id : null);
   },
+  /* Legt nichts an, sondern fragt erst. Angelegt wird in `benennenFertig()` – solange
+     das Blatt offen steht, ist am Bestand nichts passiert und bei den anderen Handys
+     erst recht nicht. */
   tagNeu(){
-    const we = state.we.find(w => w.id === state.aktivWe);
-    const g = {}; we.dabei.forEach(id => g[id] = []);
-    const ort = {id:neueId(), name:'Location 1', getraenke:g};
-    const tg = {id:neueId(), label:(we.tage.length+1) + '. Tag', orte:[ort]};
-    we.tage.push(tg);
-    /* Ein neuer Tag gilt für alle – hier zieht der Zeiger der Gruppe immer mit. */
-    state.aktivTag = tg.id; state.aktivOrt = ort.id;
-    pinLoeschen();
-    letzteRunde = null; nachfrage = null; entsperrt = null;
-    benennen = {ortId:ort.id};
-    sichern(); zeichnen();
+    const {tg, ort} = aktuell();
+    if(!tg || !ort) return;
+    benennen = {von:{tag:tg.id, ort:ort.id}, neu:'tag'};
+    zeichnen();
   },
   tagWeg(el){
     const we = state.we.find(w => w.id === state.aktivWe);
@@ -4915,24 +4932,22 @@ const tu = {
     sichern(); zeichnen();
   },
   ortWahl(el){ const {tg} = aktuell(); if(tg) zieheZu(tg.id, +el.dataset.id); },
+  /* Wie `tagNeu()`: erst fragen, dann anlegen. */
   ortNeu(){
     const {tg, ort} = aktuell();
+    if(!tg || !ort) return;
     /* Wer an diesem Tag schon an einer späteren Station steht, ist vorausgezogen und
-       sitzt hier nicht mehr mit am Tisch – der wird nicht noch einmal mitgenommen. */
+       sitzt hier nicht mehr mit am Tisch – der wird gar nicht erst angeboten. */
     const i = tg.orte.findIndex(o => o.id === ort.id);
     const weiter = new Set();
     tg.orte.slice(i + 1).forEach(o => Object.keys(o.getraenke).forEach(id => weiter.add(id)));
     const hier = Object.keys(ort.getraenke);
     const nimm = hier.filter(id => !weiter.has(id));
-    const g = {}; (nimm.length ? nimm : hier).forEach(id => g[id] = []);
-    const neu = {id:neueId(), name:'Location ' + (tg.orte.length + 1), getraenke:g};
-    tg.orte.push(neu);
-    /* Der Zeiger der Gruppe bleibt vorerst stehen – ob die Runde geschlossen
-       weiterzieht oder sich aufteilt, entscheidet sich erst im Blatt. */
-    pinSetzen(tg.id, neu.id);
-    benennen = {ortId:neu.id, mit:Object.keys(g)};
-    letzteRunde = null; nachfrage = null; entsperrt = null;
-    sichern(); zeichnen();
+    /* `wer` ist der Vorrat und steht fest, `mit` die Auswahl darin und ändert sich
+       bei jedem Tipp auf ein Namenskästchen. */
+    const wer = nimm.length ? nimm : hier;
+    benennen = {von:{tag:tg.id, ort:ort.id}, neu:'ort', wer, mit:wer.slice()};
+    zeichnen();
   },
   mitAn(el){
     if(!benennen || !benennen.mit) return;
@@ -4944,29 +4959,54 @@ const tu = {
     if(i < 0) benennen.mit.push(id); else benennen.mit.splice(i, 1);
     zeichnen();
   },
+  /* Hier entsteht der Tag beziehungsweise die Station – erst jetzt, mit Namen und
+     Auswahl in der Hand. Aufgelöst wird über `benennenOrt()`, also über die gemerkte
+     Herkunft: Ein Abgleich im Hintergrund kann den eigenen Standort verschoben haben,
+     und die neue Station gehört an den Tag, an dem der Knopf getippt wurde. */
   benennenFertig(){
+    const {we, tg, ort} = benennenOrt();
+    if(!we || !tg || !ort){ benennen = false; zeichnen(); return; }
     const f = document.getElementById('ortNameNeu');
-    const {tg, ort} = benennenOrt();
-    if(f && ort){
-      const n = (f.value || '').trim();
-      if(n) ort.name = n;
+    const wunsch = ((f ? f.value : benennen.name) || '').trim();
+    const name = wunsch || benennenVorschlag(tg);
+    if(benennen.neu === 'tag'){
+      /* Ein neuer Tag übernimmt stillschweigend die ganze Runde und gilt für alle –
+         hier zieht der Zeiger der Gruppe immer mit. */
+      const g = {}; we.dabei.forEach(id => g[id] = []);
+      const neuOrt = {id:neueId(), name, getraenke:g};
+      const neuTag = {id:neueId(), label:(we.tage.length + 1) + '. Tag', orte:[neuOrt]};
+      we.tage.push(neuTag);
+      state.aktivTag = neuTag.id; state.aktivOrt = neuOrt.id;
+      pinLoeschen();
+    } else {
+      const mit = benennen.mit || benennen.wer || [];
+      const g = {}; mit.forEach(id => g[id] = []);
+      const neuOrt = {id:neueId(), name, getraenke:g};
+      tg.orte.push(neuOrt);
+      const bleibt = (benennen.wer || [])
+        .filter(id => !mit.some(x => String(x) === String(id)));
+      /* Kommen alle mit, zieht die Gruppe weiter und alle Geräte folgen. Bleibt jemand
+         zurück, ist das eine Aufteilung: Der Zeiger der Gruppe bleibt an der alten
+         Station, nur dieses Gerät geht voraus.
+         Steht die Gruppe inzwischen auf einem anderen Tag, bleibt sie dort – sie
+         zurückzuholen wäre schlimmer als eine verwaiste Station –, und dieses Gerät
+         läuft mit ihr mit: Der Pin hält über parallele Stationen, aber nie über Tage. */
+      if(state.aktivTag !== tg.id){ /* die Gruppe ist weitergezogen, kein Pin */ }
+      else if(bleibt.length) pinSetzen(tg.id, neuOrt.id);
+      else { state.aktivOrt = neuOrt.id; pinLoeschen(); }
     }
-    if(benennen && benennen.mit && ort && tg){
-      const bleibt = Object.keys(ort.getraenke)
-        .filter(id => !benennen.mit.some(x => String(x) === String(id)));
-      bleibt.forEach(id => delete ort.getraenke[id]);
-      /* Kommen alle mit, zieht die Gruppe weiter und alle Geräte folgen. Bleibt
-         jemand zurück, ist das eine Aufteilung: der Zeiger der Gruppe bleibt an
-         der alten Station, dieses Gerät behält seinen eigenen Standort.
-         Steht die Gruppe inzwischen auf einem anderen Tag, bleibt sie dort –
-         sie zurückzuholen wäre schlimmer als eine verwaiste Station. */
-      if(!bleibt.length){
-        if(state.aktivTag === tg.id) state.aktivOrt = ort.id;
-        pinLoeschen();
-      }
-    }
-    benennen = false; sichern(); zeichnen();
+    letzteRunde = null; nachfrage = null; entsperrt = null;
+    /* Ohne Verzögerung hinaus: Dass die Runde weitergezogen ist, ist genau die Nachricht,
+       auf die die anderen Handys warten. Vorher ging sie mit dem Öffnen des Blattes raus
+       und war damit der erste Schreibvorgang nach einer Pause, also sofort draußen – das
+       soll sie bleiben, jetzt eben am „Passt“. */
+    benennen = false; sichern({sofort:true}); zeichnen();
   },
+  /* Das Kreuz muss nichts mehr zurücknehmen: Solange das Blatt offen steht, ist nichts
+     angelegt. Es klappt das Blatt zu, und das war es. */
+  benennenAb(){ benennen = false; zeichnen(); },
+  /* Bleibt absichtlich leer: Im Blatt steckt ein getippter Name und eine Vorauswahl,
+     die ein danebengegangener Tipp nicht wegwerfen soll. Zum Abbrechen gibt es das Kreuz. */
   benennenHintergrund(){},
   ortWeg(el){
     const {we, tg} = aktuell();

@@ -247,7 +247,8 @@ console.log('\n== Ein Abgleich mitten im offenen Blatt ==');
 await schritt('„Passt" trifft die aufgemachte Station, nicht die, wo das Gerät steht', async () => {
   const r = await A.evaluate(() => {
     tu.ortNeu();                                   // neue Station am laufenden Tag
-    const meine = benennen.ortId;
+    /* Angelegt ist noch nichts – gemerkt wird, an welchen Tag sie gehören soll. */
+    const vonTag = benennen.von.tag;
     ['3','4','5'].forEach(id => tu.mitAn({dataset:{id}}));   // Aufteilung
 
     // Währenddessen macht drüben jemand einen neuen Tag auf – so übernimmt es abgleichen()
@@ -262,7 +263,13 @@ await schritt('„Passt" trifft die aufgemachte Station, nicht die, wo das Gerä
 
     const finde = (id) => { for(const t of we.tage){ const o = t.orte.find(x => x.id === id);
       if(o) return o; } return null; };
-    return {meine: finde(meine), fremd: finde(987654),
+    /* Die eigene Station entsteht erst mit „Passt" – gesucht wird sie deshalb über den
+       Namen, und zwar ausdrücklich in dem Tag, an dem der Knopf getippt wurde. */
+    const alterTag = we.tage.find(t => t.id === vonTag);
+    return {meine: alterTag.orte.find(o => o.name === 'Meine Station') || null,
+            imFremdenTag: we.tage.some(t => t.id !== vonTag
+              && t.orte.some(o => o.name === 'Meine Station')),
+            fremd: finde(987654),
             aktivTag: state.aktivTag, aktivOrt: state.aktivOrt};
   });
   if(Object.keys(r.fremd.getraenke).length !== 5)
@@ -270,8 +277,10 @@ await schritt('„Passt" trifft die aufgemachte Station, nicht die, wo das Gerä
       + Object.keys(r.fremd.getraenke).length + ' statt 5 Leute');
   if(r.fremd.name !== 'Neuer Tag, Location 1')
     throw new Error('die fremde Station wurde umbenannt: ' + r.fremd.name);
-  if(r.meine.name !== 'Meine Station')
-    throw new Error('die eigene Station heißt: ' + r.meine.name);
+  if(!r.meine)
+    throw new Error('die neue Station hängt nicht am Tag, an dem der Knopf getippt wurde');
+  if(r.imFremdenTag)
+    throw new Error('die neue Station ist im fremden Tag gelandet');
   if(Object.keys(r.meine.getraenke).length !== 2)
     throw new Error('eigene Station: ' + Object.keys(r.meine.getraenke).join(', '));
   if(r.aktivTag !== 987000 || r.aktivOrt !== 987654)

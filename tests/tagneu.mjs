@@ -37,23 +37,25 @@ await p.evaluate(() => {
 });
 
 console.log('\n== +Tag am nächsten Morgen: Kammy ist noch gar nicht wach ==');
-await schritt('tagNeu() trägt Kammy als Schlüssel ein, ohne zu fragen', async () => {
+/* +Tag fragt nach dem Namen, legt aber erst mit „Passt" an – deshalb wird hier zuerst
+   das offene Blatt geprüft und dann erst der Bestand. */
+await schritt('Kein "Wer ist heute dabei?"-Schritt wie bei +Location', async () => {
   await p.evaluate(() => tu.tagNeu());
+  const hatMit = await p.evaluate(() => !!(benennen && (benennen.mit || benennen.wer)));
+  if(hatMit) throw new Error('es gibt doch eine Auswahl – dann ist das schon entschärft');
+  return 'im Blatt steht nur der Name, keine Auswahlmöglichkeit';
+});
+
+await schritt('"Passt" trägt Kammy als Schlüssel ein, ohne dass gefragt wurde', async () => {
+  await p.evaluate(() => { document.getElementById('ortNameNeu').value = 'Frühstück';
+    tu.benennenFertig(); });
   const g = await p.evaluate(() => aktuell().ort.getraenke);
   if(!('3' in g)) throw new Error('Kammy fehlt – kein Problem?');
   if(g['3'].length !== 0) throw new Error('Kammy hat schon Bier: ' + JSON.stringify(g['3']));
   return 'Kammy steht als Schlüssel mit leerem Array, ohne dass gefragt wurde';
 });
 
-await schritt('Kein "Wer ist heute dabei?"-Schritt wie bei +Location', async () => {
-  const hatMit = await p.evaluate(() => !!(benennen && benennen.mit));
-  if(hatMit) throw new Error('es gibt doch eine Auswahl – dann ist das schon entschärft');
-  return 'benennen.mit ist nicht gesetzt, keine Auswahlmöglichkeit im Blatt';
-});
-
 await schritt('"Runde für alle" trägt auch bei Kammy ein, der noch schläft', async () => {
-  await p.evaluate(() => { document.getElementById('ortNameNeu').value = 'Frühstück';
-    tu.benennenFertig(); });
   await p.evaluate(() => tu.runde());
   const kammy = await p.evaluate(() => aktuell().ort.getraenke['3']);
   if(kammy.length === 0) throw new Error('kein Bier – doch kein Problem?');

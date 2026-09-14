@@ -79,15 +79,18 @@ die **Urkunde**. Die ist die einzige, die nicht an einer Variablen hängt, sonde
 (`offeneUrkunde()`) — deshalb steht sie hinten: Sie muss sich vor kein offenes Eingabeblatt
 drängen, sie wartet ohnehin.
 
-`benennen` ist ein Objekt, kein Schalter: `{ortId, mit?, name?}`. `mit` trägt die Vorauswahl
-für „Wer geht mit?“ und fehlt beim neuen Tag, `name` hält den eingetippten Ortsnamen fest,
-weil jeder Tipp auf ein Namenschip das Blatt neu zeichnet.
+`benennen` ist ein Objekt, kein Schalter: `{von:{tag, ort}, neu, wer?, mit?, name?}`. `neu` ist
+`'tag'` oder `'ort'` und sagt, was „Passt“ anlegen würde — **angelegt ist zu dem Zeitpunkt
+nichts**, siehe die Entscheidung dazu. `von` ist die Station, an der die Runde stand, als der
+Knopf getippt wurde. `wer` ist der Vorrat für „Wer geht mit?“ und steht fest, `mit` die Auswahl
+darin und ändert sich bei jedem Tipp auf ein Kästchen; beide fehlen beim neuen Tag. `name` hält
+den eingetippten Ortsnamen fest, weil jeder solche Tipp das Blatt neu zeichnet.
 
-Das Blatt löst seine Station über **`benennenOrt()`** aus `ortId` auf, nie über `aktuell()`.
+Das Blatt löst seine Herkunft über **`benennenOrt()`** aus `von` auf, nie über `aktuell()`.
 `aktuell()` folgt dem eigenen Standort, und den kann ein Abgleich im Hintergrund aufheben
-(etwa wenn drüben ein neuer Tag aufgemacht wird). Sonst benennt „Passt“ die falsche Location
-um und löscht Leute aus ihr. Gilt für jedes Blatt, das eine Sache über mehrere Zeichnungen
-hinweg festhält.
+(etwa wenn drüben ein neuer Tag aufgemacht wird). Sonst hängt „Passt“ die neue Station an den
+falschen Tag und nimmt die Leute vom falschen Tresen mit. Gilt für jedes Blatt, das eine Sache
+über mehrere Zeichnungen hinweg festhält.
 
 **Navigation**: `stapel` merkt bis zu zwölf Schritte, der Zurück-Pfeil ruft `zurueckNavi()`.
 `geheArchiv` und `geheZaehlen` sind Heimatziele und leeren den Stapel.
@@ -302,6 +305,66 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   Neuzeichnen bei jedem Tastendruck — sonst spränge der Cursor beim Tippen aus dem Feld.
   Gilt nur für `weStart` (neu anlegen); `weKopfPasst` (Nachbessern) behält seinen alten Titel,
   wenn das Feld leergetippt wird, und ist deshalb nie an das Feld gekoppelt.
+- **„+ Tag“ und „+ Location“ fragen erst und legen dann an** (G51). Es war andersherum:
+  `tagNeu()` und `ortNeu()` legten Tag beziehungsweise Station sofort an, samt `sichern()`,
+  und „Wo seid ihr jetzt?“ benannte das Vorhandene nur noch nach. Damit hatte ein Fehltipp
+  genau einen Ausgang — „Passt“ —, und wer die neue Station wieder loswerden wollte, musste
+  sie über „Tag löschen“ / „Location löschen“ wegräumen: ein `gefahr()`-Knopf ganz unten am
+  Zählbildschirm, den in dem Moment niemand sucht.
+  Der erste Anlauf war ein Kreuz, das die Anlage wieder zurücknahm. Das war die falsche
+  Ebene: Es reparierte, was gar nicht erst hätte passieren dürfen. Denn das Blatt fragt ja,
+  *weil* die Angaben fehlen — wer schon anlegt, bevor er fragt, rät.
+  Jetzt öffnen beide Knöpfe nur das Blatt, und **`benennenFertig()` legt an**. Das Kreuz
+  klappt das Blatt zu und sonst nichts.
+  Was dadurch wegfällt, ist der eigentliche Gewinn:
+  - **Nichts Unbestätigtes geht an die anderen Handys.** Vorher schrieb schon das Öffnen des
+    Blattes eine leere Station hinaus, und die stand binnen Sekunden auf allen fünf Geräten.
+  - **Kein Wettlauf mit dem Abgleich.** Der Rücknahme-Weg brauchte eine Bremse für den Fall,
+    dass in den Sekunden am offenen Blatt von drüben ein Strich hereinkam — eine Station mit
+    einem Bier darin durfte nicht mehr verschwinden. Ohne Anlage gibt es nichts, worin ein
+    Bier landen könnte.
+  - **„Wer geht mit?“ wird zur Auswahl statt zur Korrektur.** Vorher entstand die Station mit
+    allen Schlüsseln, und „Passt“ löschte die Abgewählten wieder heraus. Jetzt entsteht sie
+    gleich mit den Angehakten.
+  - **Kein Zustand, in den die App sonst nie gerät.** Die Rücknahme musste den letzten Tag und
+    die letzte Station des Tages ausnehmen — ein Wochenende ohne Tag hätte es sonst geben
+    können. Anlegen kann diesen Zustand gar nicht erst herstellen.
+  Drei Punkte, die beim Umbau leicht untergehen:
+  - **Das Blatt zeigt Vorschau, nicht Bestand.** „2. Tag, erste Station“ und „Station 3 an
+    diesem Tag“ sind Ankündigungen; `benennenVorschlag()` liefert den Standardnamen und muss
+    dieselbe Zahl treffen wie das Anlegen gleich darauf.
+  - **`von` statt `ortId`.** Das Blatt merkt sich die Herkunft als Kennung und löst sie bei
+    jeder Zeichnung frisch auf, nie über `aktuell()` — dieselbe Regel wie vorher, nur zeigt
+    sie jetzt auf die alte Station. Verschiebt ein Abgleich den eigenen Standort, hängt
+    „Passt“ die neue Station trotzdem an den Tag, an dem der Knopf getippt wurde.
+  - **`letzteRunde`, `nachfrage` und `entsperrt` werden erst beim Anlegen genullt**, nicht beim
+    Öffnen. Dieselbe Regel wie bei der Nachfrage vor dem Eintragen: Was noch nicht beantwortet
+    ist, darf nichts anfassen. Wer das Blatt wieder zuklappt, findet sein „Runde zurücknehmen“
+    noch vor.
+  Ein Detail, das der Umbau sonst verschoben hätte: `benennenFertig()` schreibt mit
+  `sichern({sofort:true})`. Vorher ging die neue Station mit dem Öffnen des Blattes hinaus
+  und war damit der erste Schreibvorgang nach einer Pause, also ohne Verzögerung draußen.
+  Dass die Runde weiterzieht, ist genau die Nachricht, auf die die anderen Handys warten —
+  die darf nicht im Sammelfenster liegenbleiben, bloß weil Sekunden vorher ein Bier getippt
+  wurde.
+  Und einer, der nicht neu ist, aber hier wieder auftaucht: Ist die Gruppe beim Bestätigen
+  längst auf einem anderen Tag, wird **kein** Pin gesetzt — dieses Gerät läuft mit ihr mit.
+  Der Pin hält über parallele Stationen, nie über Tage; die neue Station bleibt als Waise am
+  alten Tag stehen, und das ist das kleinere Übel.
+  **`benennenHintergrund()` bleibt absichtlich leer.** Ein Tipp daneben darf das Blatt *nicht*
+  schließen: Darin stecken der eingetippte Name und die Auswahl aus „Wer geht mit?“.
+  Abgebrochen wird über das Kreuz, bestätigt über „Passt“ — zwei ausdrückliche Wege, kein
+  versehentlicher. `tests/abbrechen.mjs` hält beide Hälften fest — dass vor „Passt“ nichts
+  entsteht (auch kein Schreibvorgang) und dass mit „Passt“ alles entsteht, was vorher der
+  Knopf erledigt hat — und misst nebenbei nach, dass das Kreuz die Überschrift nicht überdeckt.
+  Drei bestehende Testdateien hingen an der alten Reihenfolge und mussten mitziehen — wer
+  hier wieder etwas verschiebt, schaut zuerst dort nach: `tagneu.mjs` prüfte den Bestand
+  direkt nach `tagNeu()` (jetzt nach „Passt“, dafür die Blatt-Prüfung davor), `haken.mjs`
+  baute sich `benennen` von Hand (jetzt über `tu.ortNeu()`, damit es nicht an der inneren
+  Form hängt), und `teilung.mjs` suchte die neue Station über `benennen.ortId` — die es vor
+  dem Anlegen nicht mehr gibt. Der Fall dort ist der wichtigste im ganzen Umbau: Macht
+  drüben jemand einen neuen Tag auf, während das Blatt offen steht, muss „Passt“ die Station
+  trotzdem an den Tag hängen, an dem der Knopf getippt wurde.
 - **Vor dem Eintragen wird nachgefragt, wenn es gerade erst etwas gab.** Lag die vorige
   Eintragung weniger als `FRAGE_FENSTER` (3 min) zurück, trägt der Tipp nichts ein, sondern
   stellt eine Frage, die der nächste Tipp bestätigt; unbeantwortet verfällt sie nach
