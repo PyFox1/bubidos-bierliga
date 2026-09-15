@@ -77,8 +77,13 @@ await p.evaluate(() => { tu.geheEinst(); verwaltungOffen = true; zeichnen(); });
 await p.waitForTimeout(300);
 
 await schritt('Kein „Stand jetzt holen“ mehr', async () => {
-  const t = await p.locator('#app').innerText();
-  if(/holen/i.test(t)) throw new Error('steht noch da');
+  /* Gesucht ist der **Knopf**, nicht das Wort. Die Änderungen stehen auf derselben Seite,
+     und dort darf „mehr zu holen“ vorkommen, ohne dass irgendetwas kaputt ist – genau
+     daran hat diese Prüfung schon einmal falschen Alarm geschlagen. */
+  const k = await p.evaluate(() => [...document.querySelectorAll('#app button')]
+    .map(e => (e.textContent || '').trim()).filter(t => /holen/i.test(t)));
+  if(k.length) throw new Error('steht noch da: ' + k.join(' | '));
+  return 'kein Knopf zum Holen';
 });
 
 await schritt('Kein Deckel-Block mehr', async () => {
