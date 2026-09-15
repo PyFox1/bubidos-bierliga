@@ -54,8 +54,8 @@ const kiMock = (kopf, text) => p.route('**/api.anthropic.com/**', r => {
 
 await p.addInitScript(() => localStorage.setItem('bubidos-token', 'github_pat_test'));
 
-const KOPF10 = 'Korbi zappt sich zweistellig';
-const TEXT10 = 'Zehn Biereinheiten. Während anderswo noch über die Abschaffung der '
+const KOPF_M = 'Mängelanzeige gegen Korbi';
+const TEXT18 = 'Achtzehn Biereinheiten. Während anderswo noch über die Abschaffung der '
   + 'Zeitumstellung gestritten wird, hat Korbi seine eigene längst vollzogen — '
   + 'ordnungspetergemäß dokumentiert und ohne jede Debatte.';
 const TEXT25 = 'Fünfundzwanzig Biereinheiten. Der Wetterdienst meldete heute den wärmsten '
@@ -63,7 +63,7 @@ const TEXT25 = 'Fünfundzwanzig Biereinheiten. Der Wetterdienst meldete heute de
   + 'und bei Zimmertemperatur aufgestellt. Was er weggezappt hat, wird in dieser Runde noch '
   + 'in Jahren als Maßeinheit herhalten müssen.';
 
-await kiMock(KOPF10, TEXT10);
+await kiMock(KOPF_M, TEXT18);
 await p.goto('http://localhost:8966/');
 await p.evaluate(() => document.fonts.ready);
 await p.waitForTimeout(700);
@@ -84,11 +84,13 @@ const aufbau = v => p.evaluate(v => {
 }, v);
 
 const marke = s => p.evaluate(s =>
-  (state.we[0].tage[0].marken || []).find(m => m.stufe === s), s);
+  (state.we[0].marken || []).find(m => m.stufe === s), s);
+const mangelMarke = () => p.evaluate(() =>
+  (state.we[0].marken || []).find(m => m.art === 'mangel'));
 
 console.log('\n══ Was rausgeht ══');
 
-await aufbau({be:{'1':9, '2':2, '3':1}});
+await aufbau({be:{'1':17, '2':2, '3':1}});
 await p.waitForTimeout(200);
 await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
 await p.waitForTimeout(600);
@@ -180,33 +182,66 @@ await schritt('Die Anweisung erlaubt kein Weglassen mehr', async () => {
 await schritt('Der Bezug muss im JSON mitgeliefert werden', async () => {
   const t = letzterLeib.messages[0].content;
   if(t.indexOf('"bezug"') < 0) throw new Error('das Feld wird nicht verlangt');
-  if(!/\{"kopf":"…","text":"…","bezug":"…"\}/.test(t))
-    throw new Error('das JSON-Muster nennt den Bezug nicht');
-  return 'bezug im Muster';
+  /* Die Stufe braucht keine Überschrift, die Mängelanzeige schon – das Muster muss zur
+     Art passen, sonst liefert die API brav ein Feld, das niemand liest, oder keines,
+     wo eines gebraucht wird. */
+  if(!/\{"text":"…","bezug":"…"\}/.test(t))
+    throw new Error('das JSON-Muster der Stufe nennt den Bezug nicht');
+  const tm = await p.evaluate(() => urkundeAnweisung(state.we[0],
+    {id:'x', art:'mangel', pid:'1', stufe:10, be:6, wendung:'Peter'}));
+  if(!/\{"kopf":"…","text":"…","bezug":"…"\}/.test(tm))
+    throw new Error('das Muster der Mängelanzeige verlangt keine Überschrift');
+  return 'bezug in beiden Mustern';
 });
 
 console.log('\n══ Was ankommt ══');
 
 await schritt('Der Text von der API ersetzt den Ersatztext', async () => {
-  const m = await marke(10);
+  const m = await marke(18);
   if(m.quelle !== 'ki') throw new Error('Quelle ' + m.quelle);
-  if(m.text !== TEXT10) throw new Error('Text: ' + m.text.slice(0,70));
-  if(m.kopf !== KOPF10) throw new Error('Kopf: ' + m.kopf);
+  if(m.text !== TEXT18) throw new Error('Text: ' + m.text.slice(0,70));
+  /* Die Stufe hat keine Überschrift – schickt die API doch eine, wird sie verworfen.
+     Sonst stünde über der großen Zahl eine Zeile, die dasselbe noch einmal sagt. */
+  if(m.kopf) throw new Error('die Stufe hat eine Überschrift bekommen: ' + m.kopf);
   return 'quelle: ki';
 });
 
 await schritt('Vorrede und Suchblöcke stören das Auslesen nicht', async () => {
-  const m = await marke(10);
+  const m = await marke(18);
   if(/Ich schaue kurz/.test(m.text)) throw new Error('die Vorrede ist im Text gelandet');
   if(/web_search|tagesschau/i.test(m.text)) throw new Error('Suchblock im Text');
 });
 
-await schritt('Er steht auch in der Eilmeldung auf dem Bildschirm', async () => {
+await schritt('Er steht auch auf der Urkunde auf dem Bildschirm', async () => {
   const t = await p.evaluate(() => {
     const e = document.querySelector('.u-blende'); return e ? e.innerText : null; });
   if(!t) throw new Error('keine Blende');
   if(t.indexOf('Zeitumstellung') < 0) throw new Error('Text fehlt: ' + t.slice(0,120));
-  await p.screenshot({path: ORDNER + 'ki-stufe10.png'});
+  await p.screenshot({path: ORDNER + 'ki-stufe18.png'});
+});
+
+/* Die Mängelanzeige ist die einzige Art mit einer Überschrift – und die kommt bei ihr
+   von der API. Ohne diese Probe fällt ein vertauschtes Feld erst am Tisch auf. */
+await schritt('Die Mängelanzeige holt Text *und* Überschrift von der API', async () => {
+  await kiMock(KOPF_M, TEXT18);
+  await aufbau({be:{'1':5, '2':12, '3':11}});
+  await p.waitForTimeout(200);
+  await p.evaluate(() => { markenPruefen(); zeichnen(); });
+  await p.waitForTimeout(900);
+  const m = await mangelMarke();
+  if(!m) throw new Error('keine Mängelanzeige angelegt');
+  if(m.quelle !== 'ki') throw new Error('Quelle ' + m.quelle);
+  if(m.kopf !== KOPF_M) throw new Error('Kopf: ' + m.kopf);
+  if(m.text !== TEXT18) throw new Error('Text: ' + String(m.text).slice(0,70));
+  const t = await p.evaluate(() => {
+    const e = document.querySelector('.u-blende');
+    return e ? {kl:e.className, txt:e.innerText} : null;
+  });
+  if(!t) throw new Error('keine Blende');
+  if(!/u-mangel/.test(t.kl)) throw new Error('Klasse: ' + t.kl);
+  if(t.txt.indexOf('Zeitumstellung') < 0) throw new Error('Text fehlt auf dem Schirm');
+  await p.screenshot({path: ORDNER + 'ki-mangel.png'});
+  return 'Kopf und Text von der API';
 });
 
 console.log('\n══ Auf dem Bild zum Aufheben ══');
@@ -225,8 +260,8 @@ await schritt('Auch die Ehrenurkunde bekommt den Text', async () => {
 });
 
 await p.evaluate(async () => {
-  const tg = state.we[0].tage[0];
-  const c = await urkundeBild(tg.marken.find(x => x.stufe === 25), tg, '1');
+  const we = state.we[0];
+  const c = await urkundeBild(we.marken.find(x => x.stufe === 25), we, '1');
   document.body.innerHTML = '<img id="ub" style="width:540px;display:block" src="'
     + c.toDataURL('image/png') + '">';
 });
@@ -239,11 +274,11 @@ await p.reload(); await p.waitForTimeout(600);
 
 await schritt('Bei einem Fehler bleibt der Ersatztext stehen', async () => {
   await p.route('**/api.anthropic.com/**', r => r.fulfill({status:500, body:'{}'}));
-  await aufbau({be:{'1':9, '2':2, '3':1}});
+  await aufbau({be:{'1':17, '2':2, '3':1}});
   await p.waitForTimeout(200);
   await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
   await p.waitForTimeout(700);
-  const m = await marke(10);
+  const m = await marke(18);
   if(m.quelle !== 'ersatz') throw new Error('Quelle ' + m.quelle);
   if(!m.text || m.text.length < 30) throw new Error('kein Text');
   return 'quelle: ersatz';
@@ -299,7 +334,7 @@ await schritt('Die Suche läuft in der schlanken Bauart und nur einmal', async (
 await schritt('Ein Fehlschlag wird für das Nachsehen notiert', async () => {
   await p.route('**/api.anthropic.com/**', r => r.fulfill({status:500, body:'{}'}));
   await p.evaluate(() => lokal.loeschen(KIFEHLER_KEY));
-  await aufbau({be:{'1':9, '2':2, '3':1}});
+  await aufbau({be:{'1':17, '2':2, '3':1}});
   await p.waitForTimeout(200);
   await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
   await p.waitForTimeout(700);
@@ -326,7 +361,7 @@ await schritt('Ein geglückter Text räumt die Notiz wieder weg', async () => {
     body:JSON.stringify({content:[{type:'text', text:JSON.stringify({
       kopf:'Alles gut', text:'Ein Text, lang genug, und er hat ordentlich gezappt.',
       bezug:'Zeitumstellung abgeschafft'})}]})}));
-  await aufbau({be:{'1':9, '2':2, '3':1}});
+  await aufbau({be:{'1':17, '2':2, '3':1}});
   await p.waitForTimeout(200);
   await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
   await p.waitForTimeout(700);
@@ -346,11 +381,11 @@ await schritt('Ein Text ohne erkennbare Wendung wird notiert', async () => {
       text:'Ein Text, lang genug, mit Nachricht, aber ohne jedes Zitat der Runde.',
       bezug:'Zeitumstellung abgeschafft'})}]})}));
   await p.evaluate(() => lokal.loeschen(KIFEHLER_KEY));
-  await aufbau({be:{'1':9, '2':2, '3':1}});
+  await aufbau({be:{'1':17, '2':2, '3':1}});
   await p.waitForTimeout(200);
   await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
   await p.waitForTimeout(700);
-  const m = await marke(10);
+  const m = await marke(18);
   if(m.quelle !== 'ki') throw new Error('der Text wurde verworfen, Quelle ' + m.quelle);
   const f = await p.evaluate(() => kiFehlerLesen());
   if(!f || !/Wendung/.test(f.grund || ''))
@@ -369,18 +404,18 @@ await schritt('Zwei BE vor der Stufe wird der Text bestellt', async () => {
   await p.route('**/api.anthropic.com/**', r => {
     rufe++;
     r.fulfill({status:200, contentType:'application/json',
-      body:JSON.stringify(antwort(KOPF10, TEXT10))});
+      body:JSON.stringify(antwort(KOPF_M, TEXT18))});
   });
-  await aufbau({be:{'1':7, '2':2, '3':1}});
+  await aufbau({be:{'1':15, '2':2, '3':1}});
   await p.waitForTimeout(200);
-  await p.evaluate(() => tu.strich({dataset:{id:'1'}}));     // → 8, das ist der Vorlauf
+  await p.evaluate(() => tu.strich({dataset:{id:'1'}}));     // → 16, das ist der Vorlauf
   await p.waitForTimeout(500);
   if(!rufe) throw new Error('es wurde nichts bestellt');
   const v = await p.evaluate(() =>
-    (urkundeVorrat.get('901:10:1') || {}).text || null);
+    (urkundeVorrat.get('900:stufe:18:1') || {}).text || null);
   if(!v) throw new Error('der Vorrat ist leer');
   /* Eine Marke darf daraus noch nicht werden – gerissen ist die Stufe ja nicht. */
-  if(await marke(10)) throw new Error('die Marke steht schon da');
+  if(await marke(18)) throw new Error('die Marke steht schon da');
   /* Und im Bestand hat der Text nichts verloren: Wer bei neun aufhört, hinterliesse
      dort einen, den nie jemand sieht. */
   const bestand = await p.evaluate(() => JSON.stringify(standDaten()));
@@ -389,23 +424,23 @@ await schritt('Zwei BE vor der Stufe wird der Text bestellt', async () => {
   return rufe + ' Aufruf, Text liegt bereit';
 });
 
-/* Der eigentliche Punkt: Das zehnte Bier soll sich anfühlen wie jedes andere – ein
+/* Der eigentliche Punkt: Das achtzehnte Bier soll sich anfühlen wie jedes andere – ein
    Tipp, und die Meldung steht da. Kein Aufbau dazwischen, dieser Test lebt von dem
    Vorrat, den der vorige angelegt hat. */
 await schritt('Fällt die Stufe, steht die Meldung mit demselben Tipp da', async () => {
   rufe = 0;
   const r = await p.evaluate(() => {
     const tipp = () => tu.strich({dataset:{id:'1'}});
-    tipp(); tipp();                       // → 9; der erste Tipp fragt nur nach
+    tipp(); tipp();                       // → 17; der erste Tipp fragt nur nach
     tipp();                               // fragt nach
     const t0 = performance.now();
-    tipp();                               // → 10, die Stufe fällt
+    tipp();                               // → 18, die Stufe fällt
     const ms = Math.round(performance.now() - t0);
     const e = document.querySelector('.u-blende');
-    return {ms, text: e ? e.innerText : null, be: beAmTag(state.we[0].tage[0], '1'),
-            quelle: (state.we[0].tage[0].marken.find(m => m.stufe === 10) || {}).quelle};
+    return {ms, text: e ? e.innerText : null, be: beAmWe(state.we[0], '1'),
+            quelle: (state.we[0].marken.find(m => m.stufe === 18) || {}).quelle};
   });
-  if(r.be < 10) throw new Error('das Bier ist gar nicht drin, erst ' + r.be + ' BE');
+  if(r.be < 18) throw new Error('das Bier ist gar nicht drin, erst ' + r.be + ' BE');
   if(!r.text) throw new Error('keine Blende nach dem Tipp');
   if(r.quelle !== 'ki') throw new Error('Quelle ' + r.quelle);
   if(r.text.indexOf('Zeitumstellung') < 0)
@@ -425,9 +460,9 @@ await schritt('Der Ersatztext geht nie auf, wenn der echte noch unterwegs ist', 
   await p.route('**/api.anthropic.com/**', async r => {
     await new Promise(w => setTimeout(w, 1200));
     r.fulfill({status:200, contentType:'application/json',
-      body:JSON.stringify(antwort(KOPF10, TEXT10))});
+      body:JSON.stringify(antwort(KOPF_M, TEXT18))});
   });
-  await aufbau({be:{'1':9, '2':2, '3':1}});
+  await aufbau({be:{'1':17, '2':2, '3':1}});
   await p.waitForTimeout(200);
   await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
   /* Alle 60 ms nachsehen, was auf dem Schirm steht. Stünde der Ersatztext auch nur
@@ -450,7 +485,7 @@ await schritt('Der Ersatztext geht nie auf, wenn der echte noch unterwegs ist', 
    von selbst: Ein Neuzeichnen stößt zu dem Zeitpunkt sonst niemand an. */
 await schritt('Bleibt der Text aus, geht sie nach der Wartezeit von selbst auf', async () => {
   await p.route('**/api.anthropic.com/**', r => r.fulfill({status:500, body:'{}'}));
-  await aufbau({be:{'1':9, '2':2, '3':1}});
+  await aufbau({be:{'1':17, '2':2, '3':1}});
   await p.waitForTimeout(200);
   await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
   await p.waitForTimeout(700);
@@ -459,7 +494,7 @@ await schritt('Bleibt der Text aus, geht sie nach der Wartezeit von selbst auf',
   /* Die Uhr vorstellen statt 25 s zu warten. Gezeichnet wird genau einmal – dass sie
      danach aufgeht, muss der eingeplante Termin erledigen. */
   await p.evaluate(() => {
-    const m = state.we[0].tage[0].marken.find(x => x.stufe === 10);
+    const m = state.we[0].marken.find(x => x.stufe === 18);
     m.t = Date.now() - URKUNDE_WARTE + 400;
     zeichnen();
   });
@@ -468,7 +503,7 @@ await schritt('Bleibt der Text aus, geht sie nach der Wartezeit von selbst auf',
   await p.waitForTimeout(900);
   if(!(await p.evaluate(() => !!document.querySelector('.u-blende'))))
     throw new Error('sie geht nach der Wartezeit nicht auf');
-  const m = await marke(10);
+  const m = await marke(18);
   if(m.quelle !== 'ersatz') throw new Error('Quelle ' + m.quelle);
   return 'mit dem Ersatztext, nach der Wartezeit';
 });
@@ -490,11 +525,11 @@ await schritt('Ein Text ohne Bezug bleibt stehen und wird notiert', async () => 
       kopf:'Ohne alles',
       text:'Ein Text, der lang genug ist, aber keine Nachricht verwebt.'})}]})}));
   await p.evaluate(() => lokal.loeschen(KIFEHLER_KEY));
-  await aufbau({be:{'1':9, '2':2, '3':1}});
+  await aufbau({be:{'1':17, '2':2, '3':1}});
   await p.waitForTimeout(200);
   await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
   await p.waitForTimeout(700);
-  const m = await marke(10);
+  const m = await marke(18);
   if(m.quelle !== 'ki') throw new Error('der Text wurde verworfen, Quelle ' + m.quelle);
   const f = await p.evaluate(() => kiFehlerLesen());
   if(!f || !/Nachrichtenbezug/.test(f.grund || ''))
@@ -506,13 +541,13 @@ await schritt('Und wenn gar kein Schlüssel hinterlegt ist, wird nicht gefragt',
   let gefragt = false;
   await p.route('**/api.anthropic.com/**', r => { gefragt = true; r.abort(); });
   await p.evaluate(() => { state.einst.kiSchluessel = ''; });
-  await aufbau({be:{'1':9, '2':2, '3':1}});
+  await aufbau({be:{'1':17, '2':2, '3':1}});
   await p.evaluate(() => { state.einst.kiSchluessel = ''; });
   await p.waitForTimeout(200);
   await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
   await p.waitForTimeout(600);
   if(gefragt) throw new Error('es wurde trotzdem angefragt');
-  const m = await marke(10);
+  const m = await marke(18);
   if(m.quelle !== 'ersatz') throw new Error('Quelle ' + m.quelle);
   return 'kein Aufruf';
 });

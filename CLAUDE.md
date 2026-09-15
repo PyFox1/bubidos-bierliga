@@ -201,10 +201,13 @@ Größen: `033`, `05`, `10`.
 **Anwesenheit** = die Person ist ein Schlüssel im `getraenke`-Objekt der Location. Ein leeres
 Array heißt „war da, hat nichts getrunken" — das ist etwas völlig anderes als „war nicht da".
 
-Am Tag hängt außerdem `tag.marken`: die ausgestellten Urkunden, je eine
-`{id, stufe, pid, be, t, ort, ortNr, text, kopf?, quelle}`. Die `id` ist fest aus
-`tagId:stufe:pid` gebaut und nicht gewürfelt — die Marke gehört **einer Person**, nicht der
-Stufe. Siehe Tagesmarken weiter unten.
+Am Wochenende hängt außerdem `we.marken`: die ausgestellten Blätter, je eines
+`{id, art, stufe, pid, be, zahl, einheit, t, tag, ort, ortNr, text, kopf?, quelle, wendung}`.
+`art` ist `'stufe'` (18/25) oder `'mangel'` (die verfehlte Zehn). Die `id` ist fest aus
+`weId:art:stufe:pid` gebaut und nicht gewürfelt — die Marke gehört **einer Person**, nicht der
+Stufe. `zahl` und `einheit` sind, was groß auf Karte und Bild steht; `tag`, `ort` und `ortNr`
+werden beim Anlegen festgehalten, weil die Runde weiterzieht und sich das später nicht mehr
+rekonstruieren ließe. Siehe Marken weiter unten.
 
 ## Die Wertung
 
@@ -450,9 +453,41 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   kein Einstieg. Jeder Paragraf hat einen Anker `p1` bis `p11`. Wer einen Paragrafen einschiebt,
   muss die `para`-Verweise in `ERKLAERUNGEN` mitziehen — dort stehen Anker *und* Klartextname
   (`§ 7 Technische Daten`), und beide laufen sonst auseinander.
-- **Tagesmarken: 10, 18 und 25 BE, je Stufe, Tag und Person genau eine.** Die Entscheidungen
-  dahinter:
-  - **Jeder bekommt seine eigene.** Die Kennung heißt `tagId:stufe:pid` und trägt die Person.
+- **Gezählt wird das Wochenende, und die Zehn zählt andersherum** (G52). Bis dahin lagen die
+  Marken am **Tag**: 10, 18, 25 BE, und jeder Tag fing wieder bei null an. Das war zu selten —
+  ein normaler Abend reißt die Zehn nicht, und so bekam die Runde ihre Urkunden kaum zu sehen.
+  Jetzt addiert sich das ganze Wochenende (`beAmWe`), die Marken liegen an `we.marken`, und die
+  Kennung heißt `weId:art:stufe:pid`.
+  Die **Zehn** ist dabei keine Auszeichnung mehr. Sie wäre bei Wochenendzählung die schlechteste
+  von allen: Zehn am Wochenende hat irgendwann jeder, und dann rissen sie alle fünf binnen einer
+  Stunde — fünf Blenden, fünf API-Aufrufe, und die Überraschung für den Rest des Wochenendes
+  verbraucht. Stattdessen ist sie eine **Mängelanzeige** an die, die sie als Einzige *nicht*
+  haben. Ausgezeichnet wird ab 18.
+  - **Wann sie fällt** (`mangelKandidaten()`): Ein oder zwei stehen noch drunter, **und** die
+    drüber sind in der Mehrzahl. Alle drüber gibt nichts — das ist kein Anlass für irgendwas.
+    Drei oder mehr drunter auch nicht: Da ist das Wochenende schlicht noch nicht weit genug,
+    das wäre kein Vorwurf, sondern eine Uhrzeit. Die Mehrheitsbedingung ist nicht Zierde — zu
+    dritt hieße „zwei von drei haben's nicht“ sonst Nachsitzen für die halbe Runde, und zu
+    viert wäre zwei gegen zwei ein Unentschieden.
+  - **Sie geht nach beiden Seiten wieder weg.** Der Gescholtene holt auf — dann ist sie erledigt
+    —, oder ein Dritter fällt zurück, dann ist es keine Minderheit mehr und der Vorwurf trägt
+    nicht. Beides fällt aus `markenAufraeumen()` heraus, das dafür jetzt nach `art` unterscheidet.
+    Ein Stups, kein Urteil: Wer die Zehn noch reißt, ist sie los — und wer sie abfotografiert
+    hat, hat trotzdem den Beleg.
+  - **Der Spott gilt der Bilanz, nie dem Menschen.** Das steht so in der Anweisung, und es ist
+    keine Zierde: Das Blatt trägt einen Namen und wird weitergeschickt. Sechs von zehn *ist*
+    eine schlechte Bilanz, während die anderen durch sind — genau darüber wird gespottet.
+    Der Wortschatz bleibt dabei **unbeschnitten**: „Dreckschwein“ und die groben Wendungen
+    gelten auch hier, weil in dieser Runde jeder weiß, wie sie gemeint sind. Ausgerichtet wird
+    über die Bedeutung, nicht über eine Ausschlussliste — dieselbe Regel wie überall sonst.
+  - **Sie braucht keine Vorbereitung.** `urkundeVorbereiten()` läuft nur für die Stufen. Die
+    Mängelanzeige löst ein *anderer* aus — der Gescholtene wartet auf gar nichts, und die
+    fünfzehn Sekunden sieht niemand.
+  - **Sie ist die einzige Art mit einer Überschrift** (`MARKE_MIT_KOPF`). Bei den Stufen steht
+    die Zahl groß darüber; ein Kopf sagte dasselbe ein zweites Mal.
+  Was davon unberührt bleibt, steht darunter — es galt für den Tag und gilt genauso fürs
+  Wochenende:
+  - **Jeder bekommt seine eigene.** Die Kennung trägt die Person.
     Das war einmal andersherum — eine Urkunde je Stufe und Tag, für den, der zuerst dort war —
     und genau daran ist es gescheitert: Wer dem einen das zehnte Bier tippt und zwei Sekunden
     später dem nächsten, hat für sein Gefühl zwei gleichzeitige Zehner vor sich; die Marke sah
@@ -537,8 +572,10 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
     dagegen (die Marke hat noch keinen) — gut so, denn bis zum zehnten Bier kann die Runde
     weitergezogen sein, und ein falscher Wirtshausname im Text fiele sofort auf. Auf dem Bild
     steht der Ort ohnehin, und der stimmt: Er wird beim Anlegen der Marke festgehalten.
-  - **Gestaffelt wird die Fläche, nicht nur der Text.** 10 ist ein Blatt von unten, 18 eine Karte
-    in der Mitte, 25 nimmt den ganzen Bildschirm. Das erkennt man auch in fortgeschrittener
+  - **Gestaffelt wird die Fläche, nicht nur der Text.** Die Mängelanzeige ist ein Blatt von
+    unten — dieselbe Fläche wie die frühere Zehn, aber mit rotem Akzent statt Malz
+    (`u-mangel`), weil man in fortgeschrittener Stunde die Farbe schneller erkennt als die
+    Überschrift. 18 ist eine Karte in der Mitte, 25 nimmt den ganzen Bildschirm. Das erkennt man auch in fortgeschrittener
     Stunde noch, und darum ging es. Die 25 trägt bewusst kein `data-tu` auf der Blende — wer so
     weit gekommen ist, drückt den Knopf. Die anderen beiden tragen `urkundeHintergrund`, nicht
     `urkundeWeg`: Das Muster `…Hintergrund` lässt der globale Klick-Empfänger nur durch, wenn

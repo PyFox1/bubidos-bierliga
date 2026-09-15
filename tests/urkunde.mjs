@@ -1,4 +1,6 @@
-// Tagesmarken: 10 / 18 / 25 BE. Jeder bekommt seine eigene, kein Wettlauf.
+// Marken am Wochenende. Ausgezeichnet wird ab 18 BE, jeder bekommt seine eigene –
+// kein Wettlauf. Die Zehn zaehlt andersherum: Sie ist eine Maengelanzeige an die, die
+// sie als Einzige nicht haben.
 import { chromium } from 'playwright-core';
 import http from 'http';
 import fs from 'fs';
@@ -54,47 +56,70 @@ const aufbau = v => p.evaluate(v => {
   pinLoeschen(); zeichnen();
 }, v);
 
-const marken = () => p.evaluate(() => (state.we[0].tage[0].marken || []).map(m =>
-  ({id:m.id, stufe:m.stufe, pid:m.pid, quelle:m.quelle, text:m.text, kopf:m.kopf,
-    ort:m.ort, ortNr:m.ortNr, be:m.be})));
+const marken = () => p.evaluate(() => (state.we[0].marken || []).map(m =>
+  ({id:m.id, art:m.art, stufe:m.stufe, pid:m.pid, quelle:m.quelle, text:m.text, kopf:m.kopf,
+    ort:m.ort, ortNr:m.ortNr, be:m.be, zahl:m.zahl, tag:m.tag})));
 const blende = () => p.evaluate(() => {
   const e = document.querySelector('.u-blende');
   return e ? {klasse:e.className, text:e.innerText} : null;
 });
 
-console.log('\n══ Eine Marke je Stufe, Tag und Person ══');
+console.log('\n══ Eine Marke je Stufe, Wochenende und Person ══');
 
-await aufbau({be:{'1':9, '2':2, '3':1, '4':0}});
+await aufbau({be:{'1':17, '2':2, '3':1, '4':0}});
 await p.waitForTimeout(200);
-await schritt('Bei 9 BE ist noch nichts', async () => {
+await schritt('Bei 17 BE ist noch nichts', async () => {
   await p.evaluate(() => markenPruefen());
   const m = await marken();
   if(m.length) throw new Error('es gibt schon ' + m.length);
 });
 
-await schritt('Das zehnte Bier stellt die Urkunde aus', async () => {
+await schritt('Das achtzehnte Bier stellt die Urkunde aus', async () => {
   await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
   const m = await marken();
   if(m.length !== 1) throw new Error('Marken: ' + JSON.stringify(m));
-  if(m[0].id !== '901:10:1') throw new Error('Kennung ' + m[0].id);
+  if(m[0].id !== '900:stufe:18:1') throw new Error('Kennung ' + m[0].id);
   if(String(m[0].pid) !== '1') throw new Error('pid ' + JSON.stringify(m[0].pid));
   return m[0].id;
 });
 
-await schritt('Sie merkt sich Ort und Nummer für das Bild', async () => {
+/* Die Kennung traegt das **Wochenende**, nicht den Tag: Wer am Freitag neun trinkt und
+   am Samstag neun, hat achtzehn – und genau darum ging der Umbau. */
+await schritt('Die BE addieren sich über die Tage', async () => {
+  const x = await p.evaluate(() => {
+    const we = state.we[0];
+    we.marken = [];
+    we.tage[0].orte[1].getraenke['2'] = Array(9).fill('normal:05');
+    we.tage.push({id:902, label:'2. Tag', orte:[{id:20, name:'Frühstück',
+      getraenke:{'2':Array(8).fill('normal:05')}, log:[]}]});
+    state.aktivTag = 902; state.aktivOrt = 20; pinLoeschen();
+    tu.strich({dataset:{id:'2'}});
+    return {be:beAmWe(we, '2'), ids:(we.marken || []).map(m => m.id)};
+  });
+  if(Math.abs(x.be - 18) > 0.01) throw new Error('beAmWe ergibt ' + x.be);
+  if(x.ids.indexOf('900:stufe:18:2') < 0)
+    throw new Error('keine Marke über die Tage hinweg: ' + x.ids.join(', '));
+  return '9 + 9 = 18, Marke steht';
+});
+
+await aufbau({be:{'1':17, '2':2, '3':1, '4':0}});
+await p.waitForTimeout(200);
+await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
+
+await schritt('Sie merkt sich Ort, Nummer und Tag für das Bild', async () => {
   const m = await marken();
   if(m[0].ort !== 'Augustiner') throw new Error('Ort: ' + m[0].ort);
   if(m[0].ortNr !== 2) throw new Error('ortNr: ' + m[0].ortNr);
-  return m[0].ortNr + '. Location: ' + m[0].ort;
+  if(m[0].tag !== '1. Tag') throw new Error('Tag: ' + m[0].tag);
+  return m[0].tag + ', ' + m[0].ortNr + '. Location: ' + m[0].ort;
 });
 
 await schritt('Ohne Schlüssel steht sofort ein Ersatztext mit Namen da', async () => {
   const m = await marken();
   if(m[0].quelle !== 'ersatz') throw new Error('Quelle ' + m[0].quelle);
-  if(!m[0].kopf) throw new Error('Stufe 10 ohne Überschrift');
-  const alles = m[0].text + ' ' + m[0].kopf;
-  if(/\{name\}/.test(alles)) throw new Error('Platzhalter steht noch drin');
-  if(!/Korbi/.test(alles)) throw new Error('kein Name: ' + alles);
+  if(m[0].kopf) throw new Error('die Stufe bringt eine Überschrift mit, die niemand zeigt');
+  if(/\{name\}/.test(m[0].text)) throw new Error('Platzhalter steht noch drin');
+  if(!/Korbi/.test(m[0].text)) throw new Error('kein Name: ' + m[0].text);
 });
 
 await schritt('Nochmal prüfen legt nicht doppelt an', async () => {
@@ -108,7 +133,7 @@ await schritt('Nochmal prüfen legt nicht doppelt an', async () => {
    zweite Person ging leer aus, weil die Stufe für den Tag schon vergeben war. */
 console.log('\n══ Jeder bekommt seine eigene ══');
 
-await aufbau({be:{'1':9, '2':9, '3':1, '4':0}});
+await aufbau({be:{'1':17, '2':17, '3':1, '4':0}});
 await p.waitForTimeout(200);
 await schritt('Zwei kurz nacheinander bekommen zwei Urkunden', async () => {
   await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
@@ -119,7 +144,7 @@ await schritt('Zwei kurz nacheinander bekommen zwei Urkunden', async () => {
   const m = await marken();
   if(m.length !== 2) throw new Error('es sind ' + m.length + ' statt zwei');
   const ids = m.map(x => x.id).sort().join(' ');
-  if(ids !== '901:10:1 901:10:2') throw new Error('Kennungen: ' + ids);
+  if(ids !== '900:stufe:18:1 900:stufe:18:2') throw new Error('Kennungen: ' + ids);
   return ids;
 });
 
@@ -134,9 +159,12 @@ await schritt('Jede nennt nur ihre eigene Person', async () => {
   return 'getrennt';
 });
 
-await aufbau({be:{'1':9, '2':9, '3':9, '4':3}});
+/* Der Vierte steht hier bewusst über zehn: Sonst bekäme er zur selben Sekunde eine
+   Mängelanzeige, und dieser Abschnitt prüft die Stufen. Das Zusammenspiel der beiden
+   steht weiter unten und ist dort der eigentliche Punkt. */
+await aufbau({be:{'1':17, '2':17, '3':17, '4':12}});
 await p.waitForTimeout(200);
-await schritt('Eine Runde für alle schiebt drei zugleich über die Zehn', async () => {
+await schritt('Eine Runde für alle schiebt drei zugleich über die Achtzehn', async () => {
   await p.evaluate(() => tu.runde());
   const m = await marken();
   if(m.length !== 3) throw new Error('es sind ' + m.length + ' Marken statt dreier');
@@ -165,9 +193,127 @@ await schritt('Sie kommen nacheinander, jede mit einem Namen und einem Knopf', a
   return namen.join(' → ');
 });
 
+console.log('\n══ Die Mängelanzeige: wer die Zehn als Einziger nicht hat ══');
+
+/* Eigener Aufbau, weil hier die Gruppengröße mitspielt: Die Regel hängt daran, wie
+   viele drunter stehen *und* wie viele drüber. `be` ist die Liste der BE je Person. */
+const runde = be => p.evaluate(be => {
+  localStorage.removeItem('bubidos-urkunden');
+  const bier = k => Array(k).fill('normal:05');
+  const g = {};
+  state.spieler = be.map((x,i) => ({id:i+1, name:'P' + (i+1)}));
+  be.forEach((x,i) => g[String(i+1)] = bier(x));
+  state.we = [{id:900, titel:'Nockherberg', datum:'2026-09-10', zu:false,
+    dabei: be.map((x,i) => i+1),
+    tage:[{id:901, label:'1. Tag', orte:[{id:11, name:'Augustiner', getraenke:g, log:[]}]}]}];
+  state.aktivWe = 900; state.aktivTag = 901; state.aktivOrt = 11;
+  state.einst = {k:40, kiSchluessel:''};
+  ansicht = null; letzteRunde = null; nachfrage = null; pinLoeschen();
+  markenPruefen();
+  return {kandidaten: mangelKandidaten(state.we[0]).slice().sort(),
+          marken: (state.we[0].marken || [])
+            .filter(m => m.art === 'mangel').map(m => String(m.pid)).sort()};
+}, be);
+
+await schritt('Reissen alle die Zehn, passiert gar nichts', async () => {
+  const x = await runde([12, 11, 10, 14, 10]);
+  if(x.marken.length) throw new Error('es kam doch eine: ' + x.marken.join(','));
+  return 'still';
+});
+
+await schritt('Einer drunter, der Rest drüber – der eine bekommt sie', async () => {
+  const x = await runde([12, 11, 10, 6, 14]);
+  if(x.marken.join(',') !== '4') throw new Error('Mängelanzeigen an: ' + x.marken.join(','));
+  return 'P4';
+});
+
+await schritt('Zwei drunter von fünf – beide bekommen sie', async () => {
+  const x = await runde([12, 11, 10, 6, 3]);
+  if(x.marken.join(',') !== '4,5') throw new Error('Mängelanzeigen an: ' + x.marken.join(','));
+  return 'P4 und P5';
+});
+
+/* Drei von fünf drunter heißt nicht „drei sind faul", sondern „es ist erst neun Uhr".
+   Das wäre kein Vorwurf, sondern eine Uhrzeit. */
+await schritt('Drei drunter – das Wochenende ist schlicht noch nicht weit genug', async () => {
+  const x = await runde([12, 11, 6, 5, 3]);
+  if(x.marken.length) throw new Error('es kam doch eine: ' + x.marken.join(','));
+  return 'still';
+});
+
+/* Zwei gegen zwei ist ein Unentschieden, kein Nachsitzen. */
+await schritt('Zwei von vier drunter – nichts, die Mehrheit fehlt', async () => {
+  const x = await runde([12, 11, 6, 5]);
+  if(x.marken.length) throw new Error('es kam doch eine: ' + x.marken.join(','));
+  return 'still';
+});
+
+await schritt('Zu dritt: einer drunter ja, zwei drunter nein', async () => {
+  const eins = await runde([12, 11, 6]);
+  if(eins.marken.join(',') !== '3') throw new Error('bei einem: ' + eins.marken.join(','));
+  const zwei = await runde([12, 6, 5]);
+  if(zwei.marken.length) throw new Error('bei zweien kam: ' + zwei.marken.join(','));
+  return 'einer ja, zwei nein';
+});
+
+await schritt('Sie nennt den Stand und trägt eine Überschrift', async () => {
+  await runde([12, 11, 10, 6, 14]);
+  const m = (await marken()).find(x => x.art === 'mangel');
+  if(!m) throw new Error('keine Mängelanzeige');
+  if(!m.kopf) throw new Error('ohne Überschrift');
+  if(m.zahl !== '6,0') throw new Error('Stand: ' + m.zahl);
+  if(m.id !== '900:mangel:10:4') throw new Error('Kennung: ' + m.id);
+  if(m.text.indexOf('6,0') < 0) throw new Error('der Text nennt den Stand nicht: ' + m.text);
+  if(/\{be\}|\{name\}/.test(m.text + m.kopf)) throw new Error('Platzhalter steht noch drin');
+  if(m.text.indexOf('P4') < 0 && m.kopf.indexOf('P4') < 0)
+    throw new Error('kein Name: ' + m.kopf + ' / ' + m.text);
+  return m.zahl + ' von 10';
+});
+
+/* Ein Stups, kein Urteil: Wer die Zehn noch reißt, ist sie los. */
+await schritt('Holt er auf, ist sie wieder weg', async () => {
+  const n = await p.evaluate(() => {
+    const o = state.we[0].tage[0].orte[0];
+    o.getraenke['4'] = Array(11).fill('normal:05');
+    markenAufraeumen();
+    return (state.we[0].marken || []).filter(m => m.art === 'mangel').length;
+  });
+  if(n) throw new Error('sie steht noch da');
+  return 'eingezogen';
+});
+
+/* Die andere Seite: Nicht der Gescholtene ändert sich, sondern das Feld um ihn herum.
+   Sobald ein Dritter zurückfällt, ist es keine Minderheit mehr und der Vorwurf trägt nicht. */
+await schritt('Fällt ein Dritter zurück, trägt der Vorwurf nicht mehr', async () => {
+  const vorher = await runde([12, 11, 10, 6, 14]);
+  if(vorher.marken.join(',') !== '4') throw new Error('Aufbau: ' + vorher.marken.join(','));
+  const n = await p.evaluate(() => {
+    const o = state.we[0].tage[0].orte[0];
+    o.getraenke['3'] = Array(4).fill('normal:05');   // P3 rutscht unter zehn
+    o.getraenke['5'] = Array(5).fill('normal:05');   // P5 auch
+    markenAufraeumen();
+    return (state.we[0].marken || []).filter(m => m.art === 'mangel').length;
+  });
+  if(n) throw new Error('sie steht noch da, obwohl jetzt drei drunter sind');
+  return 'eingezogen';
+});
+
+/* Das Zusammenspiel, um das es eigentlich geht: Eine Runde für alle schiebt drei über
+   die Achtzehn – und macht den Vierten damit zum Einzigen unter der Zehn. */
+await schritt('Eine Runde kann Urkunde und Mängelanzeige zugleich auslösen', async () => {
+  await runde([17, 17, 17, 5]);
+  const x = await p.evaluate(() => {
+    tu.runde();
+    return (state.we[0].marken || []).map(m => m.art + ':' + m.pid).sort();
+  });
+  const soll = ['mangel:4', 'stufe:1', 'stufe:2', 'stufe:3'].join(' ');
+  if(x.join(' ') !== soll) throw new Error('es kam: ' + x.join(' '));
+  return 'drei Urkunden und eine Mängelanzeige';
+});
+
 console.log('\n══ Zurückgenommenes Bier zieht die Urkunde ein ══');
 
-await aufbau({be:{'1':9, '2':2, '3':1, '4':0}});
+await aufbau({be:{'1':17, '2':2, '3':1, '4':0}});
 await p.waitForTimeout(200);
 await schritt('Ein Minus unter die Marke nimmt sie zurück', async () => {
   await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
@@ -192,9 +338,9 @@ await schritt('Das Bier wieder drauf stellt sie neu aus', async () => {
 await schritt('Eine Rücknahme von drüben kommt beim Abgleich an', async () => {
   const n = await p.evaluate(() => {
     const d = JSON.parse(JSON.stringify(standDaten()));
-    d.we[0].tage[0].orte[1].getraenke['1'] = Array(9).fill('normal:05');
+    d.we[0].tage[0].orte[1].getraenke['1'] = Array(17).fill('normal:05');
     uebernehmen(d);
-    return (state.we[0].tage[0].marken || []).length;
+    return (state.we[0].marken || []).length;
   });
   if(n) throw new Error('nach dem Abgleich stehen noch ' + n);
   return 'weg';
@@ -202,18 +348,18 @@ await schritt('Eine Rücknahme von drüben kommt beim Abgleich an', async () => 
 
 console.log('\n══ Der Ort ist der der Person, nicht der des Handys ══');
 
-await aufbau({be:{'1':9, '2':2, '3':1, '4':0}});
+await aufbau({be:{'1':17, '2':17, '3':1, '4':0}});
 await p.waitForTimeout(200);
 await schritt('Nach einer Aufteilung steht Korbis Location auf Korbis Urkunde', async () => {
   const m = await p.evaluate(() => {
     const tg = aktuell().tg;
-    /* Fifu zieht in den Neubau vor, Korbi bleibt im Augustiner. Korbis zehntes Bier
+    /* Fifu zieht in den Neubau vor, Korbi bleibt im Augustiner. Korbis achtzehntes Bier
        kommt von drüben; dieses Handy steht im Neubau und legt die Marke an. */
     tg.orte.push({id:12, name:'Neubau', getraenke:{'2':[]}, log:[]});
     state.aktivOrt = 12; pinLoeschen();
     tg.orte[1].getraenke['1'].push('normal:05');
     tu.strich({dataset:{id:'2'}});
-    return (tg.marken || []).map(x => ({pid:x.pid, ort:x.ort, ortNr:x.ortNr}));
+    return (state.we[0].marken || []).map(x => ({pid:x.pid, ort:x.ort, ortNr:x.ortNr}));
   });
   const korbi = m.find(x => String(x.pid) === '1');
   if(!korbi) throw new Error('Korbi hat keine: ' + JSON.stringify(m));
@@ -222,42 +368,45 @@ await schritt('Nach einer Aufteilung steht Korbis Location auf Korbis Urkunde', 
   return korbi.ortNr + '. Location: ' + korbi.ort;
 });
 
-console.log('\n══ Die drei Stufen sehen verschieden aus ══');
+console.log('\n══ Die Formen unterscheiden sich ══');
 
-await aufbau({be:{'1':9, '2':2, '3':1, '4':0}});
+/* Einer unter zehn, drei drüber – die Mängelanzeige fällt. */
+await aufbau({be:{'1':12, '2':11, '3':10, '4':5}});
 await p.waitForTimeout(200);
-await schritt('10 kommt als Blatt von unten', async () => {
-  await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
+await schritt('Die Mängelanzeige kommt als Blatt von unten, in Rot', async () => {
+  /* `markenPruefen()` zeichnet nicht von sich aus – im Betrieb tut das der Tipp,
+     der es ausgelöst hat. */
+  await p.evaluate(() => { markenPruefen(); zeichnen(); });
   await p.waitForTimeout(150);
   const e = await blende();
+  if(!e) throw new Error('keine Blende');
   if(!/\bs1\b/.test(e.klasse)) throw new Error('Klasse ' + e.klasse);
-  if(!/EILMELDUNG/i.test(e.text)) throw new Error('kein Eilmeldungs-Band');
+  if(!/\bu-mangel\b/.test(e.klasse)) throw new Error('nicht als Mängelanzeige gekennzeichnet');
+  if(!/MÄNGELANZEIGE/i.test(e.text)) throw new Error('kein Mängel-Band: ' + e.text);
   if(!/sichere dir/.test(e.text)) throw new Error('keine Andenken-Zeile');
-  await p.screenshot({path: ORDNER + 'u-stufe10.png'});
-  return 's1';
+  await p.screenshot({path: ORDNER + 'u-mangel.png'});
+  return 's1 u-mangel';
 });
 
-await aufbau({be:{'1':17, '2':2, '3':1, '4':0}});
+await aufbau({be:{'1':17, '2':12, '3':11, '4':10}});
 await p.waitForTimeout(200);
 await schritt('18 kommt als Karte in der Mitte', async () => {
   await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
   await p.waitForTimeout(150);
   const m = await marken();
-  if(m.length !== 2) throw new Error('Marken: ' + m.map(x => x.stufe).join(','));
-  await p.evaluate(() => tu.urkundeWeg());
-  await p.waitForTimeout(150);
+  if(m.length !== 1) throw new Error('Marken: ' + m.map(x => x.art + x.stufe).join(','));
   const e = await blende();
   if(!/\bs2\b/.test(e.klasse)) throw new Error('Klasse ' + e.klasse);
   await p.screenshot({path: ORDNER + 'u-stufe18.png'});
-  return 'erst s1, dann s2';
+  return 's2';
 });
 
-await aufbau({be:{'1':24, '2':2, '3':1, '4':0}});
+await aufbau({be:{'1':24, '2':12, '3':11, '4':10}});
 await p.waitForTimeout(200);
 await schritt('25 nimmt den ganzen Bildschirm', async () => {
   await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
   await p.waitForTimeout(150);
-  await p.evaluate(() => { tu.urkundeWeg(); tu.urkundeWeg(); });
+  await p.evaluate(() => tu.urkundeWeg());
   await p.waitForTimeout(150);
   const e = await blende();
   if(!/\bs3\b/.test(e.klasse)) throw new Error('Klasse ' + e.klasse);
@@ -278,9 +427,9 @@ console.log('\n══ Das Bild zum Aufheben ══');
 
 await schritt('Es entsteht ein PNG in fester Größe', async () => {
   const r = await p.evaluate(async () => {
-    const tg = state.we[0].tage[0];
-    const m = tg.marken.find(x => x.stufe === 25);
-    const c = await urkundeBild(m, tg, '1');
+    const we = state.we[0];
+    const m = we.marken.find(x => x.stufe === 25);
+    const c = await urkundeBild(m, we, '1');
     const url = c.toDataURL('image/png');
     return {b:c.width, h:c.height, kopf:url.slice(0,22), n:url.length};
   });
@@ -312,10 +461,9 @@ await schritt('Anton greift auch im Canvas', async () => {
 
 await schritt('Es trägt Datum, Uhrzeit, Tag und Location', async () => {
   const s = await p.evaluate(() => {
-    const tg = state.we[0].tage[0];
-    const m = tg.marken.find(x => x.stufe === 25);
     const we = state.we[0];
-    return [we.titel, tg.label, m.ortNr + '. Location: ' + m.ort].join(' · ');
+    const m = we.marken.find(x => x.stufe === 25);
+    return [we.titel, m.tag, m.ortNr + '. Location: ' + m.ort].join(' · ');
   });
   ['Nockherberg', '1. Tag', '2. Location: Augustiner'].forEach(w => {
     if(s.indexOf(w) < 0) throw new Error('„' + w + '" fehlt in „' + s + '"');
@@ -325,8 +473,8 @@ await schritt('Es trägt Datum, Uhrzeit, Tag und Location', async () => {
 
 /* Zum Ansehen: das Bild in die Seite hängen und abfotografieren. */
 await p.evaluate(async () => {
-  const tg = state.we[0].tage[0];
-  const c = await urkundeBild(tg.marken.find(x => x.stufe === 25), tg, '1');
+  const we = state.we[0];
+  const c = await urkundeBild(we.marken.find(x => x.stufe === 25), we, '1');
   document.body.innerHTML = '<img id="ub" style="width:540px;display:block" src="'
     + c.toDataURL('image/png') + '">';
 });
@@ -336,7 +484,7 @@ await p.reload(); await p.waitForTimeout(600);
 
 console.log('\n══ Abhaken gilt nur für dieses Handy ══');
 
-await aufbau({be:{'1':9, '2':2, '3':1, '4':0}});
+await aufbau({be:{'1':17, '2':12, '3':11, '4':10}});
 await p.waitForTimeout(200);
 await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
 await p.waitForTimeout(150);
@@ -376,15 +524,16 @@ await schritt('Bei derselben Kennung gewinnt die frühere Marke', async () => {
     const bau = (t, text) => ({
       spieler:[{id:1,name:'Korbi'},{id:2,name:'Fifu'}], einst:{}, geraete:{},
       aktivWe:900, aktivTag:901, aktivOrt:11,
-      we:[{id:900, titel:'N', zu:false, dabei:[1,2], tage:[{id:901, label:'1. Tag',
-        marken:[{id:'901:10:1', stufe:10, pid:'1', t, quelle:'ersatz', text}],
-        orte:[{id:11, name:'A', getraenke:{'1':[]}, log:[]}]}]}]});
+      we:[{id:900, titel:'N', zu:false, dabei:[1,2],
+        marken:[{id:'900:stufe:18:1', art:'stufe', stufe:18, pid:'1', t, quelle:'ersatz', text}],
+        tage:[{id:901, label:'1. Tag',
+        orte:[{id:11, name:'A', getraenke:{'1':Array(18).fill('normal:05')}, log:[]}]}]}]});
     const basis = {spieler:[{id:1,name:'Korbi'}], einst:{}, geraete:{}, aktivWe:900,
       aktivTag:901, aktivOrt:11,
       we:[{id:900, titel:'N', zu:false, dabei:[1], tage:[{id:901, label:'1. Tag',
         orte:[{id:11, name:'A', getraenke:{'1':[]}, log:[]}]}]}]};
     const r = zusammenfuehren(basis, bau(200, 'spaet'), bau(100, 'frueh'));
-    return r.we[0].tage[0].marken;
+    return r.we[0].marken;
   });
   if(n.length !== 1) throw new Error('es sind ' + n.length + ' geworden');
   if(n[0].text !== 'frueh') throw new Error('die spätere hat gewonnen: ' + n[0].text);
@@ -396,14 +545,17 @@ await schritt('Zwei Personen an derselben Stufe bleiben zwei Marken', async () =
     const bau = pid => ({
       spieler:[{id:1,name:'Korbi'},{id:2,name:'Fifu'}], einst:{}, geraete:{},
       aktivWe:900, aktivTag:901, aktivOrt:11,
-      we:[{id:900, titel:'N', zu:false, dabei:[1,2], tage:[{id:901, label:'1. Tag',
-        marken:[{id:'901:10:' + pid, stufe:10, pid, t:100, quelle:'ersatz', text:'x'}],
-        orte:[{id:11, name:'A', getraenke:{'1':[], '2':[]}, log:[]}]}]}]});
+      we:[{id:900, titel:'N', zu:false, dabei:[1,2],
+        marken:[{id:'900:stufe:18:' + pid, art:'stufe', stufe:18, pid, t:100,
+                 quelle:'ersatz', text:'x'}],
+        tage:[{id:901, label:'1. Tag', orte:[{id:11, name:'A',
+          getraenke:{'1':Array(18).fill('normal:05'), '2':Array(18).fill('normal:05')},
+          log:[]}]}]}]});
     const basis = {spieler:[{id:1,name:'Korbi'}], einst:{}, geraete:{}, aktivWe:900,
       aktivTag:901, aktivOrt:11,
       we:[{id:900, titel:'N', zu:false, dabei:[1], tage:[{id:901, label:'1. Tag',
         orte:[{id:11, name:'A', getraenke:{'1':[], '2':[]}, log:[]}]}]}]};
-    return zusammenfuehren(basis, bau('1'), bau('2')).we[0].tage[0].marken.map(m => m.id);
+    return zusammenfuehren(basis, bau('1'), bau('2')).we[0].marken.map(m => m.id);
   });
   if(n.length !== 2) throw new Error('es sind ' + n.length + ': ' + n.join(', '));
   return n.join(' + ');
@@ -413,14 +565,15 @@ await schritt('Bei gleicher Zeit gewinnt der Text von der API', async () => {
   const n = await p.evaluate(() => {
     const bau = quelle => ({
       spieler:[{id:1,name:'Korbi'}], einst:{}, geraete:{}, aktivWe:900, aktivTag:901, aktivOrt:11,
-      we:[{id:900, titel:'N', zu:false, dabei:[1], tage:[{id:901, label:'1. Tag',
-        marken:[{id:'901:10:1', stufe:10, pid:'1', t:5, quelle, text:quelle}],
-        orte:[{id:11, name:'A', getraenke:{'1':[]}, log:[]}]}]}]});
+      we:[{id:900, titel:'N', zu:false, dabei:[1],
+        marken:[{id:'900:stufe:18:1', art:'stufe', stufe:18, pid:'1', t:5, quelle, text:quelle}],
+        tage:[{id:901, label:'1. Tag',
+        orte:[{id:11, name:'A', getraenke:{'1':Array(18).fill('normal:05')}, log:[]}]}]}]});
     const basis = {spieler:[{id:1,name:'Korbi'}], einst:{}, geraete:{}, aktivWe:900,
       aktivTag:901, aktivOrt:11,
       we:[{id:900, titel:'N', zu:false, dabei:[1], tage:[{id:901, label:'1. Tag',
         orte:[{id:11, name:'A', getraenke:{'1':[]}, log:[]}]}]}]};
-    return zusammenfuehren(basis, bau('ersatz'), bau('ki')).we[0].tage[0].marken;
+    return zusammenfuehren(basis, bau('ersatz'), bau('ki')).we[0].marken;
   });
   if(n.length !== 1) throw new Error('es sind ' + n.length);
   if(n[0].quelle !== 'ki') throw new Error('der Ersatztext hat gewonnen');
@@ -428,7 +581,7 @@ await schritt('Bei gleicher Zeit gewinnt der Text von der API', async () => {
 
 console.log('\n══ Beim Abschließen fällt der Text weg, die Marke bleibt ══');
 
-await aufbau({be:{'1':10, '2':2, '3':1, '4':0}});
+await aufbau({be:{'1':18, '2':12, '3':11, '4':10}});
 await p.waitForTimeout(200);
 await schritt('Abschließen räumt den Text weg', async () => {
   await p.evaluate(() => { markenPruefen(); state.we[0].zu = true;
@@ -436,7 +589,7 @@ await schritt('Abschließen räumt den Text weg', async () => {
   const m = await marken();
   if(m.length !== 1) throw new Error('die Marke ist weg');
   if(m[0].text || m[0].kopf) throw new Error('der Text steht noch da');
-  if(m[0].stufe !== 10 || String(m[0].pid) !== '1') throw new Error('Marke beschädigt');
+  if(m[0].stufe !== 18 || String(m[0].pid) !== '1') throw new Error('Marke beschädigt');
   return 'Stufe und Person bleiben';
 });
 
@@ -448,14 +601,22 @@ await schritt('Ein abgeschlossenes Wochenende zeigt keine Urkunde mehr', async (
 
 console.log('\n══ Kleinkram ══');
 
-await aufbau({be:{'1':9, '2':2, '3':1, '4':0}, name:'Kor<b>i'});
+/* Über die Mängelanzeige geprüft: Dort steht der Name in der Überschrift *und* im
+   Text, das ist die schärfere Probe als eine Stufe, die nur den Text füllt. */
+await aufbau({be:{'1':6, '2':12, '3':11, '4':10}, name:'Kor<b>i'});
 await p.waitForTimeout(200);
 await schritt('Ein Name mit spitzen Klammern wird maskiert', async () => {
-  await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
+  await p.evaluate(() => { markenPruefen(); zeichnen(); });
   await p.waitForTimeout(150);
-  const roh = await p.evaluate(() => document.querySelector('.u-blende').innerHTML);
-  if(/Kor<b>i/.test(roh)) throw new Error('unmaskiert im HTML');
-  if(!/Kor&lt;b&gt;i/.test(roh)) throw new Error('Name fehlt ganz');
+  const e = await p.evaluate(() => {
+    const x = document.querySelector('.u-blende');
+    return x ? {roh:x.innerHTML, kl:x.className} : null;
+  });
+  if(!e) throw new Error('keine Blende');
+  if(!/u-mangel/.test(e.kl)) throw new Error('es kam keine Mängelanzeige: ' + e.kl);
+  if(/Kor<b>i/.test(e.roh)) throw new Error('unmaskiert im HTML');
+  if(!/Kor&lt;b&gt;i/.test(e.roh)) throw new Error('Name fehlt ganz');
+  return 'in Überschrift und Text';
 });
 
 await schritt('Jede data-tu-Aktion hat einen Handler', async () => {
@@ -484,7 +645,7 @@ await schritt('Das Wörterbuch hat zu jedem Wort Beispiele', async () => {
 await schritt('Die Mundart-Zitate stehen wörtlich da, auch in den Ersatztexten', async () => {
   const x = await p.evaluate(() => {
     const woerter = SLANG.map(s => s.w + ' ' + s.b + ' ' + (s.bsp || []).join(' ')).join(' | ');
-    const texte = MARKEN.map(s => URKUNDE_ERSATZ[s]
+    const texte = Object.keys(URKUNDE_ERSATZ).map(a => URKUNDE_ERSATZ[a]
       .map(v => (v.kopf || '') + ' ' + v.text).join(' ')).join(' ');
     return {woerter, texte};
   });
@@ -586,32 +747,66 @@ await schritt('„Ich bleib beim Arschloch" zielt auf eine Gewohnheit, nicht auf
   return 'Gewohnheit statt Mensch';
 });
 
-await schritt('Zu jeder Stufe gibt es mehrere Ersatztexte', async () => {
-  const schlecht = await p.evaluate(() => MARKEN.filter(s =>
-    !(URKUNDE_ERSATZ[s] || []).length));
-  if(schlecht.length) throw new Error('keine Texte bei Stufe ' + schlecht.join(', '));
-  const n = await p.evaluate(() => MARKEN.reduce((s,x) => s + URKUNDE_ERSATZ[x].length, 0));
+/* Zu jeder Art, die es gibt, muss es auch Texte geben – sonst steht am Abend eine
+   leere Urkunde da, und zwar genau dann, wenn kein Netz ist. */
+await schritt('Zu jeder Art gibt es mehrere Ersatztexte', async () => {
+  const schlecht = await p.evaluate(() =>
+    ['mangel', ...MARKEN_STUFEN].filter(a => ((URKUNDE_ERSATZ[a] || []).length) < 2));
+  if(schlecht.length) throw new Error('zu wenige Texte bei: ' + schlecht.join(', '));
+  const n = await p.evaluate(() => Object.keys(URKUNDE_ERSATZ)
+    .reduce((s,a) => s + URKUNDE_ERSATZ[a].length, 0));
   return n + ' Ersatztexte';
 });
 
-/* Die Stufe 10 ist die einzige mit einer Überschrift – die Eilmeldung braucht eine. */
-await schritt('Nur Stufe 10 bringt Überschriften mit', async () => {
+/* Die Mängelanzeige ist die einzige mit einer Überschrift – die Eilmeldung braucht eine,
+   bei den Stufen steht die Zahl groß darüber und ein Kopf sägte dasselbe ein zweites Mal. */
+await schritt('Nur die Mängelanzeige bringt Überschriften mit', async () => {
   const x = await p.evaluate(() => ({
-    zehn: URKUNDE_ERSATZ[10].every(v => !!v.kopf),
-    rest: MARKEN.filter(s => s !== 10).some(s => URKUNDE_ERSATZ[s].some(v => v.kopf))
+    mangel: URKUNDE_ERSATZ.mangel.every(v => !!v.kopf),
+    rest: MARKEN_STUFEN.some(st => URKUNDE_ERSATZ[st].some(v => v.kopf)),
+    liste: [...MARKE_MIT_KOPF]
   }));
-  if(!x.zehn) throw new Error('bei der 10 fehlt eine Überschrift');
+  if(!x.mangel) throw new Error('bei der Mängelanzeige fehlt eine Überschrift');
   if(x.rest) throw new Error('18 oder 25 bringt eine Überschrift mit, die niemand zeigt');
+  if(x.liste.join(',') !== 'mangel')
+    throw new Error('MARKE_MIT_KOPF und die Texte laufen auseinander: ' + x.liste.join(','));
+  return 'nur mangel';
+});
+
+/* Der Stand der Person gehört in den Text: „sechs von zehn" ist der Vorwurf. Ohne die
+   Zahl bleibt eine Beschimpfung ohne Anlass übrig. */
+await schritt('Die Mängeltexte nennen den Stand', async () => {
+  const ohne = await p.evaluate(() =>
+    URKUNDE_ERSATZ.mangel.filter(v => v.text.indexOf('{be}') < 0).length);
+  if(ohne) throw new Error(ohne + ' Mängeltexte nennen den Stand nicht');
+  return 'alle drei';
 });
 
 await schritt('Die Anweisung an die API trägt Slang, Auftrag und Nachrichtenbezug', async () => {
-  const t = await p.evaluate(() => urkundeAnweisung(state.we[0].tage[0],
-    {id:'901:25:1', pid:'1', stufe:25, be:25, ort:'Augustiner', wendung:'Peter'}));
+  const t = await p.evaluate(() => urkundeAnweisung(state.we[0],
+    {id:'900:stufe:25:1', art:'stufe', pid:'1', stufe:25, be:25, ort:'Augustiner',
+     tag:'1. Tag', wendung:'Peter'}));
   ['Peter', 'Bierpetereinheiten', 'Ehrenurkunde', 'Nachricht', 'JSON',
    'letzten', 'Augustiner']
     .forEach(w => { if(t.indexOf(w) < 0) throw new Error('„' + w + '" fehlt'); });
   if(/\{name\}/.test(t)) throw new Error('Platzhalter in der Anweisung');
-  if(!/hat heute die Marke/.test(t)) throw new Error('Anlass fehlt in der Anrede');
+  if(!/an diesem Wochenende die Marke/.test(t)) throw new Error('Anlass fehlt in der Anrede');
+  return t.length + ' Zeichen';
+});
+
+/* Der Spott gilt der Bilanz. Das ist keine Zierde: Das Blatt trägt einen Namen und wird
+   weitergeschickt, und ohne den Satz entscheidet der Zufall, wohin die groben Wendungen
+   zeigen. */
+await schritt('Die Mängel-Anweisung richtet den Spott auf die Bilanz', async () => {
+  const t = await p.evaluate(() => urkundeAnweisung(state.we[0],
+    {id:'900:mangel:10:1', art:'mangel', pid:'1', stufe:10, be:6, ort:'Augustiner',
+     tag:'1. Tag', wendung:'Peter'}));
+  ['Mängelanzeige', 'Bilanz', 'nie dem Menschen', 'Nachricht', 'JSON']
+    .forEach(w => { if(t.indexOf(w) < 0) throw new Error('„' + w + '" fehlt'); });
+  if(!/nicht hat|nicht\./.test(t)) throw new Error('der umgedrehte Anlass fehlt');
+  if(!/"kopf"/.test(t)) throw new Error('die Überschrift wird nicht verlangt');
+  if(/hat an diesem Wochenende die Marke von 10 Biereinheiten gerissen/.test(t))
+    throw new Error('die Mängelanzeige gratuliert');
   return t.length + ' Zeichen';
 });
 
@@ -647,8 +842,8 @@ await schritt('Der Aufruf bringt das Websuche-Werkzeug mit', async () => {
 /* Wetter ist der billigste Aufhänger, den eine Nachricht hergibt, und beim zweiten Mal
    langweilt er. Steht das Verbot nicht mehr drin, merkt es sonst niemand. */
 await schritt('Die Anweisung schließt Wetter und Trauriges aus', async () => {
-  const t = await p.evaluate(() => urkundeAnweisung(state.we[0].tage[0],
-    {id:'901:10:1', pid:'1', stufe:10, be:10, ort:'Augustiner'}));
+  const t = await p.evaluate(() => urkundeAnweisung(state.we[0],
+    {id:'900:stufe:18:1', art:'stufe', pid:'1', stufe:18, be:18, ort:'Augustiner'}));
   ['Wetter', 'Hitzerekord', 'Temperatur', 'Unglücke', 'Kriege']
     .forEach(w => { if(t.indexOf(w) < 0) throw new Error('„' + w + '" steht nicht im Verbot'); });
   return 'beides ausgeschlossen';
@@ -753,13 +948,13 @@ console.log('\n══ Jede Wendung nur einmal je Wochenende ══');
    im selben Durchlauf über die Schwelle, die Aufrufe laufen gleichzeitig los, und eine
    Ausschlussliste im Prompt käme für keinen davon rechtzeitig. Deshalb sucht die App aus
    und reserviert sofort. */
-await aufbau({be:{'1':9, '2':9, '3':9, '4':3}});
+await aufbau({be:{'1':17, '2':17, '3':17, '4':12}});
 await p.waitForTimeout(200);
 
 await schritt('Eine Runde für alle vergibt drei verschiedene Wendungen', async () => {
   await p.evaluate(() => tu.runde());
   const w = await p.evaluate(() =>
-    (state.we[0].tage[0].marken || []).map(m => m.wendung));
+    (state.we[0].marken || []).map(m => m.wendung));
   if(w.length !== 3) throw new Error('es sind ' + w.length + ' Marken');
   if(w.some(x => !x)) throw new Error('eine Marke ohne Wendung: ' + JSON.stringify(w));
   if(new Set(w).size !== 3) throw new Error('doppelt vergeben: ' + w.join(' | '));
@@ -769,14 +964,14 @@ await schritt('Eine Runde für alle vergibt drei verschiedene Wendungen', async 
 await schritt('Zuerst sind die Kern-Wendungen dran', async () => {
   const schlecht = await p.evaluate(() => {
     const kern = SLANG.filter(s => s.kern).map(s => s.w);
-    return (state.we[0].tage[0].marken || []).map(m => m.wendung)
+    return (state.we[0].marken || []).map(m => m.wendung)
       .filter(w => kern.indexOf(w) < 0);
   });
   if(schlecht.length) throw new Error('aus dem Fundus statt dem Kern: ' + schlecht.join(', '));
   return 'alle drei aus dem Kern';
 });
 
-/* Zwölf Marken an einem Wochenende — vier Leute über alle drei Stufen. Keine zweimal. */
+/* Acht Marken an einem Wochenende — vier Leute über beide Stufen. Keine zweimal. */
 await schritt('Auch über alle Stufen hinweg wiederholt sich keine', async () => {
   const w = await p.evaluate(() => {
     const tg = state.we[0].tage[0];
@@ -784,9 +979,9 @@ await schritt('Auch über alle Stufen hinweg wiederholt sich keine', async () =>
       tg.orte[1].getraenke[id] = Array(25).fill('normal:05');
     });
     markenPruefen();
-    return (tg.marken || []).map(m => m.wendung);
+    return (state.we[0].marken || []).map(m => m.wendung);
   });
-  if(w.length < 12) throw new Error('nur ' + w.length + ' Marken');
+  if(w.length < 8) throw new Error('nur ' + w.length + ' Marken');
   if(w.some(x => !x)) throw new Error('eine Marke ohne Wendung');
   if(new Set(w).size !== w.length)
     throw new Error(w.length + ' Marken, aber nur ' + new Set(w).size + ' Wendungen');
@@ -797,7 +992,7 @@ await schritt('Beim Abschließen fällt die Wendung mit dem Text weg', async () 
   const x = await p.evaluate(() => {
     state.we[0].zu = true;
     migrieren(state.we);
-    const m = state.we[0].tage[0].marken[0];
+    const m = state.we[0].marken[0];
     return {text:m.text, wendung:m.wendung, stufe:m.stufe, pid:m.pid};
   });
   if(x.text !== undefined) throw new Error('der Text steht noch da');

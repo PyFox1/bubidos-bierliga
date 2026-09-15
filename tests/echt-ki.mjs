@@ -9,7 +9,10 @@
    Läuft absichtlich nicht in der normalen Runde mit: kostet Geld und braucht Netz.
 
    Aufruf:   ANTHROPIC_API_KEY=sk-ant-… node tests/echt-ki.mjs        (25 – drei Aufrufe)
-             ANTHROPIC_API_KEY=sk-ant-… node tests/echt-ki.mjs 10     (nur einer)
+             ANTHROPIC_API_KEY=sk-ant-… node tests/echt-ki.mjs 18     (nur zwei)
+   Der Aufbau ist so gestellt, dass beide Arten vorkommen: Korbi reißt die Stufe(n),
+   und Sperry bleibt als Einziger unter der Zehn – dessen Mängelanzeige zeigt, ob der
+   Spott dort wirklich auf die Bilanz zielt und nicht auf den Menschen.
    Ergebnis: tests/bilder/echt-*.png und der Wortlaut auf der Konsole.
 
    Der Schlüssel wird nur an die API geschickt, nirgends geloggt und nirgends abgelegt.
@@ -65,7 +68,7 @@ await p.evaluate(v => {
     tage:[{id:901, label:'1. Tag', orte:[
       {id:10, name:'Zum Ochsen', getraenke:{'1':[], '2':[], '3':[]}, log:[]},
       {id:11, name:'Augustiner',
-       getraenke:{'1':bier(v.stufe - 1), '2':bier(6), '3':bier(4)}, log:[]}]}]}];
+       getraenke:{'1':bier(v.stufe - 1), '2':bier(12), '3':bier(6)}, log:[]}]}]}];
   state.aktivWe = 900; state.aktivTag = 901; state.aktivOrt = 11;
   state.einst = {k:40, kiSchluessel:v.k};
   ansicht = null; nachfrage = null; pinLoeschen(); zeichnen();
@@ -73,27 +76,29 @@ await p.evaluate(v => {
 await p.waitForTimeout(300);
 
 console.log('\n════ Was an die API geht ════\n');
-console.log(await p.evaluate(s => urkundeAnweisung(state.we[0].tage[0],
-  {id:'901:' + s + ':1', stufe:s, pid:'1', be:s, ort:'Augustiner'}), STUFE));
+console.log(await p.evaluate(s => urkundeAnweisung(state.we[0],
+  {id:'900:stufe:' + s + ':1', art:'stufe', stufe:s, pid:'1', be:s,
+   ort:'Augustiner', tag:'1. Tag', wendung:wendungWaehlen()}), STUFE));
 
-/* Ein Strich auf Stufe 25 reißt auch die 10 und die 18 – seit jeder seine eigene Urkunde
-   bekommt, sind das drei Marken und drei Aufrufe. Das kostet dreimal, zeigt dafür aber
-   genau das, worauf es ankommt: drei Texte, drei verschiedene Nachrichtenbezüge. Wer nur
-   einen zahlen will, ruft mit `10` auf. */
-const erwartet = [10, 18, 25].filter(s => s <= STUFE);
-console.log('\n════ Aufruf läuft (' + erwartet.length + ' Urkunde'
-  + (erwartet.length > 1 ? 'n, also ' + erwartet.length + ' Aufrufe' : '') + ') ════');
+/* Ein Strich auf Stufe 25 reißt auch die 18 – seit jeder seine eigene Urkunde bekommt,
+   ist das je eine Marke und je ein Aufruf. Dazu kommt Sperrys Mängelanzeige, die im
+   selben Durchlauf fällt. Das kostet mehrfach, zeigt dafür genau das, worauf es
+   ankommt: mehrere Texte, verschiedene Nachrichtenbezüge, beide Arten. */
+const erwartet = [18, 25].filter(s => s <= STUFE).length + 1;   // + die Mängelanzeige
+console.log('\n════ Aufruf läuft (' + erwartet + ' Blatt'
+  + (erwartet > 1 ? ', also ' + erwartet + ' Aufrufe' : '') + ') ════');
 const start = Date.now();
 await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
 
 let alle = [];
 for(let i = 0; i < 60; i++){
   await p.waitForTimeout(1500);
-  alle = await p.evaluate(() => (state.we[0].tage[0].marken || [])
+  alle = await p.evaluate(() => (state.we[0].marken || [])
     .slice().sort((a,b) => a.stufe - b.stufe)
-    .map(x => ({stufe:x.stufe, quelle:x.quelle, text:x.text, kopf:x.kopf,
+    .map(x => ({art:x.art, stufe:x.stufe, pid:x.pid, quelle:x.quelle, text:x.text,
+                kopf:x.kopf, bezug:x.bezug, wendung:x.wendung,
                 laeuft:urkundeLaeuft.has(x.id)})));
-  if(alle.length >= erwartet.length && alle.every(x => !x.laeuft)) break;
+  if(alle.length >= erwartet && alle.every(x => !x.laeuft)) break;
   process.stdout.write('.');
 }
 const dauer = Math.round((Date.now() - start)/100)/10;
@@ -102,7 +107,8 @@ console.log('\n\n════ Was zurückkam (nach ' + dauer + ' s) ════
 if(!alle.length){ console.log('\nGar keine Marke – da stimmt etwas anderes nicht.'); }
 const wetter = /wetter|hitze|regen|unwetter|grad celsius|temperatur|sonnensch|schnee|sturm/i;
 alle.forEach(m => {
-  console.log('\n──── Stufe ' + m.stufe + ' ────');
+  console.log('\n──── ' + (m.art === 'mangel'
+    ? 'Mängelanzeige (' + m.stufe + ' verfehlt)' : 'Stufe ' + m.stufe) + ' ────');
   console.log('Quelle:  ' + m.quelle + (m.quelle === 'ki'
     ? '   (von der API)' : '   ← ERSATZTEXT, der Aufruf ist nicht durchgekommen'));
   if(m.kopf) console.log('\nÜberschrift:\n  ' + m.kopf);
@@ -118,6 +124,7 @@ alle.forEach(m => {
      Das Modell muss sie in `bezug` benennen — fehlt der, hat es sie weggelassen, und
      genau das ist am Tisch aufgefallen, obwohl der Wortschatz saß. */
   console.log('  Bezug:  ' + (m.bezug || '← KEINER, die halbe Pointe fehlt'));
+  console.log('  Wendung: ' + (m.wendung || '← keine zugeteilt'));
 });
 
 /* Der eigentliche Zweck des Skripts: Kam überhaupt etwas von der API, oder hat sich der
@@ -132,15 +139,27 @@ console.log(mitBezug === alle.length && mitBezug
   ? '  Alle ' + mitBezug + ' haben einen Nachrichtenbezug.'
   : '  Nur ' + mitBezug + ' von ' + alle.length + ' haben einen Nachrichtenbezug.');
 
-const datei = ORDNER + 'echt-' + STUFE + '.png';
-await p.evaluate(async s => {
-  const tg = state.we[0].tage[0];
-  const c = await urkundeBild(tg.marken.find(x => x.stufe === s), tg, '1');
-  document.body.innerHTML = '<img id="ub" style="width:540px;display:block" src="'
-    + c.toDataURL('image/png') + '">';
-}, STUFE);
-await p.waitForTimeout(500);
-await p.locator('#ub').screenshot({path: datei});
-console.log('\nBild: ' + datei + '\n');
+/* Zwei Bilder: die Urkunde und der Beleg. Der Unterschied liegt in der Farbe und der
+   Kopfzeile, und den sieht man nur nebeneinander. */
+for(const [kurz, suche] of [['' + STUFE, x => x.art === 'stufe' && x.stufe === STUFE],
+                            ['mangel',  x => x.art === 'mangel']]){
+  const da = await p.evaluate(s => {
+    const f = new Function('x', 'return ' + s);
+    return (state.we[0].marken || []).some(f);
+  }, suche.toString().replace(/^[^=]*=>\s*/, ''));
+  if(!da){ console.log('\n(kein Blatt für ' + kurz + ')'); continue; }
+  const datei = ORDNER + 'echt-' + kurz + '.png';
+  await p.evaluate(async s => {
+    const f = new Function('x', 'return ' + s);
+    const we = state.we[0];
+    const c = await urkundeBild(we.marken.find(f), we, we.marken.find(f).pid);
+    document.body.innerHTML = '<img id="ub" style="width:540px;display:block" src="'
+      + c.toDataURL('image/png') + '">';
+  }, suche.toString().replace(/^[^=]*=>\s*/, ''));
+  await p.waitForTimeout(500);
+  await p.locator('#ub').screenshot({path: datei});
+  console.log('\nBild: ' + datei);
+}
+console.log('');
 
 await b.close(); srv.close();
