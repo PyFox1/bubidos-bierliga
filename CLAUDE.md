@@ -623,6 +623,24 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
     weit gekommen ist, drückt den Knopf. Die anderen beiden tragen `urkundeHintergrund`, nicht
     `urkundeWeg`: Das Muster `…Hintergrund` lässt der globale Klick-Empfänger nur durch, wenn
     wirklich *daneben* getippt wurde. Sonst verschwände die Urkunde beim Lesen.
+  - **Eine Urkunde muss aussehen wie eine Urkunde** (G54). Der Fließtext stand
+    linksbündig und in der Grundschrift mitten in einer sonst durchgehend mittigen
+    Karte — darüber Label, Zahl und Name gesetzt, darunter ein Absatz wie aus einer
+    E-Mail. Drei Dinge machen daraus ein Blatt:
+    **Die Formel** (`urkundeFormel()`) über dem Text — „Hiermit wird bescheinigt“,
+    bei der 25 „Urkundlich bestätigt wird“, beim Führungswechsel „Hiermit wird
+    festgestellt“, bei der Mängelanzeige „Es wird beanstandet“. Ohne sie ist das ein
+    Zettel mit einer Zahl darauf; mit ihr sagt das Blatt nebenbei, was für eins es ist.
+    **Der Text mittig und kursiv**, mit einem Maß von 30em, damit er nicht über die
+    ganze Karte läuft.
+    **Der Fuß** (`urkundeFuss()`) mit Datum, Uhrzeit, Wochenende, Tag und Location. Der
+    stand bis dahin **nur auf dem Bild** zum Aufheben — am Schirm fehlte damit genau das,
+    was eine Urkunde von einem Spruch unterscheidet.
+    Das Bild ist mitgezogen: dieselbe Formel, derselbe mittige Kursivsatz. Sonst wäre das
+    Gesicherte ein anderes Blatt als das gezeigte.
+    **Die Eilmeldungen bleiben ausgenommen.** Mängelanzeige und Meldung an die Runde sind
+    keine Urkunden, sondern Meldungen — die bleiben linksbündig und ohne Formel. Eine
+    mittige, kursive Eilmeldung wäre dieselbe Verwechslung in die andere Richtung.
   - **Der Text nimmt Bezug auf eine echte Nachricht.** Dafür läuft der API-Aufruf mit dem
     Websuche-Werkzeug; das Modell weiß von sich aus nicht, was in der Zeitung stand. Die Suche
     läuft serverseitig, ein Aufruf genügt also — keine Werkzeugschleife. Sie muss **nicht von

@@ -530,7 +530,18 @@ table.rechnung td.schlecht{color:#E09084}
   color:var(--tinte);border-radius:6px;box-shadow:0 18px 50px rgba(0,0,0,.55)}
 .u-karte .raute{height:8px}
 .u-karte-in{padding:22px 22px 20px;text-align:center}
-.u-karte .u-text{text-align:left}
+/* Der Fließtext stand links und in der Grundschrift mitten in einer sonst durchgehend
+   mittigen Karte – über ihm Label, Zahl und Name gesetzt, und dann ein Absatz wie aus
+   einer E-Mail. Jetzt steht er mittig und kursiv, wie die Begründung auf einer Urkunde,
+   mit einem Maß, das nicht über die halbe Karte läuft. */
+.u-karte .u-text, .u-ehre .u-text{text-align:center;font-style:italic;
+  font-size:15.5px;line-height:1.62;max-width:30em;margin:0 auto}
+.u-formel{font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;
+  color:var(--tinte-weich);text-transform:uppercase;margin:13px 0 10px}
+/* Wann und wo – die Angaben, die eine Urkunde von einem Spruch unterscheiden. */
+.u-fuss{margin-top:17px;padding-top:12px;border-top:1px solid rgba(139,133,119,.45);
+  display:flex;flex-direction:column;gap:3px;font-family:var(--mono);font-size:9.5px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--tinte-weich);line-height:1.5}
 .u-karte .u-knopf{background:var(--tinte);color:var(--deckel);border:none;margin-top:18px;
   padding:14px;font-family:var(--display);font-size:17px;text-transform:uppercase;
   letter-spacing:.04em}
@@ -551,7 +562,9 @@ table.rechnung td.schlecht{color:#E09084}
 .u-ehre .u-einheit{margin:8px 0 0}
 .u-ehre .u-name{font-size:40px;margin:14px 0 0}
 .u-linie{width:56px;height:2px;background:var(--malz);margin:13px auto 0}
-.u-ehre .u-text{text-align:left;font-size:15px;line-height:1.55;margin:15px 0 0}
+.u-ehre .u-formel{color:var(--malz)}
+.u-ehre .u-text{font-size:16px;margin-top:2px}
+.u-ehre .u-fuss{border-top-color:rgba(184,117,19,.5);align-items:center;text-align:center}
 .u-siegel{width:92px;height:92px;border-radius:50%;background:var(--rot);color:#fff;
   transform:rotate(-13deg);display:grid;place-items:center;text-align:center;
   margin:22px auto 0;position:relative;box-shadow:0 4px 12px rgba(0,0,0,.3)}
@@ -625,7 +638,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-15 07:57 · G53 (GitHub)';
+const FASSUNG = '2026-09-15 08:30 · G54 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -645,6 +658,9 @@ const NOTIZEN = [
      anleitung durchblättert, soll den Witz nicht vorher lesen können. Die Marke merkt sich
      trotzdem alles Nötige im Datenbestand (siehe `tag.marken` weiter oben im Quelltext);
      nur erklärt wird sie nirgends. */
+  {f:'G54', d:'15.09.2026', z:'08:30', punkte:[
+    'Bei der Sache von neulich ist das Blatt jetzt ordentlich gesetzt — mittig, mit '
+    + 'Datum und Ort darunter. Was draufsteht, bleibt eine Überraschung.']},
   {f:'G53', d:'15.09.2026', z:'07:57', punkte:[
     'Bei der Sache von neulich gibt es jetzt mehr zu holen — und mehr zu verlieren. '
     + 'Mehr wird hier nicht verraten.']},
@@ -4752,19 +4768,28 @@ async function urkundeBild(m, we, pid){
   ctx.fillStyle = gold;
   ctx.fillRect(mitte - 46, y, 92, 4);
 
+  /* Dieselbe Formel wie auf dem Schirm – sie sagt, was für ein Blatt das ist. */
+  y += 64;
+  sperr('6px');
+  ctx.fillStyle = weich;
+  ctx.font = '500 21px "DM Mono", ui-monospace, monospace';
+  ctx.fillText(urkundeFormel(m).toUpperCase(), mitte, y);
+  sperr('0px');
+
   /* Der Text ist mal zwei, mal fünf Zeilen lang. Lieber die Schrift kleiner als das
-     Blatt sprengen – der Fuß steht fest unten. */
-  y += 78;
-  ctx.textAlign = 'left';
+     Blatt sprengen – der Fuß steht fest unten. Mittig und kursiv wie auf dem Schirm:
+     linksbündig sah er neben der mittigen Zahl und dem mittigen Namen aus wie
+     hineinkopiert. */
+  y += 74;
   ctx.fillStyle = tinte;
   let gr = 37, zeilen;
   do {
-    ctx.font = gr + 'px Karla, system-ui, sans-serif';
+    ctx.font = 'italic ' + gr + 'px Karla, system-ui, sans-serif';
     zeilen = bildZeilen(ctx, m.text || '', maxB);
     if(zeilen.length <= 6) break;
     gr -= 3;
   } while(gr >= 26);
-  zeilen.forEach(z => { ctx.fillText(z, rand, y); y += Math.round(gr*1.45); });
+  zeilen.forEach(z => { ctx.fillText(z, mitte, y); y += Math.round(gr*1.45); });
 
   if(ehre){
     const sx = BILD_B - 218, sy = BILD_H - 330;
@@ -4834,8 +4859,31 @@ async function urkundeBildTeilen(m, we, pid){
 
 /* Drei Stufen, drei Formen. Die 25 lässt sich bewusst nicht durch einen Tipp daneben
    wegwischen – wer so weit gekommen ist, darf den Knopf drücken. */
+/* Die Zeile über dem Text. Eine Urkunde ohne „Hiermit wird bescheinigt“ ist ein Zettel
+   mit einer Zahl darauf – das ist die Formel, die aus beidem eine Urkunde macht. Und sie
+   sagt nebenbei, was für ein Blatt man in der Hand hält. */
+function urkundeFormel(m){
+  if(m.art === 'mangel')   return 'Es wird beanstandet';
+  if(m.art === 'fuehrung') return 'Hiermit wird festgestellt';
+  if(m.art === 'stufe' && m.stufe === 25) return 'Urkundlich bestätigt wird';
+  return 'Hiermit wird bescheinigt';
+}
+
+/* Wann und wo. Stand bisher nur auf dem Bild zum Aufheben, nicht auf dem Schirm – dabei
+   ist genau das der Teil, der eine Urkunde von einem Spruch unterscheidet. */
+function urkundeFuss(m, we){
+  const d = new Date(m.t || Date.now());
+  const zwei = n => ('0' + n).slice(-2);
+  const wann = zwei(d.getDate()) + '.' + zwei(d.getMonth()+1) + '.' + d.getFullYear()
+    + ' · ' + zwei(d.getHours()) + ':' + zwei(d.getMinutes());
+  const wo = [(we && we.titel) || '', m.tag || '',
+              m.ortNr ? m.ortNr + '. Location: ' + m.ort : m.ort].filter(Boolean).join(' · ');
+  return '<div class="u-fuss"><span>' + esc(wann) + '</span>'
+    + (wo ? '<span>' + esc(wo) + '</span>' : '') + '</div>';
+}
+
 function ansichtUrkunde(x){
-  const {m} = x;
+  const {m, we} = x;
   const p = state.spieler.find(y => String(y.id) === String(m.pid));
   const name = p ? p.name : 'Unbekannt';
   const uhr = new Date(m.t || Date.now());
@@ -4889,7 +4937,10 @@ function ansichtUrkunde(x){
     + '<div class="u-zahl">' + esc(m.zahl || '18') + '</div>'
     + '<div class="u-einheit">' + esc(m.einheit || 'Biereinheiten am Wochenende') + '</div>'
     + '<h2 class="u-name">' + esc(name) + '</h2>'
+    + '<div class="u-linie"></div>'
+    + '<p class="u-formel">' + esc(urkundeFormel(m)) + '</p>'
     + '<p class="u-text">' + esc(m.text) + '</p>'
+    + urkundeFuss(m, we)
     + andenken
     + '<button class="u-knopf" data-tu="urkundeWeg">Zur Kenntnis genommen</button>'
     + '</div><div class="raute"></div></div></div>';
@@ -4905,9 +4956,11 @@ function ansichtUrkunde(x){
     + '<div class="u-einheit">' + esc(m.einheit || 'Biereinheiten am Wochenende') + '</div>'
     + '<h2 class="u-name">' + esc(name) + '</h2>'
     + '<div class="u-linie"></div>'
+    + '<p class="u-formel">' + esc(urkundeFormel(m)) + '</p>'
     + '<p class="u-text">' + esc(m.text) + '</p>'
     + '<div class="u-siegel"><span>Bubidos<br>Ehrensache<br>'
       + uhr.getFullYear() + '</span></div>'
+    + urkundeFuss(m, we)
     + andenken
     + '</div>'
     + '<button class="u-knopf" data-tu="urkundeWeg">Zur Kenntnis genommen</button>'

@@ -725,7 +725,103 @@ await schritt('Die 25 lässt sich nicht mit einem Tipp daneben wegwischen', asyn
   if(da) throw new Error('die Blende reagiert doch auf einen Tipp daneben');
 });
 
+console.log('\n══ Eine Urkunde sieht aus wie eine Urkunde ══');
+
+/* Der Fließtext stand linksbündig und in der Grundschrift mitten in einer sonst
+   durchgehend mittigen Karte – über ihm Label, Zahl und Name gesetzt, darunter ein
+   Absatz wie aus einer E-Mail. Und es fehlte alles, was ein Blatt zur Urkunde macht:
+   die Formel und die Angabe, wann und wo. */
+await aufbau({be:{'1':17, '2':12, '3':5, '4':5}});
+await p.waitForTimeout(200);
+await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
+await p.waitForTimeout(200);
+
+await schritt('Über dem Text steht die Formel', async () => {
+  const t = await p.evaluate(() => {
+    const e = document.querySelector('.u-karte .u-formel');
+    return e ? e.textContent.trim() : null;
+  });
+  if(!t) throw new Error('keine Formel');
+  if(!/Hiermit wird bescheinigt/.test(t)) throw new Error('es steht: ' + t);
+  return t;
+});
+
+await schritt('Der Text steht mittig und kursiv, nicht als Block', async () => {
+  const x = await p.evaluate(() => {
+    const e = document.querySelector('.u-karte .u-text');
+    const s = getComputedStyle(e);
+    return {aus:s.textAlign, stil:s.fontStyle};
+  });
+  if(x.aus !== 'center') throw new Error('Ausrichtung: ' + x.aus);
+  if(x.stil !== 'italic') throw new Error('Schnitt: ' + x.stil);
+  return x.aus + ', ' + x.stil;
+});
+
+/* Datum und Ort standen bisher nur auf dem Bild. Am Schirm fehlte damit genau das,
+   was eine Urkunde von einem Spruch unterscheidet. */
+await schritt('Darunter stehen Datum, Wochenende und Location', async () => {
+  const t = await p.evaluate(() => {
+    const e = document.querySelector('.u-karte .u-fuss');
+    return e ? e.innerText.replace(/\n/g, ' | ') : null;
+  });
+  if(!t) throw new Error('kein Fuß');
+  ['Nockherberg', '1. TAG', 'AUGUSTINER'].forEach(w => {
+    if(t.toUpperCase().indexOf(w.toUpperCase()) < 0)
+      throw new Error('„' + w + '" fehlt in „' + t + '"');
+  });
+  if(!/\d{2}\.\d{2}\.\d{4}/.test(t)) throw new Error('kein Datum: ' + t);
+  if(!/\d{2}:\d{2}/.test(t)) throw new Error('keine Uhrzeit: ' + t);
+  await p.screenshot({path: ORDNER + 'u-form-18.png'});
+  return t.slice(0, 50);
+});
+
+await schritt('Die Ehrenurkunde bekommt ihre eigene Formel', async () => {
+  await aufbau({be:{'1':24, '2':12, '3':5, '4':5}});
+  await p.waitForTimeout(200);
+  await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
+  await p.waitForTimeout(200);
+  await p.evaluate(() => tu.urkundeWeg());
+  await p.waitForTimeout(200);
+  const x = await p.evaluate(() => {
+    const f = document.querySelector('.u-ehre .u-formel');
+    const s = document.querySelector('.u-ehre .u-fuss');
+    return {formel: f && f.textContent.trim(), fuss: !!s};
+  });
+  if(!/Urkundlich bestätigt/.test(x.formel || ''))
+    throw new Error('Formel: ' + x.formel);
+  if(!x.fuss) throw new Error('der Ehrenurkunde fehlt der Fuß');
+  await p.screenshot({path: ORDNER + 'u-form-25.png'});
+  return x.formel;
+});
+
+/* Die Mängelanzeige und die Meldung sind **keine** Urkunden, sondern Eilmeldungen –
+   die bleiben linksbündig und ohne Formel. Eine mittige, kursive Eilmeldung wäre
+   dieselbe Verwechslung in die andere Richtung. */
+await schritt('Die Eilmeldungen bleiben Eilmeldungen', async () => {
+  await aufbau({be:{'1':6, '2':12, '3':11, '4':10}});
+  await p.waitForTimeout(200);
+  await p.evaluate(() => { markenPruefen(); zeichnen(); });
+  await p.waitForTimeout(200);
+  const x = await p.evaluate(() => {
+    const e = document.querySelector('.u-blende');
+    const t = e && e.querySelector('.u-text');
+    return {kl: e && e.className, formel: !!(e && e.querySelector('.u-formel')),
+            aus: t && getComputedStyle(t).textAlign};
+  });
+  if(!/u-mangel/.test(x.kl || '')) throw new Error('Klasse: ' + x.kl);
+  if(x.formel) throw new Error('die Eilmeldung hat eine Urkunden-Formel bekommen');
+  if(x.aus === 'center') throw new Error('die Eilmeldung ist mittig gesetzt');
+  return 'links, ohne Formel';
+});
+
 console.log('\n══ Das Bild zum Aufheben ══');
+
+/* Eigener Aufbau statt Verlass auf den vorigen Abschnitt: Der hat schon einmal seinen
+   Zustand geändert, und dann scheiterte hier etwas, das gar nicht kaputt war. */
+await aufbau({be:{'1':24, '2':12, '3':5, '4':5}});
+await p.waitForTimeout(200);
+await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
+await p.waitForTimeout(200);
 
 await schritt('Es entsteht ein PNG in fester Größe', async () => {
   const r = await p.evaluate(async () => {
