@@ -1280,6 +1280,8 @@ const letzteGabeFuer = (ort, pid) => {
    ganzen Bildschirm. Das erkennt man auch in fortgeschrittener Stunde noch. */
 const MARKEN_STUFEN = [18, 25];
 const MANGEL_STUFE  = 10;
+/* „Ich bleib beim Arschloch": acht Getränke, alles dieselbe Sorte und Größe. */
+const SORTE_ANZAHL  = 8;
 
 /* Der Wortschatz der Runde. Er geht in die Anweisung an die API und in die
    Ersatztexte, damit beide gleich klingen. Erweitern heißt: eine Zeile dazu.
@@ -1495,6 +1497,16 @@ const URKUNDE_ERSATZ = {
      text:'Der Rest ist durch, {name} nicht: {be} von zehn. Bei dieser Bilanz kommt dir '
         + 'der Mock hoch.'}
   ],
+  /* Die Wendung, nach der der Orden heißt, steht hier wörtlich drin – der Ersatztext muss
+     genauso klingen wie einer von der API, sonst hört man am Tisch, ob gerade Netz war. */
+  sorte: [
+    {text:'{n} Getränke, {n} mal dasselbe: {sorte}. Kein Bock auf was Neues, kein Bock auf '
+        + 'die halbe Karte. {name} bleibt beim Arschloch.'},
+    {text:'{sorte}, {sorte}, {sorte}. Und dann noch fünfmal. {name} bleibt beim Arschloch, '
+        + 'und das ist keine Kritik, das ist eine Haltung.'},
+    {text:'{n} mal {sorte}, ohne eine Sekunde zu überlegen. {name} weiß, was er will, und '
+        + 'der Rest der Karte darf ordnungspetergemäß zusehen.'}
+  ],
   18: [
     {text:'Achtzehn Biereinheiten an einem Wochenende, ordnungspetergemäß erfasst und gegen '
         + 'jede Nachprüfung gefeit. {name} zappt in einer Taktung, die andernorts '
@@ -1537,6 +1549,25 @@ const tagLeute = tg => [...new Set((tg.orte || []).flatMap(o => Object.keys(o.ge
 const beAmWe  = (w, pid) => (w.tage || []).reduce((s,t) => s + beAmTag(t, pid), 0);
 const weLeute = w => [...new Set((w.tage || []).flatMap(t => tagLeute(t)))];
 const markeId = (w, art, stufe, pid) => w.id + ':' + art + ':' + stufe + ':' + pid;
+
+/* Alle Getränke der Person am Wochenende, in der Reihenfolge, in der sie eingetragen
+   wurden – Tage und Locations stehen ja schon in dieser Reihenfolge. */
+const getraenkeAmWe = (w, pid) => (w.tage || []).reduce((a,t) =>
+  a.concat((t.orte || []).reduce((b,o) =>
+    b.concat(((o.getraenke || {})[pid]) || []), [])), []);
+
+/* Wer sich acht Getränke lang nicht umentschieden hat. Geprüft werden die **ersten**
+   acht, nicht die letzten acht: Nur so bleibt die Regel nachrechenbar, und nur so
+   nimmt ein späterer Ausreißer die Urkunde nicht wieder weg. Sie gehört ja einem
+   Moment – wer am Wochenende mit acht gleichen anfängt, ist beim Arschloch geblieben,
+   auch wenn er sich das neunte anders überlegt. Ein ↶ auf eines der ersten acht
+   zählt dagegen sehr wohl, und genau das soll es auch. */
+function sorteTreu(w, pid){
+  const g = getraenkeAmWe(w, pid);
+  if(g.length < SORTE_ANZAHL) return null;
+  const acht = g.slice(0, SORTE_ANZAHL);
+  return acht.every(k => k === acht[0]) ? acht[0] : null;
+}
 
 /* Wer die Zehn als Einziger (oder zu zweit) noch nicht hat, während die Mehrheit
    durch ist. Drei Fälle, und nur einer davon gibt eine Mängelanzeige:
@@ -1594,6 +1625,7 @@ function markenAufraeumen(){
     w.marken = w.marken.filter(m => {
       if(m.pid === undefined) return false;
       if(m.art === 'mangel') return mangel.has(String(m.pid));
+      if(m.art === 'sorte')  return sorteTreu(w, m.pid) === m.sorte;
       return beAmWe(w, m.pid) + 1e-9 >= m.stufe;
     });
   });
@@ -1609,7 +1641,7 @@ function markenPruefen(){
   if(!we.marken) we.marken = [];
   const frisch = [];
 
-  const anlegen = (art, stufe, pid, gross, einheit) => {
+  const anlegen = (art, stufe, pid, gross, einheit, extra) => {
     const id = markeId(we, art, stufe, pid);
     if(we.marken.some(m => m.id === id)) return;
     const p = state.spieler.find(x => String(x.id) === String(pid));
@@ -1617,11 +1649,14 @@ function markenPruefen(){
     const be = beAmWe(we, pid);
     const v = ersatzWahl(URKUNDE_ERSATZ[art === 'stufe' ? stufe : art], id);
     const wo = personStand(we, pid);
-    const fuell = t => String(t).replace(/\{name\}/g, name).replace(/\{be\}/g, zahl(be, 1));
-    const m = {id, art, stufe, pid, be: Math.round(be*100)/100, t:Date.now(),
+    const fuell = t => String(t).replace(/\{name\}/g, name)
+      .replace(/\{be\}/g, zahl(be, 1))
+      .replace(/\{sorte\}/g, (extra && extra.sorte) ? nameVon(extra.sorte) : '')
+      .replace(/\{n\}/g, String(stufe));
+    const m = Object.assign({id, art, stufe, pid, be: Math.round(be*100)/100, t:Date.now(),
                quelle:'ersatz', zahl: gross, einheit,
                ort: wo.ort, ortNr: wo.ortNr, tag: (wo.tag && wo.tag.label) || '',
-               text: fuell(v.text)};
+               text: fuell(v.text)}, extra || {});
     if(v.kopf) m.kopf = fuell(v.kopf);
     /* Liegt der Text schon vorbereitet, ist die Marke von Geburt an fertig: Sie geht
        mit demselben Tipp auf, der das Bier eingetragen hat, ohne Aufruf und ohne
@@ -1648,6 +1683,12 @@ function markenPruefen(){
       if(be + 1e-9 < stufe) return;
       anlegen('stufe', stufe, pid, String(stufe), 'Biereinheiten am Wochenende');
     });
+  });
+  /* Acht gleiche hintereinander – die gehören zur Person, nicht zu einer Schwelle. */
+  weLeute(we).forEach(pid => {
+    const k = sorteTreu(we, pid);
+    if(k) anlegen('sorte', SORTE_ANZAHL, pid, String(SORTE_ANZAHL),
+                  'mal ' + nameVon(k) + ', und nichts sonst', {sorte:k});
   });
   /* Die Zehn zählt andersherum: nicht wer sie hat, sondern wer sie als Einziger nicht
      hat. Deshalb steht sie hier und nicht in der Schleife darüber. */
@@ -1747,6 +1788,22 @@ function urkundeVorbereiten(we){
         .then(j => { if(j) urkundeVorrat.set(id, Object.assign(j, {wendung})); })
         .catch(e => kiFehlerMerken((e && e.message) || String(e)));
     });
+
+    /* Dasselbe für die Sortentreue, nur zählt hier nicht BE, sondern Getränke: Wer
+       sieben gleiche hat, ist einen Tipp davon entfernt. Auch hier wartet jemand –
+       es ist sein eigener Tipp, der die Urkunde auslöst. */
+    const g = getraenkeAmWe(we, pid);
+    if(g.length === SORTE_ANZAHL - 1 && g.every(k => k === g[0])){
+      const id = markeId(we, 'sorte', SORTE_ANZAHL, pid);
+      if(!urkundeVorrat.has(id)){
+        const wendung = wendungWaehlen();
+        urkundeVorrat.set(id, {wendung});
+        urkundeTextHolen(we, {id, art:'sorte', stufe:SORTE_ANZAHL, pid, sorte:g[0],
+                              be: beAmWe(we, pid), wendung})
+          .then(j => { if(j) urkundeVorrat.set(id, Object.assign(j, {wendung})); })
+          .catch(e => kiFehlerMerken((e && e.message) || String(e)));
+      }
+    }
   });
 }
 
@@ -2822,6 +2879,11 @@ function urkundeAnweisung(we, m){
     ? 'Anlass: Die Runde hat die Marke von ' + MANGEL_STUFE + ' Biereinheiten hinter '
       + 'sich, ' + wer + ' nicht. In Klammern steht sein Stand. Eine Biereinheit ist '
       + 'eine Halbe Helles.'
+    : m.art === 'sorte'
+    ? 'Anlass: ' + wer + ' hat an diesem Wochenende ' + m.stufe + ' Getränke bestellt — '
+      + 'und ' + m.stufe + ' mal dasselbe: ' + nameVon(m.sorte) + '. Kein einziges Mal '
+      + 'etwas anderes. In Klammern steht sein Stand in Biereinheiten; eine Biereinheit '
+      + 'ist eine Halbe Helles.'
     : 'Anlass: ' + wer + ' hat an diesem Wochenende die Marke von ' + m.stufe
       + ' Biereinheiten gerissen. In Klammern steht der aktuelle Stand. Eine '
       + 'Biereinheit ist eine Halbe Helles.';
@@ -2833,6 +2895,12 @@ function urkundeAnweisung(we, m){
       + 'und genau darüber wird gespottet. Nicht mitleidig und nicht versöhnlich, aber '
       + 'auch nicht verletzend: Das ist ein Blatt unter Freunden, und wer aufholt, ist '
       + 'es wieder los.'
+    : m.art === 'sorte'
+    ? 'Schreib den Fließtext einer Urkunde für Sortentreue. Zahl und Name stehen bereits '
+      + 'groß darüber, zähl sie nicht noch einmal auf. Gefeiert wird die **Sturheit**, nicht '
+      + 'die Menge: Wer weiß, was er will, muss nicht probieren. Das ist ausdrücklich ein '
+      + 'Lob — die Runde hält Treue zur eigenen Bestellung für eine Tugend, nicht für '
+      + 'Fantasielosigkeit.'
     : {
         18:'Schreib den Fließtext einer Urkunde. Zahl und Name stehen bereits groß darüber, '
           + 'zähl sie nicht noch einmal auf.',
@@ -2876,7 +2944,8 @@ function urkundeAnweisung(we, m){
     /* Steht bewusst ganz zuletzt, direkt vor der JSON-Zeile: Der Wortschatz darüber ist
        inzwischen der längste Teil der Anweisung, und was davor stand, ging darin unter. */
     'Und jetzt das, woran der Text hängt: In ihn gehört eine **echte Nachricht**, so '
-      + 'verwoben, dass ' + (m.art === 'mangel' ? 'Rückstand' : 'Trinkleistung')
+      + 'verwoben, dass ' + (m.art === 'mangel' ? 'Rückstand'
+          : m.art === 'sorte' ? 'Sturheit' : 'Trinkleistung')
       + ' und Nachricht sich gegenseitig kommentieren. Ohne '
       + 'die ist der Text nicht fertig. Das ist keine Kür, sondern die halbe Pointe.',
     'Du hast genau eine Suche. Nimm sie für die großen Meldungen dieser Tage — nicht für '
@@ -4674,7 +4743,9 @@ function ansichtUrkunde(x){
     + '<button class="u-knopf" data-tu="urkundeWeg">Zur Kenntnis genommen</button>'
     + '</div></div></div></div>';
 
-  if(m.stufe === 18) return ''
+  /* Die 25 nimmt den ganzen Bildschirm, alles andere ist eine Karte in der Mitte. So
+     herum, damit eine neue Art nicht versehentlich in der Ehrenurkunde landet. */
+  if(!(m.art === 'stufe' && m.stufe === 25)) return ''
     + '<div class="blende u-blende s2" data-tu="urkundeHintergrund">'
     + '<div class="u-karte" role="dialog" aria-label="Urkunde">'
     + '<div class="raute"></div><div class="u-karte-in">'

@@ -41,7 +41,16 @@ const schritt = async (name, fn) => {
 /* Vier Leute, ein laufender Tag, zwei Locations. `v.be` gibt je Person die Vorbelegung. */
 const aufbau = v => p.evaluate(v => {
   localStorage.removeItem('bubidos-urkunden');
-  const bier = k => Array(k).fill('normal:05');
+  /* Ein Alkoholfreies mitten in die ersten acht. Das kostet **keine** BE (0,00), lässt also
+     jede Schwelle unverändert – verhindert aber, dass diese Aufbauten nebenbei die
+     Sortentreue-Urkunde auslösen. Die wird in ihrem eigenen Abschnitt geprüft, und hier
+     geht es um die Stufen.
+     Dass das überhaupt nötig ist, sagt etwas über die Regel: Wer acht Halbe hintereinander
+     tippt, bekommt sie – und genau das tut in dieser Runde jeder, der die Pille nie
+     anfasst. */
+  const bier = k => k > 3
+    ? [...Array(3).fill('normal:05'), 'af:05', ...Array(k - 3).fill('normal:05')]
+    : Array(k).fill('normal:05');
   const g = {};
   Object.keys(v.be).forEach(id => g[id] = bier(v.be[id]));
   state.spieler = [{id:1,name:v.name || 'Korbi'},{id:2,name:'Fifu'},
@@ -193,13 +202,116 @@ await schritt('Sie kommen nacheinander, jede mit einem Namen und einem Knopf', a
   return namen.join(' → ');
 });
 
+console.log('\n══ Ich bleib beim Arschloch: acht mal dasselbe ══');
+
+/* `g` ist die Getränkeliste je Person, damit sich auch Sorten mischen lassen. */
+const sorten = g => p.evaluate(g => {
+  localStorage.removeItem('bubidos-urkunden');
+  urkundeVorrat.clear();
+  state.spieler = Object.keys(g).map(id => ({id:Number(id), name:'P' + id}));
+  state.we = [{id:900, titel:'Nockherberg', datum:'2026-09-10', zu:false,
+    dabei: Object.keys(g).map(Number),
+    tage:[{id:901, label:'1. Tag', orte:[{id:11, name:'Augustiner',
+      getraenke: JSON.parse(JSON.stringify(g)), log:[]}]}]}];
+  state.aktivWe = 900; state.aktivTag = 901; state.aktivOrt = 11;
+  state.einst = {k:40, kiSchluessel:''};
+  ansicht = null; letzteRunde = null; nachfrage = null; pinLoeschen();
+  markenPruefen(); zeichnen();
+  return (state.we[0].marken || []).filter(m => m.art === 'sorte')
+    .map(m => ({pid:String(m.pid), sorte:m.sorte, zahl:m.zahl, einheit:m.einheit,
+                text:m.text, id:m.id}));
+}, g);
+const halbe = n => Array(n).fill('normal:05');
+
+await schritt('Acht gleiche stellen die Urkunde aus', async () => {
+  const m = await sorten({'1':halbe(8), '2':[...halbe(4), 'stark:033', ...halbe(3)],
+                          '3':[...halbe(6), 'normal:10', 'normal:10']});
+  if(m.length !== 1) throw new Error('Urkunden an: ' + m.map(x => x.pid).join(','));
+  if(m[0].pid !== '1') throw new Error('an P' + m[0].pid);
+  if(m[0].id !== '900:sorte:8:1') throw new Error('Kennung: ' + m[0].id);
+  if(m[0].einheit !== 'mal Halbe, und nichts sonst')
+    throw new Error('Einheit: ' + m[0].einheit);
+  if(m[0].text.indexOf('Halbe') < 0) throw new Error('die Sorte fehlt im Text: ' + m[0].text);
+  if(/\{sorte\}|\{n\}|\{name\}/.test(m[0].text)) throw new Error('Platzhalter steht noch drin');
+  return m[0].zahl + '× ' + m[0].sorte;
+});
+
+await schritt('Sieben gleiche und eins daneben geben nichts', async () => {
+  const m = await sorten({'1':[...halbe(7), 'stark:033'], '2':halbe(3), '3':halbe(3)});
+  if(m.length) throw new Error('es kam doch eine');
+  return 'still';
+});
+
+/* Geprüft werden die **ersten** acht. Sonst nähme ein späterer Ausreißer die Urkunde
+   wieder weg – und die gehört einem Moment, nicht dem Endstand. */
+await schritt('Ein Ausreißer nach den ersten acht nimmt sie nicht weg', async () => {
+  const m = await sorten({'1':[...halbe(8), 'stark:033', 'af:05'], '2':halbe(3), '3':halbe(3)});
+  if(m.length !== 1) throw new Error('sie ist weg');
+  return 'bleibt';
+});
+
+/* Ein ↶ auf eines der ersten acht zählt dagegen sehr wohl – dann waren es nie acht. */
+await schritt('Ein Minus auf eines der ersten acht nimmt sie weg', async () => {
+  await sorten({'1':halbe(8), '2':halbe(3), '3':halbe(3)});
+  const n = await p.evaluate(() => {
+    state.we[0].tage[0].orte[0].getraenke['1'] = Array(7).fill('normal:05');
+    markenAufraeumen();
+    return (state.we[0].marken || []).filter(m => m.art === 'sorte').length;
+  });
+  if(n) throw new Error('sie steht noch da');
+  return 'eingezogen';
+});
+
+await schritt('Auf der Maß steht auch Maß', async () => {
+  const m = await sorten({'1':Array(8).fill('normal:10'), '2':halbe(3), '3':halbe(3)});
+  if(m.length !== 1) throw new Error('keine Urkunde');
+  if(m[0].einheit.indexOf('Maß') < 0) throw new Error('Einheit: ' + m[0].einheit);
+  if(m[0].text.indexOf('Maß') < 0) throw new Error('Text: ' + m[0].text);
+  return m[0].einheit;
+});
+
+await schritt('Sie kommt als Karte in der Mitte, nicht als Ehrenurkunde', async () => {
+  await sorten({'1':halbe(8), '2':halbe(3), '3':halbe(3)});
+  const e = await blende();
+  if(!e) throw new Error('keine Blende');
+  if(!/\bs2\b/.test(e.klasse)) throw new Error('Klasse ' + e.klasse);
+  if(/u-mangel/.test(e.klasse)) throw new Error('sieht aus wie eine Mängelanzeige');
+  await p.screenshot({path: ORDNER + 'u-sorte.png'});
+  return 's2';
+});
+
+/* Der Orden heißt nach der Wendung – also muss auch die Anweisung sagen, dass hier die
+   Sturheit gefeiert wird. Ohne den Satz liest das Modell „acht mal dasselbe" als Mangel
+   an Fantasie und schreibt einen Spott, wo ein Lob stehen soll. */
+await schritt('Die Anweisung feiert die Sturheit, nicht die Menge', async () => {
+  const t = await p.evaluate(() => urkundeAnweisung(state.we[0],
+    {id:'900:sorte:8:1', art:'sorte', pid:'1', stufe:8, be:8, sorte:'normal:05',
+     ort:'Augustiner', tag:'1. Tag', wendung:'Ich bleib beim Arschloch'}));
+  ['Sturheit', 'ausdrücklich ein Lob', 'Halbe', 'Nachricht', 'JSON']
+    .forEach(w => { if(t.indexOf(w) < 0) throw new Error('„' + w + '" fehlt'); });
+  if(/"kopf"/.test(t)) throw new Error('es wird eine Überschrift verlangt, die niemand zeigt');
+  return t.length + ' Zeichen';
+});
+
+/* Die Wendung, nach der der Orden heißt, muss in den Ersatztexten wörtlich stehen –
+   sonst hört man am Tisch, ob gerade Netz war. */
+await schritt('Die Ersatztexte zitieren die Wendung wörtlich', async () => {
+  const n = await p.evaluate(() => URKUNDE_ERSATZ.sorte
+    .filter(v => /bleibt? beim Arschloch/.test(v.text)).length);
+  if(n < 2) throw new Error('nur ' + n + ' von dreien zitieren sie');
+  return n + ' von 3';
+});
+
 console.log('\n══ Die Mängelanzeige: wer die Zehn als Einziger nicht hat ══');
 
 /* Eigener Aufbau, weil hier die Gruppengröße mitspielt: Die Regel hängt daran, wie
    viele drunter stehen *und* wie viele drüber. `be` ist die Liste der BE je Person. */
 const runde = be => p.evaluate(be => {
   localStorage.removeItem('bubidos-urkunden');
-  const bier = k => Array(k).fill('normal:05');
+  /* Wie oben: das Alkoholfreie hält die Sortentreue aus diesem Abschnitt heraus. */
+  const bier = k => k > 3
+    ? [...Array(3).fill('normal:05'), 'af:05', ...Array(k - 3).fill('normal:05')]
+    : Array(k).fill('normal:05');
   const g = {};
   state.spieler = be.map((x,i) => ({id:i+1, name:'P' + (i+1)}));
   be.forEach((x,i) => g[String(i+1)] = bier(x));
