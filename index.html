@@ -520,6 +520,10 @@ table.rechnung td.schlecht{color:#E09084}
    als die Überschrift. */
 .u-mangel .u-meld-karte{border-top:3px solid var(--rot)}
 .u-mangel .u-chip{color:var(--rot);border-color:var(--rot)}
+/* Die Meldung an die Runde ist weder Lob noch Tadel – gedämpftes Band statt Rot, damit
+   sie sich neben einer echten Urkunde nicht vordrängt. */
+.u-runde .u-band{background:var(--linie);color:var(--tinte)}
+.u-runde .u-meld-in{padding-top:14px}
 
 .u-blende.s2{place-items:center;padding:16px}
 .u-karte{width:100%;max-width:400px;max-height:96vh;overflow-y:auto;background:var(--deckel);
@@ -621,7 +625,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-15 07:31 · G52 (GitHub)';
+const FASSUNG = '2026-09-15 07:57 · G53 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -641,6 +645,9 @@ const NOTIZEN = [
      anleitung durchblättert, soll den Witz nicht vorher lesen können. Die Marke merkt sich
      trotzdem alles Nötige im Datenbestand (siehe `tag.marken` weiter oben im Quelltext);
      nur erklärt wird sie nirgends. */
+  {f:'G53', d:'15.09.2026', z:'07:57', punkte:[
+    'Bei der Sache von neulich gibt es jetzt mehr zu holen — und mehr zu verlieren. '
+    + 'Mehr wird hier nicht verraten.']},
   {f:'G52', d:'15.09.2026', z:'07:31', punkte:[
     'Bei der Sache von neulich hat sich einiges geändert. Was genau, findet ihr '
     + 'am Wochenende selbst heraus — hier steht es nicht.']},
@@ -972,6 +979,8 @@ function standDaten(){
    hat – das ist spätestens am Ende des Wochenendes vorbei. */
 function abgeschlossenAufraeumen(w){
   (w.tage || []).forEach(t => (t.orte || []).forEach(o => { delete o.log; }));
+  /* Nur ein Merker für den nächsten Durchlauf, nach dem Abschluss ohne Bedeutung. */
+  delete w.fuehrer;
   (w.marken || []).forEach(m => {
     delete m.text; delete m.kopf; delete m.bezug; delete m.wendung;
   });
@@ -1282,6 +1291,12 @@ const MARKEN_STUFEN = [18, 25];
 const MANGEL_STUFE  = 10;
 /* „Ich bleib beim Arschloch": acht Getränke, alles dieselbe Sorte und Größe. */
 const SORTE_ANZAHL  = 8;
+/* Ab hier lohnt ein Führungswechsel eine Urkunde. Darunter ist „vorn“ nur eine Laune
+   des Abends – beim dritten Bier wechselt die Spitze mit jedem Tipp. */
+const FUEHRUNG_MIN  = 8;
+/* Die einzige Meldung, die der ganzen Runde gilt und keiner Person. Sie holt keinen
+   Text von der API – es gibt keinen Namen, auf den sich einer schreiben ließe. */
+const RUNDE_STUFE   = 50;
 
 /* Der Wortschatz der Runde. Er geht in die Anweisung an die API und in die
    Ersatztexte, damit beide gleich klingen. Erweitern heißt: eine Zeile dazu.
@@ -1497,6 +1512,24 @@ const URKUNDE_ERSATZ = {
      text:'Der Rest ist durch, {name} nicht: {be} von zehn. Bei dieser Bilanz kommt dir '
         + 'der Mock hoch.'}
   ],
+  /* Fest, nie von der API: Ohne Namen gibt es niemanden, dem der Text gelten könnte,
+     und ein Nachrichtenbezug wäre hier ein Aufwand ohne Adressaten. */
+  runde: [
+    {text:'Die Runde steht bei {zahl} Biereinheiten. Zusammen, wohlgemerkt. Des sin '
+        + 'Sachen ausm Leeeeeben.'},
+    {text:'{zahl} Biereinheiten auf diesem Tisch. Kleiner Scherz am Rande, aber im Prinzip '
+        + 'isses so: Das war mal ein Feierabend.'},
+    {text:'{zahl} Biereinheiten, ordnungspetergemäß erfasst und auf fünf Schultern '
+        + 'verteilt. Genau so is des, NUR so.'}
+  ],
+  fuehrung: [
+    {text:'{name} hat {ueber} überholt und steht jetzt vorn: {be} Biereinheiten. Dis is er, '
+        + 'dis is der Mann fürs Leben.'},
+    {text:'Die Spitze hat gewechselt. {name} zieht mit {be} Biereinheiten an {ueber} vorbei, '
+        + 'ordnungspetergemäß erfasst und nicht wegzudiskutieren.'},
+    {text:'{ueber} war lange vorn. Jetzt ist {name} vorn, mit {be} Biereinheiten. Genau so '
+        + 'is des, NUR so.'}
+  ],
   /* Die Wendung, nach der der Orden heißt, steht hier wörtlich drin – der Ersatztext muss
      genauso klingen wie einer von der API, sonst hört man am Tisch, ob gerade Netz war. */
   sorte: [
@@ -1587,6 +1620,32 @@ function mangelKandidaten(w){
   return drunter;
 }
 
+/* Was die Runde zusammen weggezappt hat. */
+const beDerRunde = w => weLeute(w).reduce((x,pid) => x + beAmWe(w, pid), 0);
+
+/* Wer gerade allein vorn liegt, und ob das ein Wechsel ist. Schreibt `we.fuehrer` fort,
+   damit der nächste Durchlauf weiß, wer vorher vorn war – anders lässt sich ein *Wechsel*
+   nicht erkennen, denn der Bestand kennt nur den Jetzt-Stand.
+   Drei Bedingungen, und jede hat ihren Grund:
+   - **Alleinführung**, kein Gleichstand: Bei zwei gleichauf hat niemand überholt.
+   - **Es muss vorher jemand anders vorn gewesen sein.** Der erste Führende eines
+     Wochenendes hat niemanden überholt; der Zeiger wird trotzdem gesetzt, still.
+   - **Mindestens `FUEHRUNG_MIN`**, sonst kommt die Urkunde beim dritten Bier, wo die
+     Spitze mit jedem Tipp wechselt. Auch dann wird der Zeiger fortgeschrieben – sonst
+     wäre der erste Wechsel oberhalb der Schwelle kein Wechsel, weil niemand „vorher“ war. */
+function fuehrungPruefen(we){
+  const leute = weLeute(we);
+  if(leute.length < 2) return null;
+  const nach = leute.slice().sort((a,b) => beAmWe(we, b) - beAmWe(we, a));
+  const erst = String(nach[0]), be = beAmWe(we, erst);
+  if(beAmWe(we, nach[1]) + 1e-9 >= be) return null;
+  const vorher = we.fuehrer === undefined || we.fuehrer === null ? null : String(we.fuehrer);
+  we.fuehrer = erst;
+  if(vorher === null || vorher === erst) return null;
+  if(be + 1e-9 < FUEHRUNG_MIN) return null;
+  return {pid:erst, ueber:vorher, be};
+}
+
 /* Wo die Person im Wochenende zuletzt stand – für das Bild zum Aufheben. Rückwärts
    durch die Tage, weil sie am letzten vorkommen sollte, an dem sie vorkommt. */
 function personStand(w, pid){
@@ -1622,10 +1681,14 @@ function markenAufraeumen(){
        dann ist es keine Minderheit mehr und der Vorwurf trägt nicht. Ein Stups, kein
        Urteil: Wer die Zehn noch reißt, ist sie los. */
     const mangel = new Set(mangelKandidaten(w).map(String));
+    const gesamt = beDerRunde(w);
     w.marken = w.marken.filter(m => {
-      if(m.pid === undefined) return false;
+      if(m.art === 'runde') return gesamt + 1e-9 >= m.stufe;
+      if(m.pid === undefined || m.pid === null) return false;
       if(m.art === 'mangel') return mangel.has(String(m.pid));
       if(m.art === 'sorte')  return sorteTreu(w, m.pid) === m.sorte;
+      /* Der Wechsel ist passiert; dass später jemand zurücküberholt, macht ihn nicht
+         ungeschehen. Weg ist er nur, wenn die Striche den Stand nicht mehr hergeben. */
       return beAmWe(w, m.pid) + 1e-9 >= m.stufe;
     });
   });
@@ -1652,6 +1715,10 @@ function markenPruefen(){
     const fuell = t => String(t).replace(/\{name\}/g, name)
       .replace(/\{be\}/g, zahl(be, 1))
       .replace(/\{sorte\}/g, (extra && extra.sorte) ? nameVon(extra.sorte) : '')
+      .replace(/\{ueber\}/g, (() => {
+        const q = state.spieler.find(x => String(x.id) === String(extra && extra.ueber));
+        return q ? q.name : 'dem Rest';
+      })())
       .replace(/\{n\}/g, String(stufe));
     const m = Object.assign({id, art, stufe, pid, be: Math.round(be*100)/100, t:Date.now(),
                quelle:'ersatz', zahl: gross, einheit,
@@ -1684,6 +1751,26 @@ function markenPruefen(){
       anlegen('stufe', stufe, pid, String(stufe), 'Biereinheiten am Wochenende');
     });
   });
+  /* Die Meldung an die Runde. Kein Name, kein Aufruf, kein Bild – deshalb hier von Hand
+     und nicht über `anlegen()`, das um eine Person herum gebaut ist. */
+  const gesamt = beDerRunde(we);
+  if(gesamt + 1e-9 >= RUNDE_STUFE){
+    const id = markeId(we, 'runde', RUNDE_STUFE, '-');
+    if(!we.marken.some(m => m.id === id)){
+      const v = ersatzWahl(URKUNDE_ERSATZ.runde, id);
+      const letzt = (we.tage || [])[(we.tage || []).length - 1];
+      we.marken.push({id, art:'runde', stufe:RUNDE_STUFE, pid:null, t:Date.now(),
+        quelle:'fest', zahl: zahl(gesamt, 0), einheit:'Biereinheiten, die ganze Runde',
+        tag: (letzt && letzt.label) || '',
+        text: v.text.replace(/\{zahl\}/g, zahl(gesamt, 0))});
+    }
+  }
+
+  /* Der Führungswechsel hängt nicht an einer Schwelle der Person, sondern am Feld um sie
+     herum – deshalb eine eigene Prüfung, die nebenbei `we.fuehrer` fortschreibt. */
+  const w = fuehrungPruefen(we);
+  if(w) anlegen('fuehrung', FUEHRUNG_MIN, w.pid, zahl(w.be, 1),
+                'Biereinheiten, und damit vorn', {ueber:w.ueber});
   /* Acht gleiche hintereinander – die gehören zur Person, nicht zu einer Schwelle. */
   weLeute(we).forEach(pid => {
     const k = sorteTreu(we, pid);
@@ -1789,6 +1876,25 @@ function urkundeVorbereiten(we){
         .catch(e => kiFehlerMerken((e && e.message) || String(e)));
     });
 
+    /* Und für den Führungswechsel: Wer nicht vorn liegt, aber weniger als den Vorlauf
+       dahinter, ist einen Tipp davon entfernt. Auch hier wartet jemand – es ist sein
+       eigener Tipp, der ihn nach vorn bringt. */
+    const spitze = weLeute(we).reduce((a,x) =>
+      beAmWe(we, x) > beAmWe(we, a) ? x : a, weLeute(we)[0]);
+    const rueck = beAmWe(we, spitze) - be;
+    if(String(spitze) !== String(pid) && be + URKUNDE_VORLAUF + 1e-9 >= FUEHRUNG_MIN
+       && rueck > 0 && rueck <= URKUNDE_VORLAUF){
+      const id = markeId(we, 'fuehrung', FUEHRUNG_MIN, pid);
+      if(!urkundeVorrat.has(id)){
+        const wendung = wendungWaehlen();
+        urkundeVorrat.set(id, {wendung});
+        urkundeTextHolen(we, {id, art:'fuehrung', stufe:FUEHRUNG_MIN, pid,
+                              ueber:String(spitze), be: beAmWe(we, spitze), wendung})
+          .then(j => { if(j) urkundeVorrat.set(id, Object.assign(j, {wendung})); })
+          .catch(e => kiFehlerMerken((e && e.message) || String(e)));
+      }
+    }
+
     /* Dasselbe für die Sortentreue, nur zählt hier nicht BE, sondern Getränke: Wer
        sieben gleiche hat, ist einen Tipp davon entfernt. Auch hier wartet jemand –
        es ist sein eigener Tipp, der die Urkunde auslöst. */
@@ -1831,7 +1937,8 @@ const URKUNDE_WARTE = 25000;
    zeichnet, sobald sie da ist, und ist durch `KI_FRIST` ohnehin begrenzt. Ein langsamer
    Aufruf schiebt die Marke damit nach hinten, statt sie zweimal zu zeigen. */
 function urkundeReif(m){
-  if(m.quelle === 'ki' || !kiSchluessel()) return true;
+  /* `fest` holt nie einen Text – auf so eine zu warten hieße, ewig zu warten. */
+  if(m.quelle === 'ki' || m.quelle === 'fest' || !kiSchluessel()) return true;
   if(urkundeLaeuft.has(m.id)) return false;
   return Date.now() - (m.t || 0) >= URKUNDE_WARTE;
 }
@@ -2879,6 +2986,13 @@ function urkundeAnweisung(we, m){
     ? 'Anlass: Die Runde hat die Marke von ' + MANGEL_STUFE + ' Biereinheiten hinter '
       + 'sich, ' + wer + ' nicht. In Klammern steht sein Stand. Eine Biereinheit ist '
       + 'eine Halbe Helles.'
+    : m.art === 'fuehrung'
+    ? (() => {
+        const q = state.spieler.find(x => String(x.id) === String(m.ueber));
+        return 'Anlass: ' + wer + ' hat ' + (q ? q.name : 'den bisherigen Führenden')
+          + ' überholt und liegt an diesem Wochenende jetzt allein vorn. In Klammern '
+          + 'steht sein Stand. Eine Biereinheit ist eine Halbe Helles.';
+      })()
     : m.art === 'sorte'
     ? 'Anlass: ' + wer + ' hat an diesem Wochenende ' + m.stufe + ' Getränke bestellt — '
       + 'und ' + m.stufe + ' mal dasselbe: ' + nameVon(m.sorte) + '. Kein einziges Mal '
@@ -2895,6 +3009,12 @@ function urkundeAnweisung(we, m){
       + 'und genau darüber wird gespottet. Nicht mitleidig und nicht versöhnlich, aber '
       + 'auch nicht verletzend: Das ist ein Blatt unter Freunden, und wer aufholt, ist '
       + 'es wieder los.'
+    : m.art === 'fuehrung'
+    ? 'Schreib den Fließtext einer Urkunde für die Übernahme der Führung. Zahl und Name '
+      + 'stehen bereits groß darüber, zähl sie nicht noch einmal auf. Gefeiert wird der '
+      + 'Überholte mit — er hat die Vorlage geliefert, und nächste Woche kann es wieder '
+      + 'andersherum sein. Keine Häme gegen ihn, das ist ein Wochenende unter Freunden und '
+      + 'kein Abstiegskampf.'
     : m.art === 'sorte'
     ? 'Schreib den Fließtext einer Urkunde für Sortentreue. Zahl und Name stehen bereits '
       + 'groß darüber, zähl sie nicht noch einmal auf. Gefeiert wird die **Sturheit**, nicht '
@@ -2945,7 +3065,8 @@ function urkundeAnweisung(we, m){
        inzwischen der längste Teil der Anweisung, und was davor stand, ging darin unter. */
     'Und jetzt das, woran der Text hängt: In ihn gehört eine **echte Nachricht**, so '
       + 'verwoben, dass ' + (m.art === 'mangel' ? 'Rückstand'
-          : m.art === 'sorte' ? 'Sturheit' : 'Trinkleistung')
+          : m.art === 'sorte' ? 'Sturheit'
+          : m.art === 'fuehrung' ? 'Führungswechsel' : 'Trinkleistung')
       + ' und Nachricht sich gegenseitig kommentieren. Ohne '
       + 'die ist der Text nicht fertig. Das ist keine Kür, sondern die halbe Pointe.',
     'Du hast genau eine Suche. Nimm sie für die großen Meldungen dieser Tage — nicht für '
@@ -4725,6 +4846,21 @@ function ansichtUrkunde(x){
     + esc(String(m.pid)) + '">' + (m.art === 'mangel' ? 'Beleg sichern' : 'Urkunde sichern')
     + '</button>'
     + '</div></div>';
+
+  /* Die Meldung gilt der Runde, nicht einer Person: kein Name, kein Andenken, kein
+     Knopf zum Sichern – auf einem Blatt ohne Namen findet sich niemand wieder. Die
+     leichteste Form, die es gibt, denn oft soll sie ja kommen dürfen. */
+  if(m.art === 'runde') return ''
+    + '<div class="blende u-blende s1 u-runde" data-tu="urkundeHintergrund"><div class="u-meld">'
+    + '<div class="u-meld-karte" role="dialog" aria-label="Meldung an die Runde">'
+    + '<div class="u-band"><span>Die Runde</span><span>'
+      + zwei(uhr.getHours()) + ':' + zwei(uhr.getMinutes()) + ' · '
+      + esc(m.tag || 'Tag') + '</span></div>'
+    + '<div class="u-meld-in">'
+    + '<span class="u-chip">' + esc(m.zahl || '') + ' BE zusammen</span>'
+    + '<p class="u-text">' + esc(m.text) + '</p>'
+    + '<button class="u-knopf" data-tu="urkundeWeg">Passt</button>'
+    + '</div></div></div></div>';
 
   /* Die Mängelanzeige sieht bewusst nicht aus wie eine Auszeichnung: dieselbe Fläche
      wie die Eilmeldung, aber roter Akzent statt Malz. In fortgeschrittener Stunde

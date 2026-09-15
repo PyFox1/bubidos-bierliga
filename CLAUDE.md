@@ -485,6 +485,49 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
     fünfzehn Sekunden sieht niemand.
   - **Sie ist die einzige Art mit einer Überschrift** (`MARKE_MIT_KOPF`). Bei den Stufen steht
     die Zahl groß darüber; ein Kopf sagte dasselbe ein zweites Mal.
+- **Drei weitere Arten** (G53). Alle laufen durch dieselbe Maschinerie — `we.marken`,
+  Abgleich, lokales Abhaken, Ersatztext zuerst —, unterscheiden sich aber im Anlass:
+  - **`sorte` — „Ich bleib beim Arschloch“.** Acht Getränke, alles dieselbe Sorte und
+    Größe. Geprüft werden die **ersten** acht, nicht die letzten: Nur so ist die Regel
+    nachrechenbar, und nur so nimmt ein späterer Ausreißer die Urkunde nicht wieder weg —
+    sie gehört einem Moment, nicht dem Endstand. Ein ↶ auf eines der ersten acht zählt
+    dagegen sehr wohl. Die Anweisung sagt ausdrücklich, dass die **Sturheit** gefeiert wird
+    und nicht die Menge; ohne den Satz liest das Modell „acht mal dasselbe“ als Mangel an
+    Fantasie und schreibt Spott, wo ein Lob stehen soll.
+    **Und ein Befund, der beim Bauen herausfiel:** Mit der Regel fielen 19 bestehende
+    Prüfungen um, quer durch alle Abschnitte — jeder Testaufbau füllt die Liste mit
+    `normal:05`, und damit bekam *jede* Person die Urkunde. Das ist nicht der Testfall,
+    das ist der Normalfall: Pille steht auf Halbe, jeder tippt `+`, und beim achten Bier
+    hat sie jeder. Die Aufbauten schieben deshalb ein `af:05` zwischen die ersten acht —
+    das kostet 0,00 BE und lässt jede Schwelle unberührt. Wer das ändern will, hat einen
+    Einzeiler: Sie fällt nur, wenn mindestens einer aus der Runde variiert hat. Bewusst
+    nicht gebaut — es war ausdrücklich so gewünscht.
+  - **`fuehrung` — der Führungswechsel.** Ab `FUEHRUNG_MIN` (8 BE), und nur bei
+    **Alleinführung**: Bei zwei gleichauf hat niemand überholt. Der *erste* Führende eines
+    Wochenendes bekommt nichts — er hat niemanden überholt.
+    Das ist die eine Marke, die sich nicht allein aus dem Bestand ablesen lässt: Der
+    Bestand kennt nur den Jetzt-Stand, ein *Wechsel* braucht ein Vorher. Deshalb schreibt
+    `fuehrungPruefen()` `we.fuehrer` fort — auch unterhalb der Schwelle, still. Ohne das
+    hätte der erste Wechsel oberhalb der Schwelle niemanden, den er überholt.
+    Zurückgenommen wird sie nur, wenn die Striche den Stand nicht mehr hergeben: Dass
+    später jemand zurücküberholt, macht den Wechsel nicht ungeschehen — sonst stünde am
+    Ende des Wochenendes nur noch eine da, die des Siegers.
+    Die Anweisung verbietet ausdrücklich Häme gegen den Überholten: ein Wochenende unter
+    Freunden, kein Abstiegskampf.
+  - **`runde` — die Meldung an die Runde.** 50 BE zusammen. Die einzige Marke **ohne
+    Person**, und damit die einzige, die **nie** die API fragt (`quelle:'fest'`): Ohne
+    Namen gibt es niemanden, dem ein Text gelten könnte, und ein Nachrichtenbezug wäre
+    Aufwand ohne Adressaten. Deshalb muss `urkundeReif()` sie durchlassen — sonst wartete
+    sie auf etwas, das nie kommt. Kein Name, kein Andenken, kein Knopf zum Sichern: Auf
+    einem Blatt ohne Namen findet sich niemand wieder. Gedämpftes Band statt Rot oder
+    Malz, damit sie sich neben einer echten Urkunde nicht vordrängt.
+    Sie ist die **leichte** Form, von der es gerne mehr geben darf — weder Lob noch Tadel,
+    und sie kostet nichts.
+  Wer eine Art dazunimmt: `ansichtUrkunde()` entscheidet nach **Art**, nicht nach Stufe, und
+  fällt auf die Karte in der Mitte zurück. So landet eine neue Art nicht versehentlich in
+  der Ehrenurkunde. Vorbereitet (`urkundeVorbereiten()`) wird jede Art, bei der der
+  Auslösende **selbst wartet** — Stufen, Sortentreue, Führungswechsel. Nicht die
+  Mängelanzeige (die löst ein anderer aus) und nicht die Meldung (die fragt nie).
   Was davon unberührt bleibt, steht darunter — es galt für den Tag und gilt genauso fürs
   Wochenende:
   - **Jeder bekommt seine eigene.** Die Kennung trägt die Person.

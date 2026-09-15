@@ -65,7 +65,11 @@ const aufbau = v => p.evaluate(v => {
   pinLoeschen(); zeichnen();
 }, v);
 
-const marken = () => p.evaluate(() => (state.we[0].marken || []).map(m =>
+/* Nur die Marken, die **einer Person** gehören. Die Meldung an die Runde hat keine und
+   wird über `rundenMarke()` geprüft – sonst zählte sie hier überall mit, wo es um
+   Urkunden geht, und jede Zahl wäre um eins daneben. */
+const marken = () => p.evaluate(() => (state.we[0].marken || [])
+  .filter(m => m.pid !== null && m.pid !== undefined).map(m =>
   ({id:m.id, art:m.art, stufe:m.stufe, pid:m.pid, quelle:m.quelle, text:m.text, kopf:m.kopf,
     ort:m.ort, ortNr:m.ortNr, be:m.be, zahl:m.zahl, tag:m.tag})));
 const blende = () => p.evaluate(() => {
@@ -183,6 +187,14 @@ await schritt('Eine Runde für alle schiebt drei zugleich über die Achtzehn', a
 });
 
 await schritt('Sie kommen nacheinander, jede mit einem Namen und einem Knopf', async () => {
+  /* Drei Leute über achtzehn sind zusammen zwangsläufig über fünfzig – die Meldung an
+     die Runde steht also mit in der Schlange. Sie hat keinen Namen und gehört damit
+     nicht in diese Prüfung; dass *sie* kommt, steht in ihrem eigenen Abschnitt. */
+  await p.evaluate(() => {
+    state.we[0].marken = state.we[0].marken.filter(m => m.pid !== null);
+    zeichnen();
+  });
+  await p.waitForTimeout(120);
   const namen = [];
   for(let i = 0; i < 3; i++){
     const e = await blende();
@@ -200,6 +212,183 @@ await schritt('Sie kommen nacheinander, jede mit einem Namen und einem Knopf', a
   if(namen.slice().sort().join(',') !== '1,2,3')
     throw new Error('gezeigt wurden: ' + namen.join(','));
   return namen.join(' → ');
+});
+
+console.log('\n══ Führungswechsel ══');
+
+/* Setzt die BE je Person neu und prüft. `frisch` beginnt das Wochenende von vorn,
+   sonst wird auf dem vorigen Stand weitergespielt – der Führungszeiger ist ja Gedaechtnis. */
+const feld = (be, frisch) => p.evaluate(([be, frisch]) => {
+  const bier = k => k > 3
+    ? [...Array(3).fill('normal:05'), 'af:05', ...Array(k - 3).fill('normal:05')]
+    : Array(k).fill('normal:05');
+  if(frisch){
+    localStorage.removeItem('bubidos-urkunden');
+    state.spieler = be.map((x,i) => ({id:i+1, name:'P' + (i+1)}));
+    state.we = [{id:900, titel:'Nockherberg', datum:'2026-09-10', zu:false,
+      dabei: be.map((x,i) => i+1),
+      tage:[{id:901, label:'1. Tag', orte:[{id:11, name:'Augustiner',
+        getraenke:{}, log:[]}]}]}];
+    state.aktivWe = 900; state.aktivTag = 901; state.aktivOrt = 11;
+    state.einst = {k:40, kiSchluessel:''};
+    ansicht = null; letzteRunde = null; nachfrage = null; pinLoeschen();
+  }
+  const g = state.we[0].tage[0].orte[0].getraenke;
+  be.forEach((x,i) => g[String(i+1)] = bier(x));
+  markenPruefen();
+  return {fuehrer: state.we[0].fuehrer,
+          f:(state.we[0].marken || []).filter(m => m.art === 'fuehrung')
+             .map(m => ({pid:String(m.pid), ueber:String(m.ueber), zahl:m.zahl,
+                         text:m.text, id:m.id}))};
+}, [be, !!frisch]);
+
+await schritt('Der erste Führende bekommt nichts – er hat niemanden überholt', async () => {
+  const x = await feld([9, 6, 5], true);
+  if(x.f.length) throw new Error('es kam doch eine an P' + x.f[0].pid);
+  if(String(x.fuehrer) !== '1') throw new Error('der Zeiger steht auf ' + x.fuehrer);
+  return 'Zeiger auf P1, still';
+});
+
+await schritt('Wer überholt, bekommt sie – mit dem Namen des Überholten', async () => {
+  const x = await feld([9, 10, 5]);
+  if(x.f.length !== 1) throw new Error('Urkunden: ' + x.f.length);
+  if(x.f[0].pid !== '2' || x.f[0].ueber !== '1')
+    throw new Error('P' + x.f[0].pid + ' über P' + x.f[0].ueber);
+  if(x.f[0].id !== '900:fuehrung:8:2') throw new Error('Kennung: ' + x.f[0].id);
+  if(x.f[0].text.indexOf('P1') < 0) throw new Error('der Überholte fehlt: ' + x.f[0].text);
+  if(x.f[0].zahl !== '10,0') throw new Error('Stand: ' + x.f[0].zahl);
+  return 'P2 über P1, ' + x.f[0].zahl;
+});
+
+await schritt('Gleichstand ist kein Überholen', async () => {
+  const x = await feld([9, 10, 10]);
+  if(x.f.length !== 1) throw new Error('es kam eine zweite: ' + x.f.map(y => y.pid).join(','));
+  return 'still';
+});
+
+await schritt('Zieht der Dritte allein vorbei, bekommt auch er eine', async () => {
+  const x = await feld([9, 10, 12]);
+  if(x.f.length !== 2) throw new Error('Urkunden: ' + x.f.map(y => y.pid).join(','));
+  const d = x.f.find(y => y.pid === '3');
+  if(!d || d.ueber !== '2') throw new Error('P3 über P' + (d && d.ueber));
+  return 'P3 über P2';
+});
+
+/* Der Wechsel ist passiert. Dass später jemand zurücküberholt, macht ihn nicht ungeschehen
+   – sonst stünde am Ende des Wochenendes nur noch eine einzige da, die des Siegers. */
+await schritt('Ein Zurücküberholen nimmt die alte Urkunde nicht weg', async () => {
+  const x = await feld([9, 20, 12]);
+  if(x.f.length !== 2) throw new Error('jetzt sind es ' + x.f.length);
+  return 'beide bleiben';
+});
+
+await schritt('Zweimal vorbeiziehen gibt trotzdem nur eine je Person', async () => {
+  const x = await feld([9, 20, 25]);
+  if(x.f.length !== 2) throw new Error('Urkunden: ' + x.f.map(y => y.pid).join(','));
+  if(x.f.filter(y => y.pid === '3').length !== 1) throw new Error('P3 hat zwei');
+  return 'eine je Person';
+});
+
+/* Unter der Schwelle wechselt die Spitze mit jedem Tipp – da wäre die Urkunde wertlos.
+   Der Zeiger muss trotzdem mitwandern, sonst hätte der erste Wechsel oberhalb der
+   Schwelle niemanden, den er überholt. */
+await schritt('Unter acht BE läuft nur der Zeiger mit', async () => {
+  const a = await feld([3, 1, 1], true);
+  if(a.f.length) throw new Error('Urkunde unter der Schwelle');
+  const b2 = await feld([3, 5, 1]);
+  if(b2.f.length) throw new Error('Urkunde unter der Schwelle');
+  if(String(b2.fuehrer) !== '2') throw new Error('der Zeiger blieb auf ' + b2.fuehrer);
+  const c = await feld([3, 5, 9]);
+  if(c.f.length !== 1) throw new Error('über der Schwelle kam nichts');
+  if(c.f[0].ueber !== '2') throw new Error('überholt wurde P' + c.f[0].ueber);
+  return 'P3 über P2, sobald die Schwelle fällt';
+});
+
+await schritt('Die Anweisung nennt den Überholten und verbietet Häme', async () => {
+  const t = await p.evaluate(() => urkundeAnweisung(state.we[0],
+    {id:'900:fuehrung:8:3', art:'fuehrung', pid:'3', stufe:8, be:9, ueber:'2',
+     ort:'Augustiner', tag:'1. Tag', wendung:'Peter'}));
+  ['überholt', 'P2', 'Keine Häme', 'Nachricht', 'JSON']
+    .forEach(w => { if(t.indexOf(w) < 0) throw new Error('„' + w + '" fehlt'); });
+  if(/"kopf"/.test(t)) throw new Error('es wird eine Überschrift verlangt, die niemand zeigt');
+  return t.length + ' Zeichen';
+});
+
+console.log('\n══ Die Meldung an die Runde ══');
+
+/* Die einzige Marke ohne Person. Geprüft wird über `feld`, weil es auf die Summe
+   ankommt und nicht auf den Einzelnen. */
+const rundenMarke = () => p.evaluate(() =>
+  (state.we[0].marken || []).find(m => m.art === 'runde') || null);
+
+await schritt('Unter der Schwelle passiert nichts', async () => {
+  await feld([16, 16, 15], true);
+  const m = await rundenMarke();
+  if(m) throw new Error('sie kam bei ' + m.zahl);
+  return 'still bei 47';
+});
+
+await schritt('Ist die Schwelle voll, kommt sie – mit der Summe', async () => {
+  await feld([17, 17, 17]);
+  const m = await rundenMarke();
+  if(!m) throw new Error('sie kam nicht');
+  if(m.zahl !== '51') throw new Error('Summe: ' + m.zahl);
+  if(m.id !== '900:runde:50:-') throw new Error('Kennung: ' + m.id);
+  if(m.text.indexOf('51') < 0) throw new Error('die Summe fehlt im Text: ' + m.text);
+  if(/\{zahl\}/.test(m.text)) throw new Error('Platzhalter steht noch drin');
+  return m.zahl + ' BE';
+});
+
+/* Sie fragt die API nie – es gibt keinen Namen, auf den sich ein Text schreiben ließe.
+   Also muss sie auch sofort aufgehen dürfen, sonst wartete sie auf etwas, das nie kommt. */
+await schritt('Sie holt keinen Text und wartet auf keinen', async () => {
+  const x = await p.evaluate(() => {
+    const m = (state.we[0].marken || []).find(y => y.art === 'runde');
+    state.einst.kiSchluessel = 'sk-test';          // Schlüssel liegt vor
+    const reif = urkundeReif(m);
+    state.einst.kiSchluessel = '';
+    return {quelle:m.quelle, reif, pid:m.pid};
+  });
+  if(x.quelle !== 'fest') throw new Error('Quelle: ' + x.quelle);
+  if(!x.reif) throw new Error('sie wartet auf einen Text, der nie kommt');
+  if(x.pid !== null) throw new Error('sie hängt an einer Person: ' + x.pid);
+  return 'fest und sofort reif';
+});
+
+await schritt('Kein Name, kein Knopf zum Sichern', async () => {
+  const e = await p.evaluate(() => {
+    state.we[0].marken = state.we[0].marken.filter(m => m.art === 'runde');
+    zeichnen();
+    const x = document.querySelector('.u-blende');
+    return x ? {kl:x.className, txt:x.innerText,
+                sichern:x.querySelectorAll('.u-sichern').length} : null;
+  });
+  if(!e) throw new Error('keine Blende');
+  if(!/u-runde/.test(e.kl)) throw new Error('Klasse: ' + e.kl);
+  if(e.sichern) throw new Error('sie hat einen Sichern-Knopf');
+  if(/sichere dir/.test(e.txt)) throw new Error('sie spricht jemanden an: ' + e.txt);
+  await p.screenshot({path: ORDNER + 'u-runde.png'});
+  return 'ohne Andenken';
+});
+
+await schritt('Fällt die Runde zurück, ist sie wieder weg', async () => {
+  const n = await p.evaluate(() => {
+    const g = state.we[0].tage[0].orte[0].getraenke;
+    g['3'] = Array(5).fill('normal:05');
+    markenAufraeumen();
+    return (state.we[0].marken || []).filter(m => m.art === 'runde').length;
+  });
+  if(n) throw new Error('sie steht noch da');
+  return 'eingezogen';
+});
+
+await schritt('Sie kommt nur einmal je Wochenende', async () => {
+  await feld([17, 17, 17], true);
+  await feld([20, 20, 20]);
+  const n = await p.evaluate(() =>
+    (state.we[0].marken || []).filter(m => m.art === 'runde').length);
+  if(n !== 1) throw new Error('es sind ' + n);
+  return 'genau eine';
 });
 
 console.log('\n══ Ich bleib beim Arschloch: acht mal dasselbe ══');
@@ -416,7 +605,8 @@ await schritt('Eine Runde kann Urkunde und Mängelanzeige zugleich auslösen', a
   await runde([17, 17, 17, 5]);
   const x = await p.evaluate(() => {
     tu.runde();
-    return (state.we[0].marken || []).map(m => m.art + ':' + m.pid).sort();
+    return (state.we[0].marken || []).filter(m => m.pid !== null)
+      .map(m => m.art + ':' + m.pid).sort();
   });
   const soll = ['mangel:4', 'stufe:1', 'stufe:2', 'stufe:3'].join(' ');
   if(x.join(' ') !== soll) throw new Error('es kam: ' + x.join(' '));
@@ -596,7 +786,10 @@ await p.reload(); await p.waitForTimeout(600);
 
 console.log('\n══ Abhaken gilt nur für dieses Handy ══');
 
-await aufbau({be:{'1':17, '2':12, '3':11, '4':10}});
+/* Die Summe muss hier unter fünfzig bleiben: Sonst stellt sich die Meldung an die Runde
+   mit in die Schlange, und „ein Tipp daneben“ räumt zwar die Urkunde weg, aber die
+   nächste Blende steht sofort da. */
+await aufbau({be:{'1':17, '2':12, '3':5, '4':5}});
 await p.waitForTimeout(200);
 await p.evaluate(() => tu.strich({dataset:{id:'1'}}));
 await p.waitForTimeout(150);
@@ -1070,8 +1263,8 @@ await p.waitForTimeout(200);
 
 await schritt('Eine Runde für alle vergibt drei verschiedene Wendungen', async () => {
   await p.evaluate(() => tu.runde());
-  const w = await p.evaluate(() =>
-    (state.we[0].marken || []).map(m => m.wendung));
+  const w = await p.evaluate(() => (state.we[0].marken || [])
+    .filter(m => m.pid !== null).map(m => m.wendung));
   if(w.length !== 3) throw new Error('es sind ' + w.length + ' Marken');
   if(w.some(x => !x)) throw new Error('eine Marke ohne Wendung: ' + JSON.stringify(w));
   if(new Set(w).size !== 3) throw new Error('doppelt vergeben: ' + w.join(' | '));
@@ -1081,7 +1274,7 @@ await schritt('Eine Runde für alle vergibt drei verschiedene Wendungen', async 
 await schritt('Zuerst sind die Kern-Wendungen dran', async () => {
   const schlecht = await p.evaluate(() => {
     const kern = SLANG.filter(s => s.kern).map(s => s.w);
-    return (state.we[0].marken || []).map(m => m.wendung)
+    return (state.we[0].marken || []).filter(m => m.pid !== null).map(m => m.wendung)
       .filter(w => kern.indexOf(w) < 0);
   });
   if(schlecht.length) throw new Error('aus dem Fundus statt dem Kern: ' + schlecht.join(', '));
@@ -1096,7 +1289,7 @@ await schritt('Auch über alle Stufen hinweg wiederholt sich keine', async () =>
       tg.orte[1].getraenke[id] = Array(25).fill('normal:05');
     });
     markenPruefen();
-    return (state.we[0].marken || []).map(m => m.wendung);
+    return (state.we[0].marken || []).filter(m => m.pid !== null).map(m => m.wendung);
   });
   if(w.length < 8) throw new Error('nur ' + w.length + ' Marken');
   if(w.some(x => !x)) throw new Error('eine Marke ohne Wendung');
