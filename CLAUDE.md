@@ -883,29 +883,46 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   dann verschwindet der Knopf. „Wieder einklappen" steht erst da, wenn wirklich etwas ausgeklappt
   ist. Nur die oberste ist farbig abgesetzt, alles darunter trägt `.alt` — sie ist die
   laufende Fassung, nicht bloß die erste Zeile einer Liste.
-  **Tagesmarken/Urkunde bleiben in den Notizen kryptisch — dauerhaft, nicht nur beim
-  Einstieg (G41).** Die Marken sollen die Runde am Abend überraschen, und wer nachschaut
-  was neu ist, hätte den Witz vorher gelesen. Das gilt nicht nur für den ersten Auftritt:
-  **jede** spätere Änderung an dieser Stelle — und sei es nur ein Bugfix wie in G43 —
-  bekommt in den Notizen entweder gar keine Erwähnung oder einen bewusst vagen Satz, nie
-  Mechanik, Zahlen, Modell- oder Funktionsnamen und nicht einmal das Wort „Urkunde" selbst.
-  G43 hatte das zunächst verpasst (die Notiz nannte Text, Suche und Urkunde direkt) und
-  wurde deshalb nachgezogen. Anders als sonst gibt es dafür auch **keinen eigenen
-  Paragrafen** in der Betriebsanleitung — die Überraschung soll auch dem entgehen, der von
-  sich aus nachschlägt, nicht nur dem, der die Notizen liest. Ein Erklär-Blatt zeigt hier
-  folglich auf nichts; die Marke steht nur im Quelltext (`tag.marken`, siehe Tagesmarken
-  weiter unten) und in der Anwendung selbst. `urkunde.mjs` prüft, dass weder eine Notiz
-  noch die Anleitung den Witz vorwegnimmt. Das ist die einzige Stelle, an der beides
-  absichtlich schweigt.
+  **Zu den Marken steht in den Notizen gar nichts — und zwar wirklich nichts (G55).**
+  Die Marken sollen die Runde am Abend überraschen, und wer nachschaut was neu ist, hätte
+  den Witz vorher gelesen. Die Regel hieß deshalb lange „gar keine Erwähnung **oder** ein
+  bewusst vager Satz“ — und die zweite Hälfte war der Fehler. Aus ihr wurden elf Notizen
+  wie „Bei der Sache von neulich…“, „Was draufsteht, bleibt eine Überraschung“,
+  „Diese Fassung bringt eine Sache mit, die hier absichtlich nicht steht“. Jede einzelne
+  davon **kündigt an, dass es etwas zu finden gibt**, und schickt den Leser auf die Suche.
+  Das ist schlechter als Schweigen: Die Zurückhaltung soll nicht neugierig machen, sie soll
+  unsichtbar sein.
+  Deshalb gilt jetzt: Eine Notiz zu den Marken gibt es **nicht**, auch keine vage. Entweder
+  die Fassung hat daneben etwas Sichtbares geändert — dann steht *das* da, ohne einen Hauch
+  von „und sonst noch was“ —, oder die Fassung bleibt **ohne Notiz**. Die elf alten sind
+  aus `NOTIZEN` entfernt; die Historie hat dort jetzt Lücken, und das ist der Punkt.
+  Damit eine Fassung überhaupt schweigen *kann*, trägt die **Fassungszeile** die Kennung
+  wieder selbst (siehe unten) — die frühere Kopplung „die oberste Notiz *ist* die
+  Fassungsanzeige“ erzwang für jede Fassung eine Notiz und war die eigentliche Ursache des
+  Raunens.
+  `notizen.mjs` schlägt auf die Raun-Formeln an („Sache von neulich“, „bleibt eine
+  Überraschung“, „absichtlich nicht“ …), `urkunde.mjs` prüft **alle** Notizen — nicht nur
+  die oberste — auf die verräterischen Wörter.
+  Anders als sonst gibt es dafür auch **keinen eigenen Paragrafen** in der
+  Betriebsanleitung — die Überraschung soll auch dem entgehen, der von sich aus
+  nachschlägt, nicht nur dem, der die Notizen liest. Ein Erklär-Blatt zeigt hier folglich
+  auf nichts; die Marke steht nur im Quelltext (`we.marken`) und in der Anwendung selbst.
+  Das ist die einzige Stelle, an der beides absichtlich schweigt.
   Geschrieben wird sonst **für den, der die App bedient**: was er jetzt anders vorfindet oder neu
   kann. Keine Funktions- und Klassennamen, kein `sha`/`ETag`/`Timer`, und vor allem keine
   Floskeln — „diverse Verbesserungen", „Stabilität erhöht" sagen niemandem etwas. Statt
   „`schreibTimer` wird zurückgesetzt" also „Nach dem ersten eingetragenen Bier kam von den
   anderen Handys nichts mehr an". `notizen.mjs` hat dafür eine Wortliste und schlägt an.
-  Die oberste Notiz **ist** die Fassungsanzeige: eine eigene Fußzeile mit `FASSUNG` gab es
-  darunter mal, sie sagte dasselbe ein zweites Mal und ist raus. Deshalb müssen `f`, `d` und
-  `z` exakt zu `FASSUNG` passen — sonst zeigt die App eine falsche Fassung an, und das fällt
-  keinem auf; `notizen.mjs` rechnet beides gegeneinander.
+  **Die Fassung steht als eigene Zeile über den Änderungen** (`.fassungzeile`), nicht mehr
+  in der obersten Notiz. Das war schon zweimal andersherum: Erst gab es beides, das sagte
+  dasselbe doppelt, also flog die Zeile raus — und damit war jede Fassung an eine Notiz
+  gekettet. Genau diese Kette hat die Verschwiegenheit ruiniert (siehe oben). Jetzt trägt
+  die Zeile die Kennung, und eine Fassung **darf ohne Notiz bleiben**; die Liste
+  überspringt sie dann. `notizen.mjs` prüft dafür dreierlei: dass die Zeile da steht und
+  genau `FASSUNG` zeigt, dass die Fassung **genau einmal** auf der Seite steht (zweimal
+  wäre der alte Fehler andersherum), und dass keine Notiz **neuer** ist als die
+  ausgelieferte Fassung — eine Fassung ohne Notiz ist erlaubt, eine Notiz ohne Fassung
+  nicht.
   **Die Uhrzeit gehört dazu**, nicht nur das Datum: an einem Tag gehen durchaus mehrere
   Fassungen raus, und dann sind zwei Zeilen mit demselben Datum nicht auseinanderzuhalten.
   Kein `<details>` dafür: `zeichnen()` baut die Seite bei jedem Abgleich neu auf, ein offenes

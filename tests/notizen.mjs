@@ -47,18 +47,52 @@ console.log('  Stufen  : ' + meta.start + ' offen, je ' + meta.anzahl
   + ' nachholbar – ' + tipps + ' Tipps bis zur ältesten');
 meta.alle.forEach(n => console.log('  ' + n.f + ' · ' + n.d + ' · ' + n.z));
 
-/* Die oberste Notiz ersetzt die frühere Fußzeile. Läuft sie gegen FASSUNG aus dem
-   Ruder, zeigt die App eine falsche Fassung an – und das fällt niemandem auf. */
-await schritt('Die oberste Notiz trägt genau die laufende Fassung', async () => {
-  const m = meta.fassung.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}:\d{2}) · (G\d+)/);
+/* Die Fassung steht als eigene Zeile da. Sie hing eine Weile an der obersten Notiz –
+   und diese Kopplung erzwang für *jede* Fassung eine Notiz, auch für die, über die man
+   nichts schreiben will. Genau daran ist die Verschwiegenheit gescheitert. */
+await schritt('Die laufende Fassung steht in den Einstellungen', async () => {
+  const t = await p.evaluate(() => {
+    const e = document.querySelector('#app .fassungzeile');
+    return e ? e.textContent.trim() : null;
+  });
+  if(!t) throw new Error('keine Fassungszeile');
+  if(t !== meta.fassung) throw new Error('dort steht „' + t + '", FASSUNG sagt „'
+    + meta.fassung + '"');
+  return t;
+});
+
+/* Eine Fassung **darf** ohne Notiz bleiben – aber nie eine Notiz ohne Fassung: Steht
+   oben eine neuere Nummer als in FASSUNG, ist eine Notiz stehengeblieben, deren Fassung
+   nie ausgeliefert wurde. */
+await schritt('Keine Notiz ist neuer als die laufende Fassung', async () => {
+  const m = meta.fassung.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}:\d{2}) · G(\d+)/);
   if(!m) throw new Error('FASSUNG hat ein unerwartetes Format: ' + meta.fassung);
-  const [, jahr, monat, tag, zeit, nr] = m;
-  const soll = {f:nr, d:tag + '.' + monat + '.' + jahr, z:zeit};
-  const ist = {f:meta.oben.f, d:meta.oben.d, z:meta.oben.z};
-  if(JSON.stringify(ist) !== JSON.stringify(soll))
-    throw new Error('FASSUNG sagt ' + JSON.stringify(soll)
-      + ', die Notiz sagt ' + JSON.stringify(ist));
-  return nr + ' · ' + soll.d + ' · ' + soll.z;
+  const jetzt = Number(m[5]);
+  const zu = meta.alle.map(n => Number(String(n.f).replace(/^G/, '')))
+    .filter(n => n > jetzt);
+  if(zu.length) throw new Error('neuer als G' + jetzt + ': G' + zu.join(', G'));
+  return 'oben steht ' + meta.oben.f + ', ausgeliefert ist G' + jetzt;
+});
+
+/* Der eigentliche Punkt, und er ist teuer bezahlt: Eine Notiz, die raunt, ist
+   **schlechter** als gar keine. „Bei der Sache von neulich…", „bleibt eine
+   Überraschung", „steht hier absichtlich nicht" – wer das liest, weiß sofort, dass es
+   etwas zu finden gibt, und sucht danach. Genau das sollte die Zurückhaltung verhindern.
+   Also: entweder eine Notiz, der man nicht ansieht, dass etwas fehlt – oder keine. */
+await schritt('Keine Notiz kündigt an, dass etwas verschwiegen wird', async () => {
+  const raunen = [
+    /Sache von neulich/i, /bleibt eine Überraschung/i, /wird hier nicht verraten/i,
+    /steht hier nicht/i, /absichtlich nicht/i, /findet ihr .* selbst heraus/i,
+    /mehr dazu bewusst nicht/i, /wer sie kennt, merkt es/i, /nicht verraten/i,
+    /bleibt geheim/i, /lasst euch überraschen/i
+  ];
+  const treffer = [];
+  meta.alle.forEach(n => (n.p || []).forEach(t => {
+    const r = raunen.find(x => x.test(t));
+    if(r) treffer.push(n.f + ': ' + String(t).slice(0, 60));
+  }));
+  if(treffer.length) throw new Error('raunende Notizen:\n       ' + treffer.join('\n       '));
+  return meta.alle.length + ' Notizen, keine raunt';
 });
 
 await schritt('Jede Notiz hat Datum und Uhrzeit', async () => {
@@ -85,18 +119,16 @@ await schritt('Keine Notiz ist eine leere Hülse', async () => {
   return 'alle mit Inhalt';
 });
 
-await schritt('Die alte Fassungs-Fußzeile steht nicht mehr doppelt darunter', async () => {
-  const t = await p.evaluate(() => document.body.innerText);
-  if(/Fassung\s+\d{4}-\d{2}-\d{2}/.test(t))
-    throw new Error('die Fußzeile mit FASSUNG steht noch in den Einstellungen');
-  return 'weg, die Notiz trägt die Kennung';
-});
-
-await schritt('Die laufende Fassung ist trotzdem ablesbar', async () => {
-  const t = await p.evaluate(() => document.body.innerText);
-  if(!t.includes(meta.oben.f) || !t.includes(meta.oben.z))
-    throw new Error('weder Kennung noch Uhrzeit stehen da');
-  return meta.oben.f + ' · ' + meta.oben.d + ' · ' + meta.oben.z;
+/* Genau **einmal** soll die Fassung dastehen. Sie stand schon zweimal da – als Zeile und
+   als oberste Notiz –, deshalb flog die Zeile damals raus; jetzt trägt sie die Zeile, und
+   die Notiz darf fehlen. Zweimal wäre wieder derselbe Fehler, nur andersherum. */
+await schritt('Die Fassung steht genau einmal da', async () => {
+  const n = await p.evaluate(() => {
+    const t = document.getElementById('app').innerText;
+    return (t.match(/G\d+ \(GitHub\)/g) || []).length;
+  });
+  if(n !== 1) throw new Error('sie steht ' + n + '-mal da');
+  return 'einmal';
 });
 
 console.log('\n══ Der Ausgangszustand ══');

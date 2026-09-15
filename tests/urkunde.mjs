@@ -1294,20 +1294,16 @@ await schritt('Jedes Erklär-Blatt zeigt auf den Paragrafen, den es benennt', as
   return (await p.evaluate(() => Object.keys(ERKLAERUNGEN).length)) + ' Blätter geprüft';
 });
 
-await schritt('Die Fassung passt zur obersten Notiz', async () => {
-  const x = await p.evaluate(() => ({f:FASSUNG,
-    n:NOTIZEN[0].f + ' ' + NOTIZEN[0].d + ' ' + NOTIZEN[0].z}));
-  const m = x.f.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}:\d{2}) · (G\d+)/);
-  if(!m) throw new Error('FASSUNG hat ein anderes Format: ' + x.f);
-  const soll = m[5] + ' ' + m[3] + '.' + m[2] + '.' + m[1] + ' ' + m[4];
-  if(soll !== x.n) throw new Error('FASSUNG sagt ' + soll + ', die Notiz ' + x.n);
-  return m[5];
-});
-
 /* Die Tagesmarken sollen am Abend überraschen. Steht das Wort in den Änderungen,
-   liest es vorher jemand beim Nachschauen, was neu ist. */
+   liest es vorher jemand beim Nachschauen, was neu ist.
+   Dass die Fassung zur obersten Notiz passt, wird hier **nicht** mehr geprüft: Diese
+   Kopplung erzwang für jede Fassung eine Notiz — auch für die, über die man nichts
+   schreiben will —, und daran ist die Verschwiegenheit gescheitert. `notizen.mjs`
+   prüft stattdessen die eigene Fassungszeile. */
 await schritt('Die Änderungen verraten die Tagesmarken nicht', async () => {
-  const t = await p.evaluate(() => JSON.stringify(NOTIZEN[0]));
+  /* **Alle** Notizen, nicht nur die oberste: Die Historie bleibt in der App lesbar, und
+     eine alte Zeile verrät genauso viel wie eine neue. */
+  const t = await p.evaluate(() => JSON.stringify(NOTIZEN));
   ['Urkunde', 'Tagesmarke', 'Biereinheiten', 'Ehrenurkunde', 'zehn', 'Stufe']
     .forEach(w => {
       if(new RegExp(w, 'i').test(t)) throw new Error('„' + w + '" steht in der Notiz');

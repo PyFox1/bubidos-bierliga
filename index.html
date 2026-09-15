@@ -536,6 +536,10 @@ table.rechnung td.schlecht{color:#E09084}
    mit einem Maß, das nicht über die halbe Karte läuft. */
 .u-karte .u-text, .u-ehre .u-text{text-align:center;font-style:italic;
   font-size:15.5px;line-height:1.62;max-width:30em;margin:0 auto}
+/* Die Fassung, kleingedruckt über den Änderungen. Eigene Zeile, damit eine Fassung
+   ohne Notiz auskommen kann – siehe `notizBlock()`. */
+.fassungzeile{font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+  color:var(--tinte-weich);margin:0 2px 12px}
 .u-formel{font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;
   color:var(--tinte-weich);text-transform:uppercase;margin:13px 0 10px}
 /* Wann und wo – die Angaben, die eine Urkunde von einem Spruch unterscheiden. */
@@ -638,7 +642,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-15 08:30 · G54 (GitHub)';
+const FASSUNG = '2026-09-15 13:33 · G55 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -653,55 +657,16 @@ const FASSUNG = '2026-09-15 08:30 · G54 (GitHub)';
 const NOTIZ_START  = 1;
 const NOTIZ_ANZAHL = 3;
 const NOTIZEN = [
-  /* Absichtlich ohne Inhalt: Die Tagesmarken sollen die Runde am Abend überraschen. Anders
-     als sonst gibt es dafür auch keinen Paragrafen zum Nachschlagen – wer die Betriebs-
-     anleitung durchblättert, soll den Witz nicht vorher lesen können. Die Marke merkt sich
-     trotzdem alles Nötige im Datenbestand (siehe `tag.marken` weiter oben im Quelltext);
-     nur erklärt wird sie nirgends. */
-  {f:'G54', d:'15.09.2026', z:'08:30', punkte:[
-    'Bei der Sache von neulich ist das Blatt jetzt ordentlich gesetzt — mittig, mit '
-    + 'Datum und Ort darunter. Was draufsteht, bleibt eine Überraschung.']},
-  {f:'G53', d:'15.09.2026', z:'07:57', punkte:[
-    'Bei der Sache von neulich gibt es jetzt mehr zu holen — und mehr zu verlieren. '
-    + 'Mehr wird hier nicht verraten.']},
-  {f:'G52', d:'15.09.2026', z:'07:31', punkte:[
-    'Bei der Sache von neulich hat sich einiges geändert. Was genau, findet ihr '
-    + 'am Wochenende selbst heraus — hier steht es nicht.']},
   {f:'G51', d:'14.09.2026', z:'17:41', punkte:[
     '+ Tag und + Location fragen jetzt erst und legen dann an. Vorher stand der neue Tag '
     + 'beziehungsweise die neue Station schon auf allen Handys, bevor überhaupt jemand '
     + '„Passt“ getippt hatte. Wer sich vertippt, kommt über das Kreuz oben rechts wieder '
     + 'heraus, und dann ist nichts geschehen — auch bei den anderen nicht.']},
-  {f:'G50', d:'14.09.2026', z:'17:09', punkte:[
-    'Bei der Sache von neulich klang der Spruch der Runde zuletzt wie alles andere. '
-    + 'Jetzt steht er wieder so da, dass man ihn wiedererkennt.']},
-  {f:'G49', d:'13.09.2026', z:'14:49', punkte:[
-    'Bei der Sache von neulich kam derselbe Spruch zweimal hintereinander. Jetzt fällt '
-    + 'an einem Wochenende jeder nur noch einmal.']},
-  {f:'G48', d:'12.09.2026', z:'14:29', punkte:[
-    'Die Sache von neulich nimmt jetzt wieder Bezug auf das, was gerade in der Welt '
-    + 'passiert. Das war zuletzt abhandengekommen.']},
-  {f:'G47', d:'12.09.2026', z:'13:23', punkte:[
-    'Noch ein Wort in der Sammlung von neulich dazugekommen.']},
-  {f:'G46', d:'12.09.2026', z:'12:44', punkte:[
-    'Die Sache von neulich hat dazugelernt und redet jetzt deutlich mehr wie die Runde.']},
-  {f:'G45', d:'12.09.2026', z:'11:48', punkte:[
-    'Die Sache von neulich meldet sich jetzt in dem Moment, in dem sie fällig wird — '
-    + 'die Pause davor ist weg.']},
-  {f:'G44', d:'12.09.2026', z:'09:19', punkte:[
-    'Die Sache von neulich meldet sich jetzt nur noch einmal statt zweimal. Dafür lässt '
-    + 'sie sich ein paar Sekunden länger Zeit, bevor sie aufgeht.']},
-  {f:'G43', d:'12.09.2026', z:'06:45', punkte:[
-    'Eine Sache von neulich läuft jetzt spürbar runder. Mehr dazu bewusst nicht — wer '
-    + 'sie kennt, merkt es von selbst.']},
   {f:'G42', d:'11.09.2026', z:'20:49', punkte:[
     'Hängt man „?test“ an die Adresse, läuft die App auf einem eigenen Satz Daten. Dort '
     + 'kann man in Ruhe herumprobieren, ohne dass die Tabelle etwas abbekommt oder auf '
     + 'den anderen Handys etwas aufblinkt. Ein gestreiftes Band oben zeigt, dass gerade '
     + 'nicht die echten Zahlen vor einem stehen.']},
-  {f:'G41', d:'11.09.2026', z:'14:04', punkte:[
-    'Diese Fassung bringt eine Sache mit, die hier absichtlich nicht steht. '
-    + 'Sie meldet sich von selbst.']},
   {f:'G40', d:'10.09.2026', z:'19:42', punkte:[
     'Wer erst nach einer Runde dazustößt, bekommt sein erstes Bier wieder ohne Rückfrage '
     + 'eingetragen. Vorher stand bei ihm „vor 1 Min gab es schon eins“, obwohl die Runde '
@@ -3706,18 +3671,24 @@ function urkundeFehlerZeile(){
     + '</b>. Auf der Urkunde stand solange der vorgefertigte Text.</p>';
 }
 
-/* Die laufende Fassung steht offen da, jeder Tipp holt drei ältere nach, bis die
-   Historie durch ist. Wer wissen will, was sich zuletzt geändert hat, soll nicht erst
-   tippen müssen – alles darunter hat man beim letzten Öffnen schon gelesen. Die oberste
-   trägt zugleich die laufende Fassungskennung – eine eigene Fußzeile dafür stünde direkt
-   darunter und sagte dasselbe noch einmal. */
+/* Die neueste Notiz steht offen da, jeder Tipp holt drei ältere nach, bis die Historie
+   durch ist. Wer wissen will, was sich zuletzt geändert hat, soll nicht erst tippen
+   müssen – alles darunter hat man beim letzten Öffnen schon gelesen.
+   Die **Fassung steht als eigene Zeile darüber**. Sie hing eine Weile an der obersten
+   Notiz, und genau daran ist die Verschwiegenheit gescheitert: Diese Kopplung erzwang
+   für *jede* Fassung eine Notiz – auch für die, über die man nichts schreiben will.
+   Wo nichts zu sagen war, stand dann ein raunender Satz („Bei der Sache von neulich…",
+   „bleibt eine Überraschung"), und der verriet durch sein bloßes Dasein, dass es etwas
+   zu verraten gibt. Das ist schlechter als Schweigen. Jetzt darf eine Fassung schweigen,
+   und die Liste überspringt sie einfach. */
 function notizBlock(){
-  if(!NOTIZEN.length) return '';
+  const fassungZeile = '<p class="fassungzeile">' + esc(FASSUNG) + '</p>';
+  if(!NOTIZEN.length) return fassungZeile;
   const zeigt = Math.min(NOTIZ_START + NOTIZ_ANZAHL * notizenStufe, NOTIZEN.length);
   const eine = (n, alt) => '<div class="notiz' + (alt ? ' alt' : '') + '">'
     + '<div class="fkopf">' + esc(n.f) + ' · ' + esc(n.d) + ' · ' + esc(n.z) + '</div><ul>'
     + n.punkte.map(t => '<li>' + esc(t) + '</li>').join('') + '</ul></div>';
-  return NOTIZEN.slice(0, zeigt).map((n, i) => eine(n, i > 0)).join('')
+  return fassungZeile + NOTIZEN.slice(0, zeigt).map((n, i) => eine(n, i > 0)).join('')
     + (zeigt < NOTIZEN.length
         ? '<button class="knopf leer" style="margin-top:14px" data-tu="notizenMehr">'
           + 'Ältere Fassungen</button>'
