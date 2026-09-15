@@ -621,7 +621,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-14 17:41 · G51 (GitHub)';
+const FASSUNG = '2026-09-15 07:31 · G52 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -641,6 +641,9 @@ const NOTIZEN = [
      anleitung durchblättert, soll den Witz nicht vorher lesen können. Die Marke merkt sich
      trotzdem alles Nötige im Datenbestand (siehe `tag.marken` weiter oben im Quelltext);
      nur erklärt wird sie nirgends. */
+  {f:'G52', d:'15.09.2026', z:'07:31', punkte:[
+    'Bei der Sache von neulich hat sich einiges geändert. Was genau, findet ihr '
+    + 'am Wochenende selbst heraus — hier steht es nicht.']},
   {f:'G51', d:'14.09.2026', z:'17:41', punkte:[
     '+ Tag und + Location fragen jetzt erst und legen dann an. Vorher stand der neue Tag '
     + 'beziehungsweise die neue Station schon auf allen Handys, bevor überhaupt jemand '
@@ -1229,27 +1232,41 @@ const letzteGabeFuer = (ort, pid) => {
   return null;
 };
 
-/* ---------- Tagesmarken und Urkunden ----------
-   Wer an einem Tag 10, 18 oder 25 Biereinheiten reißt, bekommt eine Urkunde. Vier
-   Entscheidungen dahinter:
+/* ---------- Marken und Urkunden ----------
+   Gezählt wird das **Wochenende**, nicht der Tag. Der Tag bleibt die Einheit der
+   Wertung (§ 3) – für die Marken ist er es seit G52 nicht mehr. Vorher fing jeder Tag
+   wieder bei null an, und ein normaler Abend reißt die Zehn nicht: Die Runde bekam ihre
+   Urkunden kaum zu Gesicht.
 
-   1. **Jeder bekommt seine eigene.** Die Kennung ist `tagId:stufe:pid`, die Marke
+   Es gibt zwei Arten (`m.art`), und die zweite ist der Witz:
+
+   - **`stufe`** – 18 und 25 BE am Wochenende. Eine Auszeichnung, wie gehabt.
+   - **`mangel`** – die verfehlte Zehn. Kein Lob, sondern eine Mängelanzeige an die, die
+     sie als Einzige *nicht* haben. Als Auszeichnung wäre die Zehn bei Wochenendzählung
+     nämlich die schlechteste von allen: Die hat irgendwann jeder, alle fünf rissen sie
+     binnen einer Stunde, und die Überraschung wäre für den Rest des Wochenendes
+     verbraucht. Wann sie fällt, steht bei `mangelKandidaten()`.
+
+   Was für beide gilt:
+
+   1. **Jeder bekommt seine eigene.** Die Kennung ist `weId:art:stufe:pid`, die Marke
       gehört also einer Person und nicht der Stufe. Das war einmal andersherum – eine
       Urkunde je Stufe und Tag, für den, der zuerst dort war – und das ging schief:
       Wer dem einen das zehnte Bier tippt und zwei Sekunden später dem nächsten, hat
       für sein Gefühl zwei gleichzeitige Zehner vor sich; die Marke sah nur den ersten
       und ließ den zweiten leer ausgehen. Ein Zeitfenster hätte die Grenze nur
       verschoben. Jetzt gibt es kein Rennen mehr: Wer die Stufe reißt, bekommt sie.
-   2. Die Marke liegt im Tag (`tag.marken`), nicht in einer Variablen. Sonst ginge sie
-      bei jedem Neuzeichnen wieder auf, sähe sie nur das Handy, das das Bier getippt
+   2. Die Marke liegt im Wochenende (`we.marken`), nicht in einer Variablen. Sonst ginge
+      sie bei jedem Neuzeichnen wieder auf, sähe sie nur das Handy, das das Bier getippt
       hat, und jedes Gerät bekäme einen anderen Text. So verteilt der Abgleich sie.
    3. Der Ersatztext steht **sofort** drin. Erst danach wird versucht, über die API
       einen besseren zu holen. Wäre es andersherum, hinge am Bierabend eine leere
       Urkunde im Netz – und ohne Schlüssel gäbe es nie eine.
-   4. Die Marke merkt sich Ort und Zeit (`ort`, `ortNr`, `t`). Nicht für die Anzeige,
-      sondern für das Bild zum Aufheben: Da gehört hin, wann und wo das war. Der Ort
-      ist der **dieser Person** – nach einer Aufteilung steht sie woanders als das
-      Handy, das gerade tippt.
+   4. Die Marke merkt sich Tag, Ort und Zeit (`tag`, `ort`, `ortNr`, `t`) sowie das, was
+      groß darauf steht (`zahl`, `einheit`). Nicht für die Anzeige, sondern für das Bild
+      zum Aufheben: Da gehört hin, wann und wo das war, und später ließe sich das nicht
+      mehr rekonstruieren, weil die Runde weiterzieht. Der Ort ist der **dieser Person** –
+      nach einer Aufteilung steht sie woanders als das Handy, das gerade tippt.
 
    Angelegt wird nur beim Eintragen (`markenPruefen`), **zurückgenommen überall**
    (`markenAufraeumen` in `sichern` und `uebernehmen`). Das ist Absicht: Legte auch
@@ -1258,13 +1275,9 @@ const letzteGabeFuer = (ort, pid) => {
    verschwindet eine Marke nach einem Fehltipp auf allen Geräten, ohne dass eine
    Löschung durch den Abgleich getragen werden müsste.
 
-   Gestaffelt wird auch die Form, nicht nur der Text: 10 kommt als Blatt von unten,
-   18 als Karte in der Mitte, 25 nimmt den ganzen Bildschirm. Das erkennt man auch
-   in fortgeschrittener Stunde noch. */
-/* Gezählt wird das **Wochenende**, nicht mehr der Tag. Zehn an einem Tag ist selten,
-   zehn am Wochenende hat irgendwann jeder — deshalb ist die Zehn keine Auszeichnung
-   mehr, sondern eine Mahnung an die, die sie als Einzige *nicht* haben. Siehe
-   `mangelKandidaten()`. Ausgezeichnet wird erst ab 18. */
+   Gestaffelt wird auch die Form, nicht nur der Text: Die Mängelanzeige kommt als Blatt
+   von unten mit rotem Akzent (`u-mangel`), 18 als Karte in der Mitte, 25 nimmt den
+   ganzen Bildschirm. Das erkennt man auch in fortgeschrittener Stunde noch. */
 const MARKEN_STUFEN = [18, 25];
 const MANGEL_STUFE  = 10;
 
@@ -1445,13 +1458,18 @@ const SLANG = [
      + 'Bauart „Hab in meinem ganzen Leben noch kei …“ trägt und lässt sich auf alles legen.',
    bsp:['Hab in meinem ganzen Leben noch kein Geld in die Schweiz überwiesen',
         'Hab in meinem ganzen Leben noch kei Alkoholfreies bestellt']},
-  {w:'Dreckschwein!', b:'Schimpfwort als Auszeichnung, und zwar direkt an den gerichtet, den '
-     + 'es feiert: „Du Dreckschwein“ ist in dieser Runde die höchste Form der Anerkennung für '
-     + 'etwas, das keiner für möglich hielt. Applaus, kein Urteil — bewundernd gesagt und so '
-     + 'verstanden, nie herablassend.',
+  /* Zwei Richtungen, und in beiden zugewandt. Stand hier zuerst nur als Auszeichnung – damit
+     schrieb das Modell auf einer Mängelanzeige brav daran vorbei, obwohl die Runde den Spruch
+     genau dort auch benutzt. Gesteuert wird über die Bedeutung, also muss sie beides hergeben. */
+  {w:'Dreckschwein!', b:'Schimpfwort als Auszeichnung, direkt an den gerichtet, den es meint. '
+     + 'Meist ein Lob: „Du Dreckschwein“ ist in dieser Runde die höchste Form der Anerkennung '
+     + 'für etwas, das keiner für möglich hielt — bewundernd gesagt und so verstanden. Es geht '
+     + 'aber genauso gegen eine mickrige Bilanz, und auch dann weiß jeder, wie es gemeint ist. '
+     + 'Applaus oder Kopfschütteln, nie herablassend.',
    kern:true,
    bsp:['Fünfundzwanzig an einem Tag? Du Dreckschwein!',
-        'Du Dreckschwein hast das wirklich durchgezogen', 'Dreckschwein!']},
+        'Du Dreckschwein hast das wirklich durchgezogen',
+        'Sechs von zehn, du Dreckschwein', 'Dreckschwein!']},
   {w:'Ich bleib beim Arschloch', b:'Bekenntnis zur alten Gewohnheit: kein Bock auf etwas '
      + 'Neues oder Extravagantes, man bleibt bei dem, was sich bewährt hat. Gilt der '
      + 'Bestellung, der Kneipe, dem gewohnten Ablauf — nie einem Menschen.',

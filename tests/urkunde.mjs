@@ -716,7 +716,12 @@ await schritt('Bei den groben Wendungen sagt die Bedeutung, wogegen sie gehen', 
     throw new Error('das Schimpfwort ist nicht mehr als Auszeichnung erklärt: ' + x.dreck);
   if(!/Du Dreckschwein/.test(x.dreckBsp))
     throw new Error('kein Beispiel spricht den Gefeierten an: ' + x.dreckBsp);
-  return 'beide gesteuert';
+  /* Und die zweite Richtung: Seit es die Mängelanzeige gibt, fällt der Spruch auch dort.
+     Stand hier nur das Lob, schrieb das Modell auf so einem Blatt brav daran vorbei –
+     obwohl die Runde ihn genau dort benutzt. */
+  if(!/Bilanz/.test(x.dreck))
+    throw new Error('die zweite Richtung fehlt in der Bedeutung: ' + x.dreck);
+  return 'beide gesteuert, beide Richtungen';
 });
 
 /* Über dreißig Einträge, und das Modell baut ein bis zwei ein: Ohne Rangfolge käme jede
