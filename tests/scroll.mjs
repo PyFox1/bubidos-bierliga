@@ -111,7 +111,7 @@ await schritt('Dazu/Ersetzen umstellen hält die Höhe', async () => {
 
 console.log('\n== Wo die Höhe zu Recht auf null geht ==');
 await schritt('Ein anderes Blatt fängt oben an', async () => {
-  await p.evaluate(() => { foto = null; erklaer = 'orden'; zeichnen(); });
+  await p.evaluate(() => { foto = null; erklaer = 'abzeichen'; zeichnen(); });
   const y = await p.evaluate(() => document.querySelector('.blende .blatt').scrollTop);
   if(y !== 0) throw new Error('scrollTop ' + y);
   return 'scrollTop 0';

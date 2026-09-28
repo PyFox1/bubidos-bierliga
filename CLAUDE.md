@@ -59,7 +59,7 @@ Es gibt **keine Reiterleiste**. Die App hat zwei Grundzustände, `modus()` entsc
 - **Läuft keines** → Archiv mit Tabelle und vergangenen Wochenenden
 
 Die Variable `ansicht` überschreibt das für Unteransichten. Werte: `null` (automatisch),
-`archiv`, `zaehlen`, `neu`, `zwischen`, `person`, `wedetail`, `einst`, `info`, `token`.
+`archiv`, `zaehlen`, `neu`, `zwischen`, `person`, `wedetail`, `einst`, `info`, `ruhm`, `token`.
 
 | Funktion | Bildschirm | Erreichbar über |
 |---|---|---|
@@ -68,13 +68,15 @@ Die Variable `ansicht` überschreibt das für Unteransichten. Werte: `null` (aut
 | `ansichtNeuesWe` | Wochenende eröffnen **oder** nachbessern | Knopf im Archiv, ‹ an der ersten Location |
 | `ansichtZaehlen` | Getränke zählen | Startseite bei laufendem Wochenende |
 | `ansichtZwischen` | Zwischenstand Tag für Tag | Balkensymbol im Zählkopf |
-| `ansichtPerson` | Kacheln, Orden, Wochenenden | Tipp auf einen Namen in der Tabelle |
+| `ansichtPerson` | Kacheln, Anwesenheit, Abzeichen, Pokale, Wochenenden | Tipp auf einen Namen in der Tabelle |
+| `ansichtRuhm` | Ehrenhalle: Pokale mit Verlauf, Abzeichen, Chronik | Knopf unter der Tabelle, Personenansicht |
 | `ansichtWeDetail` | Fazit eines Wochenendes | Tipp auf eine Wochenendzeile |
 | `ansichtEinst` | Nachschlagen, Verwaltung, Änderungen | Zahnrad |
 | `ansichtInfo` | Betriebsanleitung, §1–§11 | aus den Einstellungen oder Erklär-Blättern |
 
 Überlagerungen (`.blende`), gezeichnet in dieser Rangfolge: `foto`, `rechnung`, `punkteOffen`,
-`erklaer`, `blatt` (Sammel-Eingabe), `sicherBlatt`, `benennen`, `wechsler`, `fazitOffen`, zuletzt
+`erklaer`, `blatt` (Sammel-Eingabe), `heimBlatt` (Heim-Zeit aus dem Zwischenstand), `sicherBlatt`,
+`benennen`, `wechsler`, `fazitOffen`, zuletzt
 die **Urkunde**. Die ist die einzige, die nicht an einer Variablen hängt, sondern am Datenbestand
 (`offeneUrkunde()`) — deshalb steht sie hinten: Sie muss sich vor kein offenes Eingabeblatt
 drängen, sie wartet ohnehin.
@@ -101,7 +103,9 @@ falschen Tag und nimmt die Leute vom falschen Tresen mit. Gilt für jedes Blatt,
 ## Landkarte der wichtigsten Funktionen
 
 - `berechnen()` — rechnet die gesamte Historie neu: Punkte, Siege, BE-Summen, Höchststände
-- `fazitVon(e)` — Wochenendbilanz samt Orden
+- `fazitVon(e)` — Wochenendbilanz samt Abzeichen je Tag und Pokal-Wechseln
+- `ehrungen()` / `tagAbzeichen(t)` — Abzeichen, Wanderpokale und ihr Verlauf, aus der ganzen
+  Historie gerechnet; `frueherGegangen()` und `heimVon()` lesen die Heim-Zeiten
 - `rangDaten()` / `rangZeilen()` — die sortierbare Tabelle, Spalten in `SPALTEN`
 - `laden()` / `sichern()` / `schreiben()` — GitHub-Anbindung
 - `zusammenfuehren()` — Drei-Wege-Abgleich bei gleichzeitiger Änderung, samt `listeVereinen()`
@@ -201,6 +205,11 @@ Größen: `033`, `05`, `10`.
 **Anwesenheit** = die Person ist ein Schlüssel im `getraenke`-Objekt der Location. Ein leeres
 Array heißt „war da, hat nichts getrunken" — das ist etwas völlig anderes als „war nicht da".
 
+Am Tag hängt `tg.heim = {pid: zeitstempel}`: wer wann heimgegangen ist. Das ist das Einzige, was
+die Ehrungen an eigenen Daten brauchen, alles andere rechnen sie aus den Strichen. `heim`
+überlebt den Abschluss des Wochenendes (anders als das Tagebuch), weil Bettzipfel und
+Treuepokal auch rückwirkend daraus gerechnet werden.
+
 Am Wochenende hängt außerdem `we.marken`: die ausgestellten Blätter, je eines
 `{id, art, stufe, pid, be, zahl, einheit, t, tag, ort, ortNr, text, kopf?, quelle, wendung}`.
 `art` ist `'stufe'` (18/25) oder `'mangel'` (die verfehlte Zehn). Die `id` ist fest aus
@@ -221,21 +230,37 @@ rekonstruieren ließe. Siehe Marken weiter unten.
 Die Punktzahlen werden **nie gespeichert**, sondern bei jedem Laden aus den Getränkelisten neu
 berechnet. Deshalb kann eine Sicherung nie im Widerspruch zur Tabelle stehen.
 
-**Die fünf Orden** — *Deckelkönig*, *Schlagzahl*, *Aufsteiger*, *Gleichmaß*, *Durchhalter* — stehen
-an **drei Stellen**, die auseinanderlaufen können: vergeben werden sie in `fazitVon()`, erklärt im
-Blatt `ERKLAERUNGEN.orden`, nachgeschlagen in **§ 6**. Genau das war schon auseinander: das Blatt
-hieß „Die vier Orden" und ließ den *Aufsteiger* aus, während das Fazit ihn vergab — wer im Fazit auf
-die Erklärung tippte, fand einen Orden weniger, als vor ihm stand. Wer einen Orden anfasst, fasst
-alle drei Stellen an; `tests/orden.mjs` prüft sie gegeneinander.
+**Abzeichen und Wanderpokale** (G56) ersetzen die fünf Orden. Wie die Punkte werden sie nie
+gespeichert, sondern in `ehrungen()` bei jedem Zeichnen aus der ganzen Historie gerechnet; nur
+die Heim-Zeiten (`tg.heim`) liegen im Bestand.
 
-Jeder Orden wird von einem Wert begleitet, und der muss **begründen, warum gerade dieser gewonnen
-hat**. Das *Gleichmaß* zeigte lange den Schnitt („Ø 2,00 BE je Tag") statt der Streuung, auf die es
-vergeben wird — im Fazit stand damit neben der *Schlagzahl* mit Ø 6,00 ein Orden für Ø 2,00, ohne
-dass irgendwas den niedrigeren Wert erklärte. Es zeigt jetzt `± 0,00 BE Schwankung`.
+| Abzeichen, je Tag | vergeben an |
+|---|---|
+| Tagessieger | die meisten BE — dieselbe Regel wie die Spalte „Siege“, damit beide gleich zählen |
+| Fahrer des Abends | die wenigsten BE, erst ab `FAHRER_MIN` (3) am Tisch, nicht bei Gleichstand aller |
+| Goldener Bettzipfel | die früheste Heim-Zeit; wer binnen `HEIM_GLEICH` (10 min) mitging, teilt |
 
-Nicht jedes Wochenende vergibt alle fünf: *Schlagzahl* und *Gleichmaß* brauchen mehr als einen Tag,
-der *Aufsteiger* einen echten Punktgewinn, der *Durchhalter* jemanden, der mehr Locations gesehen
-hat als der Rest. Der Titel „Die fünf Orden" meint den Katalog, nicht den einzelnen Abend.
+| Wanderpokal | hält ihn | wandert |
+|---|---|---|
+| Deckelkrone | meiste BE eines Wochenendes, egal wann angereist | beim Abschließen (`we.zu`) |
+| Rekordhalter | bester Tag aller Zeiten, Gleichziehen reicht nicht | sofort, auch mitten am Abend |
+| Treuepokal | längste laufende Serie abgeschlossener Wochenenden, ab `TREUE_MIN` (3) | beim Abschließen |
+
+Beim Treuepokal entscheiden bei gleicher Serie die Tage darin, danach die Tage „bis zum Schluss“
+(`frueherGegangen()`); ist dann noch Gleichstand, behält ihn der bisherige Halter, sonst wird
+geteilt. Reißt die Serie des Halters und hat niemand drei in Folge, ist er unvergeben.
+Bei der Deckelkrone wird bei exaktem Gleichstand geteilt.
+
+Wie die Orden vorher stehen sie an **drei Stellen**: vergeben in `tagAbzeichen()`/`ehrungen()`,
+erklärt in `ERKLAERUNGEN.abzeichen` und `.pokale`, nachgeschlagen in **§ 6**. Wer einen
+anfasst, fasst alle drei an; `tests/orden.mjs` prüft sie gegeneinander und rechnet die Regeln
+an einer kleinen Historie nach. Jede Zeile trägt den Wert, der sie begründet — Menge bei Sieger,
+Fahrer, Krone und Rekord, die Uhrzeit beim Bettzipfel, die Serie beim Treuepokal.
+
+Gezeigt wird das an fünf Stellen: Symbole neben dem Namen in der Tabelle (`pokaleVon()`,
+gezeichnete SVG, keine Emojis), das Fazit je Wochenende (je Tag die Abzeichen, darunter die
+Pokal-Wechsel), der Zwischenstand („Stand jetzt“ am laufenden Tag), die Personenansicht
+(gezählte Abzeichen, gehaltene Pokale, „Dabei: …“) und die Ehrenhalle (`ansichtRuhm()`).
 
 ## Entscheidungen und ihre Gründe
 
@@ -253,8 +278,36 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
 - **Fehltage kosten nichts.** Wer an einem Tag nicht eingetragen ist, kommt in dessen Wertung
   nicht vor. Wer fälschlich mit 0 BE mitgeführt wird, verliert dagegen deutlich (ca. 18 Punkte
   in einer Dreierrunde). Deshalb warnt die Oberfläche davor.
-- **Zwei Mengen-Orden.** *Deckelkönig* für die Gesamtmenge, *Schlagzahl* für den Tagesschnitt —
-  damit jemand, der erst am Samstag anreist, nicht chancenlos ist.
+- **Abzeichen und Wanderpokale sollen dazu bringen, möglichst viel Zeit miteinander zu
+  verbringen — und die Menge bleibt dabei das Wichtigste** (G56). Das war der Maßstab, an dem
+  der ganze Katalog neu gedacht wurde: möglichst viele Wochenenden, möglichst viele Tage,
+  möglichst lange am Abend. Die fünf Orden fielen dabei ganz weg; der Grund der alten
+  Regel „zwei Mengen-Orden, damit der Samstagsanreisende nicht chancenlos ist" gilt nicht
+  mehr — **bewusst**: Wer später anreist, hat bei der Deckelkrone weniger Zeit, und das ist
+  als Anreiz zum Kommen gewollt. Die Abzeichen dagegen gibt es je Tag, dort hat er dieselben
+  Chancen. Die Tabelle bleibt unberührt: Fehltage kosten weiterhin nichts, die Anwesenheit
+  wird über Pokale und Abzeichen belohnt und nicht in die Punkte gemischt.
+  Verworfen und warum: *Entdecker*/*Connaisseur* (die App kennt nur Stärke × Größe, keine
+  Sorten — belohnt würde, wer verschiedene Knöpfe drückt), *Stammgast* als eigener Pokal
+  (geht im Treuepokal auf), *Sperrstunde* für alle bis zum Schluss (meist geht einer früher
+  und vier bleiben — dann bekämen es jeden Abend vier; die Zahl steht als Statistik in der
+  Personenansicht), *Rote Laterne* (zeigt die letzte Tabellenzeile schon), Bettzipfel über
+  das letzte Getränk (eine „Runde für alle“ nach dem Gehen verschöbe ihn auf den Falschen).
+- **Heimgehen wird von Hand eingetragen, mit Uhrzeit** (G56). Tipp auf den Namen, „Geht
+  heim“ hält den Zeitpunkt fest; berichtigen lässt er sich im selben Blatt und im
+  Zwischenstand (`heimBlatt`) — dort auch für den, der an einer früheren Station
+  zurückgeblieben ist und am Zählbildschirm gar nicht mehr steht. Eine Uhrzeit wird relativ
+  zum frühesten bekannten Zeitpunkt des Tages gelesen (`heimZeitAus()`): mehr als drei
+  Stunden davor heißt „nach Mitternacht“. Ein festes „vor zwölf ist Nacht“ wäre beim
+  Frühschoppen falsch.
+  Wer heim ist, bekommt aus „Runde für alle" kein Bier mehr, wird bei „Wer geht mit?“ nicht
+  angeboten, und sein + fragt einmal nach (`nachfrage = 'heim:' + id`); der zweite Tipp
+  trägt ein und hebt das „heim“ auf. Wer über „Wer ist noch dazugestoßen?“ wieder
+  auftaucht, ist ebenfalls nicht mehr heim.
+  Bleibt bei „+ Location“ genau einer zurück, bietet das Blatt „… geht heim“ an. Angekreuzt
+  ist das **keine Aufteilung**: Der Zeiger der Gruppe zieht mit, kein Pin. Sonst stünde die
+  ganze Runde nach dem Gehen des Einen als „getrennt“ da.
+  Beim Abgleich wird `tg.heim` je Person nach der Drei-Wege-Regel wie `einst` behandelt.
 - **Zurückliegende Locations sind schreibgeschützt.** Man kann durch die Kette wischen, aber
   nicht versehentlich Bier am falschen Abend eintragen. Entsperren geht mit einem Tipp.
   Ausnahme: die Station, auf die `state.aktivOrt` zeigt, ist nie gesperrt — sonst stünde die
@@ -285,7 +338,7 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   „Wer ist heute schon dabei?"-Blatt wäre dafür nur eine zusätzliche Frage ohne Nutzen.
   Schläft ausnahmsweise jemand länger, wird er über `ortRaus` („War hier nicht dabei") entfernt,
   bevor eine Runde läuft — sonst trägt „Runde für alle" ihm ein Bier ein, das er nie getrunken
-  hat (`runde()` trägt bei jedem Schlüssel der Location ein, unabhängig von echter Anwesenheit),
+  hat (`runde()` trägt bei jedem Schlüssel der Location ein, der nicht als heimgegangen markiert ist),
   und ein ganzer verschlafener Tag kostet ihn spürbar Punkte (~20 in einer Dreierrunde,
   nachgestellt in `tests/tagneu.mjs`).
 - **Das Deckblatt ist dieselbe Ansicht wie das Eröffnen.** `ansichtNeuesWe()` läuft in zwei Rollen:

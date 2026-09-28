@@ -365,6 +365,55 @@ table.rechnung td.schlecht{color:#E09084}
 .ozeile{display:flex;justify-content:space-between;align-items:baseline;padding:10px 2px;
   border-bottom:1px solid rgba(82,91,102,.55);font-size:15px}
 .ozeile b{font-family:var(--mono);color:var(--malz)}
+.ozeile .psym{vertical-align:-2px;color:var(--malz)}
+.ozeile em.haelt{font-style:normal;font-family:var(--mono);font-size:10px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--malz);margin-left:4px}
+.dabeizeile{font-family:var(--mono);font-size:11px;color:#AEB5BE;margin:12px 2px 0;line-height:1.6}
+.rname .psym{vertical-align:-2px;color:var(--malz);margin-left:1px}
+.wzsieger .psym{vertical-align:-1px}
+.knopf .psym{vertical-align:-2px;margin-right:4px}
+.ordenzeile .psym{vertical-align:-2px}
+.ordenzeile.pokal .titel{color:var(--malz)}
+.fztag{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--malz);margin-top:6px;padding-top:6px;border-top:1px dashed rgba(185,172,140,.6)}
+.orden .fztag:first-child{border-top:0;padding-top:0;margin-top:0}
+
+.pokalblock{margin-bottom:12px;padding:12px 13px;border-radius:5px;border:1px solid var(--linie)}
+.pokalkopf{display:flex;gap:12px;align-items:center}
+.pokalkopf .psym{color:var(--malz);flex:0 0 auto}
+.pokalname{font-family:var(--display);font-size:20px;text-transform:uppercase;letter-spacing:.02em}
+.pokalhalter{font-family:var(--mono);font-size:12px;color:var(--deckel);margin-top:2px}
+.rverlauf{margin-top:10px;border-top:1px solid rgba(82,91,102,.6);padding-top:6px}
+.rzeile{display:flex;gap:10px;align-items:baseline;padding:4px 0;font-size:13px}
+.rzeile .rwer{font-weight:800;flex:0 0 auto;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rzeile .rwo{flex:1;min-width:0;font-family:var(--mono);font-size:10.5px;color:#8A929C;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rzeile .rwert{font-family:var(--mono);font-size:11px;color:var(--malz);flex:0 0 auto}
+.abztab{border:1px solid var(--linie);border-radius:5px;overflow:hidden}
+.abzkopf,.abzzeile{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:6px;align-items:center;
+  padding:8px 10px}
+.abzkopf{background:var(--zinn-tief);font-family:var(--mono);font-size:9px;letter-spacing:.06em;
+  text-transform:uppercase;color:#8A929C;line-height:1.3}
+.abzkopf span,.abzzeile b{text-align:center}
+.abzzeile{border-top:1px solid rgba(82,91,102,.55)}
+.abzzeile .abzname{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.abzzeile b{font-family:var(--mono);color:var(--malz);font-weight:500}
+.chrwe{margin-bottom:14px}
+.chrtitel{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--deckel);padding:6px 2px;border-bottom:1px solid var(--linie)}
+.chrtag{padding:8px 2px 4px}
+.chrkopf{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--malz);margin-bottom:3px}
+.chrtag .ordenzeile .titel,.chrtag .ordenzeile .wert{color:#8A929C}
+.chrtag .ordenzeile .wer{color:var(--deckel)}
+.heimchip{font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:#6F7883;
+  border:1px dashed rgba(111,120,131,.6);border-radius:4px;padding:3px 6px;flex:0 0 auto}
+.heimchip.an{color:var(--deckel);border-style:solid;border-color:var(--linie)}
+.pzeile.heim .pname{opacity:.55}
+.pzeile.heim .pbe{opacity:.55}
+.heimvermerk{font-family:var(--mono);color:#8A929C}
+.heimteil{margin-top:12px;padding-top:10px;border-top:1px solid rgba(185,172,140,.5)}
+.heimfeld input{font-family:var(--mono)}
 
 .zwkopf{padding:14px 2px 4px;border-bottom:1px solid var(--linie)}
 .zwtitel{font-family:var(--display);font-size:26px;text-transform:uppercase;letter-spacing:.02em}
@@ -642,7 +691,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-15 13:33 · G55 (GitHub)';
+const FASSUNG = '2026-09-28 10:31 · G56 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -657,6 +706,19 @@ const FASSUNG = '2026-09-15 13:33 · G55 (GitHub)';
 const NOTIZ_START  = 1;
 const NOTIZ_ANZAHL = 3;
 const NOTIZEN = [
+  {f:'G56', d:'28.09.2026', z:'10:31', punkte:[
+    'Die alten Orden sind durch Abzeichen und Wanderpokale ersetzt. Abzeichen gibt es an '
+    + 'jedem Tag: Tagessieger, Fahrer des Abends für den, der am wenigsten getrunken hat, '
+    + 'und den Goldenen Bettzipfel für den, der als Erster heimgeht.',
+    'Drei Wanderpokale wandern von einem zum nächsten: die Deckelkrone für das meiste Bier '
+    + 'an einem Wochenende, der Rekordhalter für den besten Tag aller Zeiten und der '
+    + 'Treuepokal für die längste Serie an Wochenenden, ab drei in Folge. Wer einen hält, hat '
+    + 'das Zeichen in der Tabelle neben dem Namen.',
+    'Wer heimgeht, bekommt über seinen Namen ein „Geht heim“ mit Uhrzeit, die sich '
+    + 'nachträglich ändern lässt. Danach bekommt er aus der Runde für alle kein Bier mehr. '
+    + 'Nachtragen geht auch im Zwischenstand.',
+    'Unter der Tabelle steht die Ehrenhalle: alle Pokale mit ihrem Verlauf, die gesammelten '
+    + 'Abzeichen und Tag für Tag, wer was bekam.']},
   {f:'G51', d:'14.09.2026', z:'17:41', punkte:[
     '+ Tag und + Location fragen jetzt erst und legen dann an. Vorher stand der neue Tag '
     + 'beziehungsweise die neue Station schon auf allen Handys, bevor überhaupt jemand '
@@ -915,13 +977,15 @@ const mischung = gs => { const z = zaehlung(gs);
 /* ---------- Zustand ---------- */
 let ansicht = null;
 let fazitOffen = null, frage = null, foto = null, blatt = null;
+/* Das Heim-Blatt aus dem Zwischenstand: {tag, id}. */
+let heimBlatt = null;
 /* Läuft gerade eine Zählung, steckt hier ihr Abbruch. */
 let fotoLauf = null;
 let wechsler = false, detailId = null, personId = null;
 let rechnung = null, punkteOffen = false, letzteRunde = null;
 /* Eine offene Rückfrage vor dem Eintragen: 'runde' für den Knopf, sonst die
-   Kennung der Person, deren + gefragt hat. Immer nur eine, ein Tipp woanders
-   entkräftet sie. */
+   Kennung der Person, deren + gefragt hat, oder 'heim:' und die Kennung, wenn sie
+   schon heimgegangen ist. Immer nur eine, ein Tipp woanders entkräftet sie. */
 let nachfrage = null, benennen = false, entsperrt = null;
 let sicherBlatt = null, infoZiel = null, erklaer = null;
 /* Kein <details>: zeichnen() baut die Seite bei jedem Abgleich neu auf, und ein
@@ -1115,6 +1179,17 @@ function zusammenfuehren(basis, meins, fremd){
       const mt = mw.tage.find(t => t.id === ft.id);
       if(!mt){ if(!drin(bw && bw.tage, ft.id)) mw.tage.push(ft); return; }
       const bt = ((bw && bw.tage) || []).find(t => t.id === ft.id);
+
+      /* Heim-Zeiten je Person wie die Einstellungen: Wer sie gegenüber der Basis
+         geändert oder gelöscht hat, behält recht. */
+      const bh = (bt && bt.heim) || {}, mh = mt.heim || {}, fh = ft.heim || {};
+      const h = Object.assign({}, mh);
+      new Set(Object.keys(fh).concat(Object.keys(bh))).forEach(k => {
+        if(mh[k] === bh[k] && fh[k] !== bh[k]){
+          if(fh[k] === undefined) delete h[k]; else h[k] = fh[k];
+        }
+      });
+      if(Object.keys(h).length || mt.heim) mt.heim = h;
 
       mt.orte = (mt.orte || []).map(o => Object.assign({}, o));
       (ft.orte || []).forEach(fo => {
@@ -2254,26 +2329,171 @@ function fazitVon(e){
   const gesAnzahl = leute.reduce((s,l) => s + l.anzahl, 0);
   const maxTage = tagLog.length;
 
-  const orden = [];
-  if(leute.length && gesBe > 0){
-    orden.push({t:'Deckelkönig', w:leute[0].name, v:zahl(leute[0].be,2)+' BE gesamt'});
-    if(maxTage > 1){
-      const schlag = [...leute].filter(l => l.tage > 0).sort((a,b) => b.schnitt - a.schnitt)[0];
-      if(schlag && schlag.schnitt > 0)
-        orden.push({t:'Schlagzahl', w:schlag.name, v:'Ø '+zahl(schlag.schnitt,2)+' BE je Tag'});
-    }
-    const auf = [...leute].sort((a,b) => b.delta - a.delta)[0];
-    if(auf && auf.delta > 0.05) orden.push({t:'Aufsteiger', w:auf.name, v:'+'+zahl(auf.delta)+' Punkte'});
-    const konst = leute.filter(l => l.streuung !== null && l.tage === maxTage && l.be > 0)
-                       .sort((a,b) => a.streuung - b.streuung)[0];
-    if(konst) orden.push({t:'Gleichmaß', w:konst.name, v:'± '+zahl(konst.streuung,2)+' BE Schwankung'});
-    const maxOrte = Math.max.apply(null, leute.map(l => l.orte));
-    const durch = leute.filter(l => l.tage === maxTage && l.orte === maxOrte);
-    if(durch.length && durch.length < leute.length && maxOrte > 1)
-      orden.push({t:'Durchhalter', w:durch.map(l => l.name).join(', '),
-                  v:maxOrte + ' von ' + orteGesamt + ' Locations, jeden Tag'});
+  /* Abzeichen je Tag, dazu, was an diesem Wochenende mit den Wanderpokalen passiert ist.
+     Beides aus `ehrungen()`, damit Fazit, Ehrenhalle und Personenansicht nie
+     unterschiedlich zählen. */
+  const eh = ehrungen();
+  const abzeichen = tagLog.map(t => ({tag:t.tag, a:tagAbzeichen(t)}));
+  const pokale = eh.wechsel.filter(w => w.weId === we.id);
+  return {leute, gesBe, gesLiter, gesAf, gesAnzahl, tage:maxTage, orteGesamt,
+          abzeichen, pokale, we};
+}
+
+/* ---------- Abzeichen und Wanderpokale ----------
+   Abzeichen gibt es je Tag, gesammelt wird über alle Wochenenden. Wanderpokale hat
+   immer genau einer (oder bei exaktem Gleichstand mehrere), bis ihn ihm jemand abnimmt.
+   Gespeichert ist davon nichts außer den Heim-Zeiten: Alles andere wird wie die Punkte
+   bei jedem Laden aus den Strichen gerechnet und kann der Tabelle nie widersprechen. */
+const ABZEICHEN = [
+  {k:'sieger',  name:'Tagessieger'},
+  {k:'fahrer',  name:'Fahrer des Abends'},
+  {k:'zipfel',  name:'Goldener Bettzipfel'}
+];
+const POKALE = [
+  {k:'krone',  name:'Deckelkrone'},
+  {k:'rekord', name:'Rekordhalter'},
+  {k:'treue',  name:'Treuepokal'}
+];
+/* Wer binnen zehn Minuten nach dem Ersten geht, ist mit ihm gegangen. */
+const HEIM_GLEICH = 10 * 60000;
+/* Den Fahrer gibt es erst ab drei am Tisch – bei zweien wäre er bloß „der andere“. */
+const FAHRER_MIN = 3;
+/* Der Treuepokal braucht eine Serie von mindestens drei Wochenenden. */
+const TREUE_MIN = 3;
+
+const heimVon = (tg, pid) => (tg && tg.heim) ? tg.heim[pid] : undefined;
+/* Wer an diesem Tag früher gegangen ist. Bleiben welche ohne Heim-Zeit, ist jeder mit
+   einer früher gegangen. Hat jeder eine – alle haben beim Aufbruch getippt –, sind es
+   die, die mehr als zehn Minuten vor dem Letzten gingen. */
+function frueherGegangen(tg, ids){
+  const mit = ids.filter(id => heimVon(tg, id) !== undefined);
+  if(!mit.length) return [];
+  if(mit.length < ids.length) return mit;
+  const ende = Math.max.apply(null, mit.map(id => heimVon(tg, id)));
+  return mit.filter(id => heimVon(tg, id) < ende - HEIM_GLEICH);
+}
+
+/* Die drei Abzeichen eines Tages. `t` ist ein Eintrag aus `berechnen().log[..].tagLog`. */
+function tagAbzeichen(t){
+  const ids = Object.keys(t.erg);
+  const be = id => t.erg[id].be;
+  const gleich = (a, b) => Math.abs(a - b) < 1e-9;
+  const r = {sieger:[], fahrer:[], zipfel:[], wert:{}};
+  if(!ids.length) return r;
+  const max = Math.max.apply(null, ids.map(be));
+  const min = Math.min.apply(null, ids.map(be));
+  /* Dieselbe Regel wie die Tagessiege in der Tabelle, damit beide dasselbe zählen. */
+  if(max > 0){ r.sieger = ids.filter(id => gleich(be(id), max)); r.wert.sieger = max; }
+  if(ids.length >= FAHRER_MIN && !gleich(min, max)){
+    r.fahrer = ids.filter(id => gleich(be(id), min)); r.wert.fahrer = min; }
+  /* Der Bettzipfel: die früheste Heim-Zeit, und wer binnen zehn Minuten mitging. Nur,
+     wenn danach noch jemand da war – gehen alle zusammen, geht keiner zuerst. */
+  const heim = ids.filter(id => heimVon(t.tag, id) !== undefined);
+  if(heim.length){
+    const erst = Math.min.apply(null, heim.map(id => heimVon(t.tag, id)));
+    const gruppe = heim.filter(id => heimVon(t.tag, id) <= erst + HEIM_GLEICH);
+    if(gruppe.length < ids.length){ r.zipfel = gruppe; r.wert.zipfel = erst; }
   }
-  return {leute, gesBe, gesLiter, gesAf, gesAnzahl, tage:maxTage, orteGesamt, orden, we};
+  return r;
+}
+
+/* Alle Ehrungen über die ganze Historie, in der Reihenfolge, in der sie passiert sind.
+   Liefert die Zählung der Abzeichen, die jetzigen Halter der Pokale samt Verlauf und
+   die Wechsel, damit das Fazit eines Wochenendes zeigen kann, was dort passiert ist. */
+let ehrungenMerk = null;
+function ehrungen(){
+  /* Die Tabelle fragt je Zeile nach – ohne Merker liefe die ganze Historie fünfmal durch. */
+  const schluessel = JSON.stringify(state.we) + '|' + state.spieler.map(p => p.id).join(',');
+  if(ehrungenMerk && ehrungenMerk.s === schluessel) return ehrungenMerk.r;
+  const {log} = berechnen();
+
+  const zahlen = {};   // zahlen[pid][k] = Anzahl
+  const plus = (pid, k) => { zahlen[pid] = zahlen[pid] || {}; zahlen[pid][k] = (zahlen[pid][k] || 0) + 1; };
+  const chronik = [];  // je Tag: {weId, tagId, a}
+  const halter = {krone:{wer:[]}, rekord:{wer:[]}, treue:{wer:[]}};
+  const verlauf = {krone:[], rekord:[], treue:[]};
+  const wechsel = [];
+  const gewertet = log.filter(e => e.tagLog.length);
+  const gleicheWer = (a, b) => a.length === b.length && a.every(x => b.some(y => String(y) === String(x)));
+
+  /* Serien für den Treuepokal laufen über abgeschlossene Wochenenden. */
+  const serie = {};   // pid → {n, tage, schluss}
+
+  gewertet.forEach(e => {
+    e.tagLog.forEach(t => {
+      const a = tagAbzeichen(t);
+      ABZEICHEN.forEach(z => a[z.k].forEach(pid => plus(pid, z.k)));
+      chronik.push({weId:e.we.id, tagId:t.tag.id, a});
+
+      /* Rekord: der beste Tag aller Zeiten. Gleichziehen reicht nicht. */
+      const ids = Object.keys(t.erg);
+      if(ids.length){
+        const max = Math.max.apply(null, ids.map(id => t.erg[id].be));
+        const alt = halter.rekord.wert || 0;
+        if(max > 0 && max > alt + 1e-9){
+          const wer = ids.filter(id => Math.abs(t.erg[id].be - max) < 1e-9);
+          const eintrag = {wer, wert:max, weId:e.we.id, tagId:t.tag.id, von:halter.rekord.wer};
+          halter.rekord = eintrag; verlauf.rekord.push(eintrag);
+          wechsel.push(Object.assign({k:'rekord'}, eintrag));
+        }
+      }
+    });
+
+    /* Deckelkrone und Treuepokal wandern erst, wenn das Wochenende abgeschlossen ist. */
+    if(!e.we.zu) return;
+
+    const summe = {};
+    e.tagLog.forEach(t => Object.keys(t.erg).forEach(id => summe[id] = (summe[id] || 0) + t.erg[id].be));
+    const ids = Object.keys(summe);
+    const max = ids.length ? Math.max.apply(null, ids.map(id => summe[id])) : 0;
+    if(max > 0){
+      const wer = ids.filter(id => Math.abs(summe[id] - max) < 1e-9);
+      const eintrag = {wer, wert:max, weId:e.we.id, von:halter.krone.wer};
+      halter.krone = eintrag; verlauf.krone.push(eintrag);
+      wechsel.push(Object.assign({k:'krone'}, eintrag));
+    }
+
+    /* Wer dabei war, verlängert seine Serie; wer fehlt, fängt wieder bei null an. */
+    const dabei = new Set(e.tagLog.flatMap(t => Object.keys(t.erg)));
+    state.spieler.forEach(p => {
+      const id = String(p.id);
+      if(!dabei.has(id)){ delete serie[id]; return; }
+      const s = serie[id] || {n:0, tage:0, schluss:0};
+      s.n++;
+      e.tagLog.forEach(t => {
+        if(!t.erg[id]) return;
+        s.tage++;
+        if(frueherGegangen(t.tag, Object.keys(t.erg)).indexOf(id) < 0) s.schluss++;
+      });
+      serie[id] = s;
+    });
+    const kandidaten = Object.keys(serie).filter(id => serie[id].n >= TREUE_MIN);
+    let neu = [];
+    if(kandidaten.length){
+      const besser = (a, b) => serie[a].n - serie[b].n || serie[a].tage - serie[b].tage
+                            || serie[a].schluss - serie[b].schluss;
+      kandidaten.sort((a, b) => besser(b, a));
+      const top = kandidaten.filter(id => besser(id, kandidaten[0]) === 0);
+      /* Bei Gleichstand behält ihn, wer ihn schon hat. */
+      const bleibt = top.filter(id => halter.treue.wer.some(x => String(x) === id));
+      neu = bleibt.length ? bleibt : top;
+    }
+    if(!gleicheWer(neu, halter.treue.wer)){
+      const eintrag = {wer:neu, wert:neu.length ? serie[neu[0]].n : 0, weId:e.we.id,
+                       von:halter.treue.wer};
+      halter.treue = eintrag; verlauf.treue.push(eintrag);
+      wechsel.push(Object.assign({k:'treue'}, eintrag));
+    }
+  });
+
+  const r = {zahlen, chronik, halter, verlauf, wechsel, serie};
+  ehrungenMerk = {s:schluessel, r};
+  return r;
+}
+/* Welche Pokale jemand gerade hält – für die Symbole in der Tabelle. */
+function pokaleVon(pid){
+  const {halter} = ehrungen();
+  return POKALE.filter(p => halter[p.k].wer.some(x => String(x) === String(pid))).map(p => p.k);
 }
 
 /* ---------- Bausteine ---------- */
@@ -2540,6 +2760,9 @@ function ansichtZaehlen(){
   const pos = kettePos(k);
   const rueck = istRueckblick();
   const hier = Object.keys(ort.getraenke);
+  /* Wer heimgegangen ist, bleibt in der Liste stehen, bekommt aber kein Bier mehr aus
+     der Runde – die Zahl auf dem Knopf zählt nur, wer noch am Tisch sitzt. */
+  const amTisch = hier.filter(id => heimVon(tg, id) === undefined);
   const nameZu = id => { const q = state.spieler.find(x => String(x.id) === String(id));
     return q ? q.name : '—'; };
   function eintragText(x){
@@ -2587,12 +2810,12 @@ function ansichtZaehlen(){
         : nachfrage === 'runde' && vorigeRunde
         ? '<button class="rundeknopf warnung2" data-tu="runde">'
           + vorWieGross(vorigeRunde.t) + ' gab es schon eine – nochmal tippen</button>'
-        : '<button class="rundeknopf" data-tu="runde"' + (hier.length ? '' : ' disabled') + '>'
+        : '<button class="rundeknopf" data-tu="runde"' + (amTisch.length ? '' : ' disabled') + '>'
           + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
           + 'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
           + '<path d="M6 3h11l-1 15a3 3 0 0 1-3 3H10a3 3 0 0 1-3-3z"/>'
           + '<path d="M17 7h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2"/></svg>'
-          + 'Runde für alle<span>' + hier.length + '×</span></button>')
+          + 'Runde für alle<span>' + amTisch.length + '×</span></button>')
     + (!rueck && eigen && !benennen
         ? '<div class="rueckband"><span>Getrennt' + (gOrt ? ' · Gruppe in ' + esc(gOrt.ort.name) : '')
           + '</span><button data-tu="zurGruppe">Wieder mitlaufen</button></div>' : '')
@@ -2615,24 +2838,29 @@ function ansichtZaehlen(){
        färbt den + ein. Der Knopf bleibt, wo der Daumen schon liegt – gelesen wird
        daneben, warum überhaupt gefragt wird. */
     const vorigeGabe = !rueck && String(nachfrage) === String(id) ? letzteGabeFuer(ort, id) : null;
-    return '<div class="pzeile"><div class="pinfo">'
+    const hz = heimVon(tg, id);
+    const heimFrage = !rueck && nachfrage === 'heim:' + id;
+    return '<div class="pzeile' + (hz !== undefined ? ' heim' : '') + '"><div class="pinfo">'
       + (rueck
           ? '<div class="pname nurlesen">' + esc(p.name) + '</div>'
           : '<button class="pname" data-tu="blattAuf" data-id="'+id+'">' + esc(p.name) + '</button>')
       + '<div class="pmeta"><span class="pbe">'
       + zahl(gs.reduce((s,k) => s + beVon(k), 0),2) + ' BE</span>'
-      + (vorigeGabe
+      + (heimFrage
+          ? '<span class="warnung2">Ist heim – nochmal tippen, dann ist er wieder da</span>'
+          : vorigeGabe
           ? '<span class="warnung2">' + vorWieGross(vorigeGabe.t)
             + ' gab es schon eins – nochmal tippen</span>'
+          : hz !== undefined ? '<span class="heimvermerk">heim · ' + zeitKurz(hz) + '</span>'
           : mix ? '<span>' + mix + '</span>' : '<span>noch nichts</span>')
       + deltaChip(erg[id] ? erg[id].delta : null,
           erg[id] ? ' data-tu="rechnungTag" data-id="'+id+'"' : '') + '</div></div>'
       + (rueck ? ''
           : '<button class="zurueck" data-tu="minus" data-id="'+id+'" ' + (gs.length?'':'disabled')
             + ' aria-label="Zurücknehmen bei '+esc(p.name)+'">−</button>'
-            + '<button class="plus' + (vorigeGabe ? ' warnung2' : '') + '" data-tu="strich" data-id="'
+            + '<button class="plus' + (vorigeGabe || heimFrage ? ' warnung2' : '') + '" data-tu="strich" data-id="'
             + id + '" aria-label="Getränk für ' + esc(p.name)
-            + (vorigeGabe ? ', nochmal tippen zum Bestätigen' : '') + '">+</button>')
+            + (vorigeGabe || heimFrage ? ', nochmal tippen zum Bestätigen' : '') + '">+</button>')
       + '</div>';
   }).join('');
 
@@ -2737,9 +2965,70 @@ function kombiWaehler(tuHinzu, extra){
     + nameVon(key) + ' · ' + zahl(beVon(key),2) + ' BE</button></div>';
 }
 
+/* „Geht heim“ und die Uhrzeit dazu. Steht im Eingabeblatt am Zählbildschirm und im
+   eigenen Blatt aus dem Zwischenstand – dort lässt sich auch nachtragen, wer an einer
+   früheren Station zurückgeblieben ist. Die Kennung des Tages steht am Knopf, nicht in
+   `aktuell()`: Der eigene Standort kann sich bis zum Tipp verschoben haben. */
+function heimTeil(we, tg, pid){
+  if(!we || !tg) return '';
+  const hz = heimVon(tg, pid);
+  const an = ' data-tag="' + tg.id + '" data-id="' + esc(pid) + '"';
+  if(hz === undefined)
+    return '<div class="heimteil"><button class="knopf leer" data-tu="heimJetzt"' + an + '>Geht heim</button>'
+      + '<p class="mini" style="margin:6px 2px 0">Hält die Uhrzeit fest. Wer als Erster geht, '
+      + 'bekommt den Goldenen Bettzipfel.</p></div>';
+  return '<div class="heimteil"><div class="wahl-titel">Heimgegangen</div>'
+    + '<div class="feld heimfeld"><input id="heimZeit" type="time" value="' + zeitKurz(hz) + '">'
+    + '<button data-tu="heimSetzen"' + an + '>Uhrzeit ändern</button></div>'
+    + '<p class="mini" style="margin:6px 2px 0">Eine Uhrzeit vor zwölf zählt zur Nacht danach.</p>'
+    + '<button class="knopf leer" data-tu="heimWeg"' + an + '>Doch noch da</button></div>';
+}
+/* Aus „HH:MM“ ein Zeitpunkt an diesem Abend. Maßstab ist das Früheste, was vom Tag
+   bekannt ist (Tagebuch, Heim-Zeiten), sonst das Datum des Wochenendes. Liegt die
+   Uhrzeit mehr als drei Stunden davor, ist sie nach Mitternacht gemeint. */
+function heimZeitAus(we, tg, hhmm){
+  const m = /^(\d{1,2}):(\d{2})/.exec(hhmm || '');
+  if(!m || +m[1] > 23 || +m[2] > 59) return null;
+  const zeiten = [];
+  Object.keys(tg.heim || {}).forEach(id => zeiten.push(tg.heim[id]));
+  (tg.orte || []).forEach(o => (o.log || []).forEach(x => zeiten.push(x.t)));
+  let basis;
+  if(zeiten.length) basis = new Date(Math.min.apply(null, zeiten));
+  else {
+    const i = Math.max(0, we.tage.findIndex(t => t.id === tg.id));
+    basis = we.datum ? new Date(we.datum + 'T12:00:00') : new Date();
+    if(we.datum) basis.setDate(basis.getDate() + i);
+  }
+  const d = new Date(basis.getTime());
+  d.setHours(+m[1], +m[2], 0, 0);
+  if(d.getTime() < basis.getTime() - 3*3600000) d.setDate(d.getDate() + 1);
+  return d.getTime();
+}
+function tagSuchen(tagId){
+  for(const we of state.we){
+    const tg = (we.tage || []).find(t => String(t.id) === String(tagId));
+    if(tg) return {we, tg};
+  }
+  return {we:null, tg:null};
+}
+
+/* Das Blatt aus dem Zwischenstand – nur die Heim-Zeit einer Person an einem Tag. */
+function ansichtHeim(){
+  const {we, tg} = tagSuchen(heimBlatt.tag);
+  if(!tg) return '';
+  const q = state.spieler.find(x => String(x.id) === String(heimBlatt.id));
+  return '<div class="blende" data-tu="heimHintergrund"><div class="blatt">'
+    + '<div class="karte" role="dialog" aria-label="Heim-Zeit">'
+    + '<h3>' + esc(q ? q.name : '—') + '</h3>'
+    + '<p class="mini" style="margin:2px 0 12px">' + esc(tg.label) + ' · ' + esc(we.titel) + '</p>'
+    + heimTeil(we, tg, heimBlatt.id)
+    + '<button class="knopf voll" data-tu="heimZu">Fertig</button>'
+    + '</div></div></div>';
+}
+
 function ansichtBlatt(){
   if(!blatt) return '';
-  const {ort} = aktuell();
+  const {we, tg, ort} = aktuell();
   if(!ort) return '';
   const p = state.spieler.find(x => String(x.id) === String(blatt.id));
   const be = KOMBIS.reduce((s,k) => s + beVon(k)*(blatt.z[k]||0), 0);
@@ -2755,6 +3044,7 @@ function ansichtBlatt(){
     + (anzahl===1?'Getränk':'Getränke') + ' · ' + zahl(be,2) + ' BE an dieser Location</p>'
     + '<button class="knopf voll" data-tu="blattSpeichern">Übernehmen</button>'
     + '<button class="knopf leer" data-tu="blattZu">Abbrechen</button>'
+    + heimTeil(we, tg, blatt.id)
     + gefahr('ortRaus', blatt.id, 'War hier nicht dabei', 'knopf gefahr')
     + '</div></div></div>';
 }
@@ -3404,6 +3694,55 @@ function ansichtFoto(){
 }
 
 /* ---------- Fazit / Verlauf ---------- */
+const namenListe = ids => ids.map(id => {
+  const q = state.spieler.find(x => String(x.id) === String(id));
+  return q ? q.name : '—'; }).join(', ');
+const weTitel = id => { const w = state.we.find(x => x.id === id); return w ? w.titel : '—'; };
+
+/* Kleine gezeichnete Symbole statt Emojis – Krone, Blitz, Anker. */
+function pokalSymbol(k, gr){
+  const s = gr || 14;
+  const pfad = k === 'krone'
+      ? '<path d="M3 18h18l-1.5-10-4.5 4-3-7-3 7-4.5-4z"/>'
+      : k === 'rekord'
+      ? '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>'
+      : '<circle cx="12" cy="5" r="2.2"/><path d="M12 7.2V21M7 11h10M4 14a8 8 0 0 0 16 0"/>';
+  const name = (POKALE.find(p => p.k === k) || {}).name || '';
+  return '<svg class="psym psym-' + k + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" '
+    + 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" '
+    + 'stroke-linejoin="round" role="img" aria-label="' + name + '"><title>' + name + '</title>'
+    + pfad + '</svg>';
+}
+
+function abzeichenZeilen(a, label){
+  const zeile = (k, wert) => {
+    if(!a[k].length) return '';
+    const z = ABZEICHEN.find(x => x.k === k);
+    return '<button class="ordenzeile" data-tu="erklaerAuf" data-was="abzeichen">'
+      + '<span class="titel">' + (label ? esc(label) + ' · ' : '') + z.name + '</span>'
+      + '<span class="wer">' + esc(namenListe(a[k])) + '</span> '
+      + '<span class="wert">' + wert + '</span></button>';
+  };
+  return zeile('sieger', a.wert.sieger !== undefined ? zahl(a.wert.sieger, 2) + ' BE' : '')
+    + zeile('fahrer', a.wert.fahrer !== undefined ? zahl(a.wert.fahrer, 2) + ' BE' : '')
+    + zeile('zipfel', a.wert.zipfel !== undefined ? 'heim um ' + zeitKurz(a.wert.zipfel) : '');
+}
+
+function pokalZeile(w){
+  const p = POKALE.find(x => x.k === w.k);
+  const wert = w.k === 'treue'
+      ? (w.wer.length ? w.wert + ' Wochenenden in Folge' : 'vorerst unvergeben')
+      : zahl(w.wert, 2) + ' BE' + (w.k === 'rekord' ? ' an einem Tag' : ' am Wochenende');
+  const von = w.von && w.von.length && !w.von.every(x => w.wer.some(y => String(y) === String(x)))
+    ? ' · von ' + esc(namenListe(w.von))
+    : !(w.von && w.von.length) ? ' · Erstverleihung'
+    : w.k === 'rekord' ? ' · eigenen verbessert' : ' · verteidigt';
+  return '<button class="ordenzeile pokal" data-tu="erklaerAuf" data-was="pokale">'
+    + '<span class="titel">' + pokalSymbol(w.k, 12) + ' ' + p.name + '</span>'
+    + '<span class="wer">' + (w.wer.length ? esc(namenListe(w.wer)) : '—') + '</span> '
+    + '<span class="wert">' + wert + von + '</span></button>';
+}
+
 function fazitBlock(f, mitKnopf){
   const zeilen = f.leute.map(l => {
     const teil = l.tage < f.tage;
@@ -3416,9 +3755,15 @@ function fazitBlock(f, mitKnopf){
       + (f.tage === 1 ? 'Tag' : 'Tagen') + '</span>'
       + '<span>' + l.orte + ' ' + (l.orte === 1 ? 'Location' : 'Locations') + '</span></div></div>';
   }).join('');
-  const orden = f.orden.map(o => '<button class="ordenzeile" data-tu="erklaerAuf" data-was="orden">'
-    + '<span class="titel">' + o.t + '</span><span class="wer">'
-    + esc(o.w) + '</span> <span class="wert">' + o.v + '</span></button>').join('');
+  /* Je Tag die drei Abzeichen, darunter, was mit den Wanderpokalen passiert ist. Jede
+     Zeile trägt den Wert, der sie begründet – Menge bei Sieger und Fahrer, Uhrzeit beim
+     Bettzipfel. */
+  const mehrereTage = f.abzeichen.length > 1;
+  const orden = f.abzeichen.map(x => {
+      const z = abzeichenZeilen(x.a, null);
+      return z && mehrereTage ? '<div class="fztag">' + esc(x.tag.label) + '</div>' + z : z;
+    }).join('')
+    + (f.pokale.length ? '<div class="fztag">Wanderpokale</div>' + f.pokale.map(w => pokalZeile(w)).join('') : '');
   return '<div class="fazit"><h3>' + esc(f.we.titel) + '</h3>'
     + '<p class="datum">' + datumHuebsch(f.we.datum) + ' · ' + f.tage + ' '
     + (f.tage===1?'Tag':'Tage') + ' · ' + f.orteGesamt + ' Locations</p>'
@@ -3498,7 +3843,8 @@ function rangZeilen(){
     return '<div class="rang ' + (x.tage === 0 ? 'ruht' : '') + '">'
       + '<span class="rnr ' + (i===0?'eins':'') + '">' + (i+1) + '</span>'
       + '<button class="rmitte" data-tu="personAuf" data-id="'+x.p.id+'">'
-      + '<div class="rname">' + esc(x.p.name) + '</div>'
+      + '<div class="rname">' + esc(x.p.name)
+      + pokaleVon(x.p.id).map(k => ' ' + pokalSymbol(k, 13)).join('') + '</div>'
       + '<div class="rmeta">' + neben.join(' · ') + '</div></button>'
       + '<span class="rwert">' + wert + '</span>'
       + '<span class="relospalte">' + deltaChip(x.d, attrs)
@@ -3539,13 +3885,14 @@ function ansichtArchiv(){
   const wochenenden = echte.length
     ? echte.map(e => {
         const f = fazitVon(e);
-        const sieger = f.orden.length ? f.orden[0].w : '—';
+        const k = f.pokale.find(w => w.k === 'krone');
+        const sieger = k ? namenListe(k.wer) : '—';
         return '<button class="weZeile" data-tu="weDetail" data-id="'+e.we.id+'">'
           + '<div class="wztext"><div class="wzname">' + esc(e.we.titel) + '</div>'
           + '<div class="wzmeta">' + datumHuebsch(e.we.datum) + ' · ' + f.tage + ' '
           + (f.tage===1?'Tag':'Tage') + ' · ' + f.orteGesamt + ' Locations · '
           + zahl(f.gesLiter) + ' L</div>'
-          + '<div class="wzsieger">Deckelkönig ' + esc(sieger) + '</div></div>'
+          + '<div class="wzsieger">' + pokalSymbol('krone', 11) + ' Deckelkrone ' + esc(sieger) + '</div></div>'
           + '<span class="wzpfeil">›</span></button>';
       }).join('')
     : '<p class="hinweis" style="margin:8px 2px">Noch nichts abgeschlossen. Das erste Wochenende '
@@ -3554,6 +3901,8 @@ function ansichtArchiv(){
   return start
     + '<div class="abschnitt oben">Tabelle</div>' + rangZeilen()
     + '<p class="hinweis">Gewertet wird je Tag über alle Locations · K ' + state.einst.k + '</p>'
+    + '<button class="knopf leer" data-tu="geheRuhm">' + pokalSymbol('krone', 15)
+    + ' Ehrenhalle</button>'
     + '<div class="abschnitt">Wochenenden</div>' + wochenenden;
 }
 
@@ -3886,23 +4235,44 @@ function ansichtInfo(){
     + 'Fehlt er, sagt die App das und ihr tippt von Hand. Eingetragen wird er nicht in der App, '
     + 'sondern im Datenbestand selbst; dasselbe gilt für die Frage, welches Modell zählt.</p></div>'
 
-    + '<div class="para" id="p6"><h2><i>§ 6</i> Ordensverleihung</h2>'
+    + '<div class="para" id="p6"><h2><i>§ 6</i> Abzeichen und Wanderpokale</h2>'
+    + '<p><strong>6.1 Abzeichen</strong> werden je Tag vergeben und gesammelt. Sie verfallen nicht, '
+    + 'sie stapeln sich.</p>'
     + '<table class="info">'
-    + '<tr><td class="wert">Deckelkönig</td><td>Die meisten Biereinheiten über das ganze Wochenende. '
-    + 'Belohnt die Menge — und damit zwangsläufig auch, wer am längsten da war.</td></tr>'
-    + '<tr><td class="wert">Schlagzahl</td><td>Der höchste Schnitt je Tag. Der Gegenpol zum '
-    + 'Deckelkönig: wer erst am Samstag anreist und dann abliefert, ist hier voll dabei.</td></tr>'
-    + '<tr><td class="wert">Aufsteiger</td><td>Größter Punktgewinn. Geht auffällig oft an Leute, die '
-    + 'vorher hinten lagen. Das ist kein Fehler, das ist Elo.</td></tr>'
-    + '<tr><td class="wert">Gleichmaß</td><td>Geringste Schwankung zwischen den Tagen. Die stille '
-    + 'Auszeichnung für alle, die auch am Sonntag noch reden können.</td></tr>'
-    + '<tr><td class="wert">Durchhalter</td><td>An jedem Tag dabei und bei den meisten Locations. '
-    + 'Der einzige Orden, den man nicht ertrinken kann — nur ersitzen.</td></tr></table>'
+    + '<tr><td class="wert">Tagessieger</td><td>Die meisten Biereinheiten des Tages, über alle '
+    + 'Locations zusammen. Bei Gleichstand für alle Beteiligten.</td></tr>'
+    + '<tr><td class="wert">Fahrer des Abends</td><td>Die wenigsten Biereinheiten des Tages. Erst ab '
+    + 'drei Anwesenden, und nur, wenn nicht alle gleichauf liegen. Wer den Abend über Alkoholfreies '
+    + 'trinkt, erfüllt die Bezeichnung wörtlich.</td></tr>'
+    + '<tr><td class="wert">Goldener Bettzipfel</td><td>Wer als Erster heimgeht. Maßgeblich ist die '
+    + 'eingetragene Heim-Zeit (6.3). Wer binnen zehn Minuten mitgeht, teilt sich den Zipfel. Gehen '
+    + 'alle gemeinsam, geht keiner zuerst.</td></tr></table>'
+    + '<p><strong>6.2 Wanderpokale</strong> hat immer nur einer, bis ihn ihm jemand abnimmt. In der '
+    + 'Tabelle steht das Zeichen neben dem Namen.</p>'
+    + '<table class="info">'
+    + '<tr><td class="wert">Deckelkrone</td><td>Die meisten Biereinheiten eines Wochenendes. Wandert '
+    + 'beim Abschließen, egal wann der Gewinner angereist ist. Wer später kommt, hat weniger Zeit — '
+    + 'das ist der Preis der Anreise, keine Regel.</td></tr>'
+    + '<tr><td class="wert">Rekordhalter</td><td>Der beste Tag aller Zeiten, gemessen in '
+    + 'Biereinheiten. Gleichziehen genügt nicht, der Rekord muss gebrochen werden. Kann mitten am '
+    + 'Abend den Besitzer wechseln.</td></tr>'
+    + '<tr><td class="wert">Treuepokal</td><td>Die längste laufende Serie an Wochenenden, bei denen '
+    + 'jemand dabei war — ab drei in Folge. Bei Gleichstand entscheiden die Tage, danach, wie oft '
+    + 'jemand bis zum Schluss geblieben ist. Wer ein Wochenende auslässt, fängt bei null an. Hat '
+    + 'niemand drei in Folge, steht der Pokal im Schrank.</td></tr></table>'
+    + '<p><strong>6.3 Heimgehen.</strong> Wer geht, wird über seinen Namen am Zählbildschirm als '
+    + 'heimgegangen eingetragen — „Geht heim“ hält die Uhrzeit fest, die sich danach berichtigen '
+    + 'lässt; eine Uhrzeit vor zwölf gilt als Nacht danach. Bleibt bei „+ Location“ genau einer '
+    + 'zurück, bietet das Blatt dasselbe an. Nachträge, auch für frühere Stationen, gehen im '
+    + 'Zwischenstand. Wer heim ist, bekommt aus der Runde für alle kein Bier mehr und wird bei '
+    + '„Wer geht mit?“ nicht angeboten. Das Nichteintragen einer Heim-Zeit gilt als Anwesenheit bis '
+    + 'zum Schluss und ist der häufigste Grund für einen unverdienten Bettzipfel beim Nächsten.</p>'
+    + '<p><strong>6.4 Ehrenhalle.</strong> Unter der Tabelle. Dort stehen die jetzigen Halter der '
+    + 'Pokale samt Verlauf, die gesammelten Abzeichen je Person und Tag für Tag, wer was bekam.</p>'
     + '<p><strong>Zur unterschiedlichen Anreise:</strong> Wer einen Tag verpasst, verliert dadurch '
-    + 'keine Punkte — er kommt in der Wertung dieses Tages schlicht nicht vor. Im Fazit steht bei '
-    + 'jedem, an wie vielen Tagen er dabei war, und neben der Gesamtmenge der Schnitt je Tag. '
-    + 'Damit lassen sich Freitagsanreisende und Samstagsanreisende nebeneinander lesen, ohne dass '
-    + 'die eine Zahl die andere erschlägt.</p></div>'
+    + 'keine Punkte — er kommt in der Wertung dieses Tages schlicht nicht vor. Abzeichen gibt es je '
+    + 'Tag, wer nur Samstag kommt, hat dort dieselben Chancen. Deckelkrone und Treuepokal dagegen '
+    + 'belohnen ausdrücklich, dass man da ist.</p></div>'
 
     + '<div class="para" id="p7"><h2><i>§ 7</i> Technische Daten</h2>'
     + '<p>Eine Biereinheit ist Liter mal Volumenprozent geteilt durch 2,5. Eine Halbe Helles ergibt damit '
@@ -4071,17 +4441,19 @@ const ERKLAERUNGEN = {
       + 'wenig für ein kleines K. Deshalb steht er ab Werk auf <b>40</b>.',
       'Wer ihn ändert, ändert die gesamte Historie mit: Die Punkte sind nirgends gespeichert, '
       + 'sondern werden bei jedem Laden neu aus den Getränkelisten gerechnet.']},
-  orden: {titel:'Die fünf Orden', para:'p6', paraName:'§ 6 Ordensverleihung',
-    text:['<b>Deckelkönig</b> — die meisten Biereinheiten über das ganze Wochenende. Belohnt die '
-        + 'Menge, und damit auch, wer am längsten dabei war.',
-      '<b>Schlagzahl</b> — der höchste Schnitt je Tag. Der Gegenpol: wer erst Samstag anreist und '
-      + 'dann abliefert, ist hier voll dabei.',
-      '<b>Aufsteiger</b> — der größte Punktgewinn. Geht auffällig oft an Leute, die vorher hinten '
-      + 'lagen. Das ist kein Fehler, das ist Elo.',
-      '<b>Gleichmaß</b> — die geringste Schwankung zwischen den Tagen. Für alle, die auch am '
-      + 'Sonntag noch reden können.',
-      '<b>Durchhalter</b> — an jedem Tag dabei und bei den meisten Locations. Der einzige Orden, '
-      + 'den man nicht ertrinken kann, nur ersitzen.']},
+  abzeichen: {titel:'Die drei Abzeichen', para:'p6', paraName:'§ 6 Abzeichen und Wanderpokale',
+    text:['<b>Tagessieger</b> — die meisten Biereinheiten des Tages.',
+      '<b>Fahrer des Abends</b> — die wenigsten Biereinheiten des Tages, ab drei am Tisch.',
+      '<b>Goldener Bettzipfel</b> — wer als Erster heimgeht. Zählt nur, wenn die Heim-Zeit '
+      + 'eingetragen ist: Tipp auf den Namen, dann „Geht heim“.',
+      'Abzeichen gibt es je Tag, sie werden gesammelt. Alle stehen in der Ehrenhalle.']},
+  pokale: {titel:'Die drei Wanderpokale', para:'p6', paraName:'§ 6 Abzeichen und Wanderpokale',
+    text:['<b>Deckelkrone</b> — die meisten Biereinheiten eines Wochenendes. Wandert beim Abschließen.',
+      '<b>Rekordhalter</b> — der beste Tag aller Zeiten. Wer ihn übertrifft, übernimmt ihn, '
+      + 'Gleichziehen reicht nicht.',
+      '<b>Treuepokal</b> — die längste Serie an Wochenenden, bei denen jemand dabei war, ab drei. '
+      + 'Wer eines auslässt, fängt bei null an.',
+      'Wer einen hält, hat das Zeichen in der Tabelle neben dem Namen.']},
   punkte: {titel:'Was die Punktzahl bedeutet', para:'p7', paraName:'§ 7 Technische Daten',
     text:['<b>Alle starten bei 1500.</b> Die Zahl misst nicht, wie viel jemand getrunken hat, '
         + 'sondern wie oft er mehr getrunken hat, <i>als von ihm erwartet war</i>.',
@@ -4096,7 +4468,7 @@ const ERKLAERUNGEN = {
       + 'einem von drei Tagen da war, wird nicht dafür bestraft. Sie beantwortet „wie stark trinkt '
       + 'der, wenn er da ist“ statt „wie viel hat er insgesamt geschafft“.',
       'Die ehrlichste Mengenangabe in der Tabelle — und die einzige, die ohne Erklärung auskommt.']},
-  siege: {titel:'Tagessiege', para:'p6', paraName:'§ 6 Ordensverleihung',
+  siege: {titel:'Tagessiege', para:'p6', paraName:'§ 6 Abzeichen und Wanderpokale',
     text:['An wie vielen <b>Tagen</b> jemand die meisten Biereinheiten hatte. Bei Gleichstand '
         + 'zählt der Tag für alle Beteiligten.',
       'Gewertet wird der ganze Tag über alle Locations zusammen, nicht jede Station einzeln.']},
@@ -4259,6 +4631,10 @@ function ansichtBenennen(){
   const nameZu = id => { const q = state.spieler.find(x => String(x.id) === String(id));
     return q ? q.name : '—'; };
   const bleibt = mit ? hier.filter(id => !an(id)) : [];
+  /* Bleibt genau einer zurück, ist das meist keiner, der sitzen bleibt, sondern einer,
+     der heimgeht. Eingetragen wird das aber nur, wenn es jemand ankreuzt. */
+  const einer = bleibt.length === 1 ? bleibt[0] : null;
+  const heimt = einer !== null && !!benennen.heim;
   const teilung = mit && hier.length > 1
     ? '<div class="wahl-titel" style="margin-top:16px">Wer geht mit?</div>'
       + '<p class="mini" style="margin:6px 0 0">Alle sind angehakt. Tipp ab, wer sitzen bleibt.</p>'
@@ -4266,8 +4642,15 @@ function ansichtBenennen(){
       + hier.map(id => '<button data-tu="mitAn" data-id="' + esc(id) + '" data-an="'
           + (an(id) ? 1 : 0) + '">' + esc(nameZu(id)) + '</button>').join('')
       + '</div>'
+      + (einer !== null
+          ? '<div class="teiln haken" style="margin-top:10px"><button data-tu="benennenHeim" data-an="'
+            + (heimt ? 1 : 0) + '">' + esc(nameZu(einer)) + ' geht heim</button></div>'
+          : '')
       + '<p class="hinweis" style="margin:10px 2px 0">'
-      + (bleibt.length
+      + (heimt
+          ? esc(nameZu(einer)) + ' geht heim, die Uhrzeit wird festgehalten. Alle anderen ziehen '
+            + 'weiter, die übrigen Geräte kommen von allein mit.'
+          : bleibt.length
           ? esc(bleibt.map(nameZu).join(', ')) + (bleibt.length === 1 ? ' bleibt' : ' bleiben')
             + ' an der alten Station und zähl' + (bleibt.length === 1 ? 't' : 'en')
             + ' dort weiter. Gewertet wird der ganze Tag, die Aufteilung kostet also niemanden '
@@ -4289,7 +4672,7 @@ function ansichtBenennen(){
     + (benennen.name !== undefined ? '' : ' autofocus') + '></div>'
     + teilung
     + '<button class="knopf voll" data-tu="benennenFertig">'
-    + (bleibt.length ? 'Passt, wir teilen uns auf' : 'Passt') + '</button>'
+    + (bleibt.length && !heimt ? 'Passt, wir teilen uns auf' : 'Passt') + '</button>'
     + '</div></div></div>';
 }
 
@@ -4313,12 +4696,21 @@ function ansichtZwischen(){
         + '<span class="trname">' + esc(q ? q.name : '—') + '</span>'
         + '<span class="trbe">' + zahl(t.erg[id].be,2) + ' BE</span>'
         + deltaChip(t.erg[id].delta, ' data-tu="rechnungTagAus" data-id="'+id
-          + '" data-we="'+we.id+'" data-tag="'+t.tag.id+'"') + '</div>';
+          + '" data-we="'+we.id+'" data-tag="'+t.tag.id+'"')
+        /* Hier lässt sich die Heim-Zeit auch für den nachtragen, der an einer früheren
+           Station zurückgeblieben ist – am Zählbildschirm steht sein Name nicht mehr. */
+        + '<button class="heimchip' + (heimVon(t.tag, id) !== undefined ? ' an' : '')
+        + '" data-tu="heimAuf" data-tag="' + t.tag.id + '" data-id="' + id + '">'
+        + (heimVon(t.tag, id) !== undefined ? 'heim ' + zeitKurz(heimVon(t.tag, id)) : 'heim?')
+        + '</button></div>';
     }).join('');
     const ist = t.tag.id === state.aktivTag;
+    const abz = abzeichenZeilen(tagAbzeichen(t), null);
     return '<div class="tagblock' + (ist ? ' laeuft' : '') + '">'
       + '<div class="tagkopf"><span>' + esc(t.tag.label) + (ist ? ' · läuft' : '') + '</span>'
-      + '<span class="tagorte">' + stationen + '</span></div>' + zeilen + '</div>';
+      + '<span class="tagorte">' + stationen + '</span></div>' + zeilen
+      + (abz ? '<div class="chrtag">' + (ist ? '<div class="chrkopf">Stand jetzt</div>' : '')
+          + abz + '</div>' : '') + '</div>';
   }).join('');
 
   const ids = [...new Set(e.tagLog.flatMap(t => Object.keys(t.erg)))];
@@ -4356,14 +4748,32 @@ function ansichtPerson(){
     liter += t.erg[p.id].liter; literAf += t.erg[p.id].literAf || 0;
     getr += t.erg[p.id].anzahl; } }));
 
-  const orden = {};
-  log.filter(e => e.tagLog.length).forEach(e => fazitVon(e).orden.forEach(o => {
-    if(o.w.split(', ').some(n => n === p.name)) orden[o.t] = (orden[o.t]||0) + 1;
+  const eh = ehrungen();
+  const meine = eh.zahlen[String(p.id)] || {};
+  const abzZeilen = ABZEICHEN.filter(z => meine[z.k]).map(z => '<div class="ozeile"><span>' + z.name
+      + '</span><b>' + meine[z.k] + '×</b></div>').join('')
+    || '<p class="hinweis" style="margin:6px 2px">Noch kein Abzeichen.</p>';
+  const drin = w => w.wer.some(x => String(x) === String(p.id));
+  const pokZeilen = POKALE.map(pk => {
+    const n = eh.verlauf[pk.k].filter(drin).length;
+    const jetzt = drin(eh.halter[pk.k]);
+    if(!n && !jetzt) return '';
+    return '<div class="ozeile"><span>' + pokalSymbol(pk.k, 13) + ' ' + pk.name
+      + (jetzt ? ' <em class="haelt">hält ihn</em>' : '') + '</span><b>' + n + '×</b></div>';
+  }).join('') || '<p class="hinweis" style="margin:6px 2px">Noch kein Wanderpokal.</p>';
+
+  /* Wie oft dabei, und wie lange: Wochenenden, Tage, Abende bis zum Schluss, Serie. */
+  const gewertet = log.filter(e => e.tagLog.length);
+  let tageAlle = 0, schluss = 0;
+  gewertet.forEach(e => e.tagLog.forEach(t => {
+    tageAlle++;
+    if(t.erg[p.id] && frueherGegangen(t.tag, Object.keys(t.erg)).indexOf(String(p.id)) < 0) schluss++;
   }));
-  const ordenZeilen = Object.keys(orden).length
-    ? Object.keys(orden).map(t => '<div class="ozeile"><span>' + t + '</span><b>'
-        + orden[t] + '×</b></div>').join('')
-    : '<p class="hinweis" style="margin:6px 2px">Noch kein Orden.</p>';
+  const serie = eh.serie[String(p.id)] ? eh.serie[String(p.id)].n : 0;
+  const dabeiZeile = '<p class="dabeizeile">Dabei: ' + weTeil[p.id] + ' von ' + gewertet.length
+    + ' ' + (gewertet.length === 1 ? 'Wochenende' : 'Wochenenden') + ' · ' + tagTeil[p.id] + ' von '
+    + tageAlle + ' ' + (tageAlle === 1 ? 'Tag' : 'Tagen') + ' · ' + schluss + '× bis zum Schluss'
+    + ' · Serie ' + serie + '</p>';
 
   const wes = log.filter(e => e.tagLog.some(t => t.erg[p.id])).reverse().map(e => {
     const d = (e.nachher[p.id]||0) - (e.vorher[p.id]||0);
@@ -4388,8 +4798,64 @@ function ansichtPerson(){
     + '<div><b>' + tagTeil[p.id] + '</b><span>Tage</span></div>'
     + '<div><b>' + weTeil[p.id] + '</b><span>Wochenenden</span></div>'
     + '<div><b>' + ortTeil[p.id] + '</b><span>Locations</span></div></div>'
-    + '<div class="abschnitt">Orden</div>' + ordenZeilen
+    + dabeiZeile
+    + '<div class="abschnitt">Abzeichen</div>' + abzZeilen
+    + '<div class="abschnitt">Wanderpokale</div>' + pokZeilen
+    + '<button class="knopf leer" data-tu="geheRuhm">Zur Ehrenhalle</button>'
     + '<div class="abschnitt">Wochenenden</div>' + wes;
+}
+
+/* ---------- Ehrenhalle ----------
+   Alles an einem Ort: wer die Pokale gerade hält und wie sie gewandert sind, wer welche
+   Abzeichen gesammelt hat, und Tag für Tag, wer sie bekam. Neueste zuerst. */
+function ansichtRuhm(){
+  const eh = ehrungen();
+  const {log} = berechnen();
+  const datumVon = id => { const w = state.we.find(x => x.id === id); return w ? datumHuebsch(w.datum) : ''; };
+
+  const pokale = POKALE.map(pk => {
+    const h = eh.halter[pk.k];
+    const erkl = pk.k === 'krone' ? 'Die meisten BE an einem Wochenende. Wandert bei jedem Abschluss.'
+               : pk.k === 'rekord' ? 'Der beste Tag aller Zeiten. Wer ihn übertrifft, übernimmt ihn.'
+               : 'Die längste Serie an Wochenenden, bei denen man dabei war – ab drei.';
+    const wert = w => pk.k === 'treue' ? w.wert + ' in Folge'
+                    : zahl(w.wert, 2) + ' BE';
+    const verlauf = [...eh.verlauf[pk.k]].reverse().map(w => '<div class="rzeile">'
+        + '<span class="rwer">' + (w.wer.length ? esc(namenListe(w.wer)) : 'unvergeben') + '</span>'
+        + '<span class="rwo">' + esc(weTitel(w.weId)) + ' · ' + datumVon(w.weId) + '</span>'
+        + '<span class="rwert">' + (w.wer.length ? wert(w) : '') + '</span></div>').join('');
+    return '<div class="pokalblock">'
+      + '<div class="pokalkopf">' + pokalSymbol(pk.k, 22) + '<div><div class="pokalname">' + pk.name + '</div>'
+      + '<div class="pokalhalter">' + (h.wer.length ? esc(namenListe(h.wer)) + ' · ' + wert(h)
+          : 'noch nicht vergeben') + '</div></div></div>'
+      + '<p class="mini" style="margin:6px 0 0">' + erkl + '</p>'
+      + (verlauf ? '<div class="rverlauf">' + verlauf + '</div>' : '') + '</div>';
+  }).join('');
+
+  const leute = state.spieler.filter(p => eh.zahlen[String(p.id)]);
+  const tabelle = leute.length
+    ? '<div class="abztab"><div class="abzkopf"><span></span>'
+      + ABZEICHEN.map(z => '<span>' + z.name + '</span>').join('') + '</div>'
+      + leute.map(p => '<div class="abzzeile"><span class="abzname">' + esc(p.name) + '</span>'
+          + ABZEICHEN.map(z => '<b>' + ((eh.zahlen[String(p.id)] || {})[z.k] || 0) + '</b>').join('')
+          + '</div>').join('') + '</div>'
+    : '<p class="hinweis" style="margin:6px 2px">Noch kein Abzeichen vergeben.</p>';
+
+  const chronik = log.filter(e => e.tagLog.length).reverse().map(e => {
+    const tage = e.tagLog.map(t => {
+      const c = eh.chronik.find(x => x.tagId === t.tag.id);
+      const z = c ? abzeichenZeilen(c.a, null) : '';
+      return '<div class="chrtag"><div class="chrkopf">' + esc(t.tag.label)
+        + (e.we.id === state.aktivWe && t.tag.id === state.aktivTag ? ' · läuft' : '') + '</div>'
+        + (z || '<p class="mini" style="margin:4px 0 0">Nichts vergeben.</p>') + '</div>';
+    }).join('');
+    return '<div class="chrwe"><div class="chrtitel">' + esc(e.we.titel) + ' · '
+      + datumHuebsch(e.we.datum) + '</div>' + tage + '</div>';
+  }).join('') || '<p class="hinweis" style="margin:6px 2px">Noch nichts gewertet.</p>';
+
+  return '<div class="abschnitt oben">Wanderpokale</div>' + pokale
+    + '<div class="abschnitt">Abzeichen</div>' + tabelle
+    + '<div class="abschnitt">Chronik</div>' + chronik;
 }
 
 /* ---------- Sichern ---------- */
@@ -4566,7 +5032,8 @@ function kopfBauen(m){
      trägt deshalb denselben Kopf mit Zurück-Pfeil – nur führt der hier zurück aufs
      Zählen und wirft die Vorauswahl weg, statt sie liegenzulassen. */
   const weBearb = m === 'neu' && vorwahl && vorwahl.weId;
-  const zurueck = (m === 'einst' || m === 'info' || m === 'wedetail' || m === 'person' || m === 'zwischen')
+  const zurueck = (m === 'einst' || m === 'info' || m === 'wedetail' || m === 'person' || m === 'zwischen'
+                   || m === 'ruhm')
     ? '<button class="kopf-zurueck" data-tu="zurueckNavi">‹ zurück</button>'
     : weBearb ? '<button class="kopf-zurueck" data-tu="weKopfZu">‹ zurück</button>' : '';
   const titel = m === 'einst' ? 'Einstellungen'
@@ -4574,6 +5041,7 @@ function kopfBauen(m){
               : m === 'wedetail' ? 'Wochenende'
               : m === 'person' ? 'Spieler'
               : m === 'zwischen' ? 'Zwischenstand'
+              : m === 'ruhm' ? 'Ehrenhalle'
               : weBearb ? 'Wochenende'
               : null;
 
@@ -4613,6 +5081,7 @@ function blendenSchluessel(){
   if(punkteOffen) return 'punkte';
   if(erklaer)     return 'erklaer:' + erklaer;
   if(blatt)       return 'blatt:' + blatt.id;
+  if(heimBlatt)   return 'heim:' + heimBlatt.tag + ':' + heimBlatt.id;
   if(sicherBlatt) return 'sicher';
   if(benennen)    return 'benennen';
   if(wechsler)    return 'wechsler';
@@ -4627,7 +5096,7 @@ function zeichnen(){
     document.querySelectorAll('.blende').forEach(x => x.remove());
     foto = null; blatt = null; rechnung = null; wechsler = false;
     punkteOffen = false; benennen = false; nachfrage = null; sicherBlatt = null;
-    erklaer = null; blendeStand = null;
+    erklaer = null; blendeStand = null; heimBlatt = null;
     const app = document.getElementById('app');
     if(app) app.innerHTML = '<div class="leerzustand"><h2>Da ist was schiefgelaufen</h2>'
       + '<p>Die Anzeige konnte nicht aufgebaut werden. Deine Daten sind gespeichert.</p></div>'
@@ -4949,6 +5418,7 @@ function zeichnenRoh(){
     m === 'neu'      ? ansichtNeuesWe() :
     m === 'person'   ? ansichtPerson() :
     m === 'zwischen' ? ansichtZwischen() :
+    m === 'ruhm'     ? ansichtRuhm() :
     m === 'token'    ? ansichtToken() : ansichtArchiv();
 
   if(infoZiel && m === 'info'){
@@ -4970,6 +5440,7 @@ function zeichnenRoh(){
   else if(punkteOffen) document.body.insertAdjacentHTML('beforeend', ansichtPunkte());
   else if(erklaer)  document.body.insertAdjacentHTML('beforeend', ansichtErklaer());
   else if(blatt)    document.body.insertAdjacentHTML('beforeend', ansichtBlatt());
+  else if(heimBlatt) document.body.insertAdjacentHTML('beforeend', ansichtHeim());
   else if(sicherBlatt) document.body.insertAdjacentHTML('beforeend', ansichtSicher());
   else if(benennen) document.body.insertAdjacentHTML('beforeend', ansichtBenennen());
   else if(wechsler) document.body.insertAdjacentHTML('beforeend', ortWechsler());
@@ -5005,7 +5476,7 @@ const tu = {
   zurueckNavi(){
     const v = stapel.pop();
     frage = null; erklaer = null; rechnung = null; punkteOffen = false;
-    blatt = null; wechsler = false; sicherBlatt = null; benennen = false;
+    blatt = null; wechsler = false; sicherBlatt = null; benennen = false; heimBlatt = null;
     if(v){ ansicht = v.a; personId = v.p; detailId = v.d; }
     else { ansicht = state.aktivWe ? null : 'archiv'; personId = null; detailId = null; }
     window.scrollTo(0,0); zeichnen();
@@ -5014,6 +5485,8 @@ const tu = {
     frage = null; window.scrollTo(0,0); zeichnen(); },
   geheZaehlen(){ stapel = []; ansicht = null; frage = null; window.scrollTo(0,0); zeichnen(); },
   geheZwischen(){ tu.merken(); ansicht = 'zwischen'; frage = null; window.scrollTo(0,0); zeichnen(); },
+  geheRuhm(){ tu.merken(); ansicht = 'ruhm'; frage = null; erklaer = null; fazitOffen = null;
+    window.scrollTo(0,0); zeichnen(); },
   geheEinst(){ tu.merken(); ansicht = 'einst'; frage = null; window.scrollTo(0,0); zeichnen(); },
   geheInfo(el){
     tu.merken();
@@ -5298,13 +5771,20 @@ const tu = {
     const i = tg.orte.findIndex(o => o.id === ort.id);
     const weiter = new Set();
     tg.orte.slice(i + 1).forEach(o => Object.keys(o.getraenke).forEach(id => weiter.add(id)));
-    const hier = Object.keys(ort.getraenke);
+    /* Wer heimgegangen ist, geht auch nicht mit. */
+    const hier = Object.keys(ort.getraenke).filter(id => heimVon(tg, id) === undefined);
     const nimm = hier.filter(id => !weiter.has(id));
     /* `wer` ist der Vorrat und steht fest, `mit` die Auswahl darin und ändert sich
        bei jedem Tipp auf ein Namenskästchen. */
     const wer = nimm.length ? nimm : hier;
     benennen = {von:{tag:tg.id, ort:ort.id}, neu:'ort', wer, mit:wer.slice()};
     zeichnen();
+  },
+  benennenHeim(){
+    if(!benennen) return;
+    const f = document.getElementById('ortNameNeu');
+    if(f) benennen.name = f.value;
+    benennen.heim = !benennen.heim; zeichnen();
   },
   mitAn(el){
     if(!benennen || !benennen.mit) return;
@@ -5340,8 +5820,15 @@ const tu = {
       const g = {}; mit.forEach(id => g[id] = []);
       const neuOrt = {id:neueId(), name, getraenke:g};
       tg.orte.push(neuOrt);
-      const bleibt = (benennen.wer || [])
+      let bleibt = (benennen.wer || [])
         .filter(id => !mit.some(x => String(x) === String(id)));
+      /* Geht der eine Zurückgebliebene heim, zieht die Gruppe geschlossen weiter –
+         das ist keine Aufteilung, und der Zeiger der Gruppe muss mit. */
+      if(bleibt.length === 1 && benennen.heim){
+        tg.heim = Object.assign({}, tg.heim);
+        tg.heim[bleibt[0]] = Date.now();
+        bleibt = [];
+      }
       /* Kommen alle mit, zieht die Gruppe weiter und alle Geräte folgen. Bleibt jemand
          zurück, ist das eine Aufteilung: Der Zeiger der Gruppe bleibt an der alten
          Station, nur dieses Gerät geht voraus.
@@ -5388,10 +5875,11 @@ const tu = {
     sichern(); zeichnen();
   },
   ortRein(el){
-    const {we, ort} = aktuell();
+    const {we, tg, ort} = aktuell();
     const id = +el.dataset.id;
     if(we && !we.dabei.some(x => String(x) === String(id))) we.dabei.push(id);
     ort.getraenke[id] = [];
+    if(tg && tg.heim) delete tg.heim[id];
     sichern(); zeichnen();
   },
   gastRein(){
@@ -5424,8 +5912,19 @@ const tu = {
   nkS(el){ neuKombi.s = el.dataset.k; zeichnen(); },
   nkG(el){ neuKombi.g = el.dataset.k; zeichnen(); },
   strich(el){
-    const {ort} = aktuell();
+    const {tg, ort} = aktuell();
     const pid = el.dataset.id;
+    /* Wer heimgegangen ist, bekommt nicht aus Versehen ein Bier: Erst fragen. Der zweite
+       Tipp heißt „er ist wieder da“ – dann ist auch die Heim-Zeit weg. */
+    if(heimVon(tg, pid) !== undefined){
+      if(nachfrage !== 'heim:' + pid){
+        nachfrage = 'heim:' + pid; zeichnen();
+        setTimeout(() => { if(nachfrage === 'heim:' + pid){ nachfrage = null; zeichnen(); } },
+          FRAGE_DAUER);
+        return;
+      }
+      delete tg.heim[pid];
+    }
     /* Dieselbe Falle wie bei der Runde: zwei Leute tragen dasselbe Bier ein. Erst
        fragen, dann eintragen – und dabei nichts anfassen, sonst verschwindet das
        „Runde zurücknehmen“, obwohl noch gar nichts passiert ist. */
@@ -5447,8 +5946,8 @@ const tu = {
     tagebuch(ort, {art:'minus', key:weg, pid:el.dataset.id});
     sichern(); zeichnen(); },
   runde(){
-    const {ort} = aktuell();
-    const ids = Object.keys(ort.getraenke);
+    const {tg, ort} = aktuell();
+    const ids = Object.keys(ort.getraenke).filter(id => heimVon(tg, id) === undefined);
     if(!ids.length) return;
     const vorige = letzteRundeIm(ort);
     if(vorige && Date.now()-vorige.t < FRAGE_FENSTER && nachfrage !== 'runde'){
@@ -5502,6 +6001,37 @@ const tu = {
     blatt = null; markenPruefen(); sichern(); zeichnen();
   },
   blattZu(){ blatt = null; zeichnen(); },
+  heimJetzt(el){
+    const {tg} = tagSuchen(el.dataset.tag);
+    if(!tg) return;
+    tg.heim = Object.assign({}, tg.heim);
+    tg.heim[el.dataset.id] = Date.now();
+    const q = state.spieler.find(x => String(x.id) === String(el.dataset.id));
+    blatt = null; nachfrage = null;
+    sichern(); zeichnen();
+    toast((q ? q.name : 'Er') + ' ist heim · ' + zeitKurz(tg.heim[el.dataset.id]));
+  },
+  heimSetzen(el){
+    const {we, tg} = tagSuchen(el.dataset.tag);
+    if(!tg) return;
+    const f = document.getElementById('heimZeit');
+    const t = heimZeitAus(we, tg, f ? f.value : '');
+    if(t === null){ toast('Keine gültige Uhrzeit'); return; }
+    tg.heim = Object.assign({}, tg.heim);
+    tg.heim[el.dataset.id] = t;
+    sichern(); zeichnen(); toast('Heim um ' + zeitKurz(t));
+  },
+  heimWeg(el){
+    const {tg} = tagSuchen(el.dataset.tag);
+    if(!tg || !tg.heim) return;
+    tg.heim = Object.assign({}, tg.heim);
+    delete tg.heim[el.dataset.id];
+    sichern(); zeichnen();
+  },
+  heimAuf(el){ heimBlatt = {tag:el.dataset.tag, id:el.dataset.id}; zeichnen(); },
+  heimZu(){ heimBlatt = null; zeichnen(); },
+  /* Nur ein Tipp wirklich daneben schließt – im Blatt steckt ein Uhrzeitfeld. */
+  heimHintergrund(){ tu.heimZu(); },
   blattHintergrund(){},
 
   fotoStart(){
