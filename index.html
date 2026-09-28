@@ -438,6 +438,11 @@ table.rechnung td.schlecht{color:#E09084}
   padding:13px;border-radius:5px;background:var(--deckel);color:var(--tinte);
   font-weight:800;font-size:15px;letter-spacing:.01em}
 .rundeknopf span{font-family:var(--mono);font-size:12px;opacity:.6;font-weight:400}
+.rundekurz{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:6px;
+  padding:9px;border-radius:5px;border:1px solid var(--linie);color:var(--deckel);
+  font-weight:700;font-size:13.5px}
+.rundekurz span{font-family:var(--mono);font-size:11px;opacity:.6;font-weight:400}
+.rundekurz:disabled{opacity:.4}
 .rundeknopf:active{transform:translateY(1px)}
 .rundeknopf[disabled]{opacity:.4}
 .rundezurueck{display:block;width:100%;margin-top:7px;padding:9px;border-radius:5px;
@@ -716,7 +721,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-28 11:26 · G57 (GitHub)';
+const FASSUNG = '2026-09-28 16:45 · G58 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -731,6 +736,13 @@ const FASSUNG = '2026-09-28 11:26 · G57 (GitHub)';
 const NOTIZ_START  = 1;
 const NOTIZ_ANZAHL = 3;
 const NOTIZEN = [
+  {f:'G58', d:'28.09.2026', z:'16:45', punkte:[
+    'Longdrinks und Kurze lassen sich eintragen. Sie stehen in der Pille unter „Kein Bier“ '
+    + 'und in der Sammel-Eingabe; gerechnet wird der Schnaps: ein Longdrink 0,64, ein '
+    + 'Kurzer 0,32.',
+    'Unter „Runde für alle“ gibt es einen eigenen Knopf für eine Runde Kurze. Die Pille '
+    + 'muss dafür nicht umgestellt werden, und eine Runde Kurze gleich nach einer Runde Bier '
+    + 'fragt nicht nach, ob es die schon gab.']},
   {f:'G56', d:'28.09.2026', z:'10:31', punkte:[
     'Die alten Orden sind durch Abzeichen und Wanderpokale ersetzt. Abzeichen gibt es an '
     + 'jedem Tag: Tagessieger, Fahrer des Abends für den, der am wenigsten getrunken hat, '
@@ -966,15 +978,34 @@ const GROESSE = [
   {k:'05',  n:'0,5',  l:0.5},
   {k:'10',  n:'1,0',  l:1.0}
 ];
+/* Longdrink und Kurzer (G58). Kein Bier, also nicht Stärke × Größe, sondern je ein
+   fester Schlüssel mit einer festen Menge Schnaps. Gerechnet wird wie beim Bier über die
+   Biereinheit, nur mit dem Schnaps statt dem Glas: 4 cl bei 40 % sind 0,64 BE, 2 cl
+   sind 0,32 BE. Bei den Litern zählt das Glas, wie es auf den Tisch kommt. */
+const SCHNAPS = [
+  {k:'lang:04', s:'lang', n:'Longdrink', kurz:'Longdrink', cl:4, v:40, l:0.3},
+  {k:'kurz:02', s:'kurz', n:'Kurzer',    kurz:'Kurzer',    cl:2, v:40, l:0.02}
+];
+const KURZER = 'kurz:02', LONGDRINK = 'lang:04';
+const schnapsVon = key => SCHNAPS.find(x => x.k === key);
 const S = k => STAERKE.find(x => x.k === k);
 const Gr = k => GROESSE.find(x => x.k === k);
 const teile = key => { const t = String(key||'').split(':'); return {s:S(t[0]), g:Gr(t[1])}; };
-const beVon = key => { const {s,g} = teile(key); return s && g ? g.l*s.v/2.5 : 0; };
-const literVon = key => { const {g} = teile(key); return g ? g.l : 0; };
+const istBier = key => { const {s,g} = teile(key); return !!(s && g); };
+const beVon = key => { const x = schnapsVon(key); if(x) return x.cl/100*x.v/2.5;
+  const {s,g} = teile(key); return s && g ? g.l*s.v/2.5 : 0; };
+const literVon = key => { const x = schnapsVon(key); if(x) return x.l;
+  const {g} = teile(key); return g ? g.l : 0; };
+/* Der Schlüssel zu einer Wahl aus Stärke und Größe – oder zu einem Schnaps, dann zählt
+   die Größe nicht. Eine Stelle für Pille, Sammel-Eingabe und Foto. */
+const kombiKey = (s, g) => { const x = SCHNAPS.find(y => y.s === s); return x ? x.k : s + ':' + g; };
 const KOMBIS = (function(){ const a = [];
-  STAERKE.forEach(s => GROESSE.forEach(g => a.push(s.k + ':' + g.k))); return a; })();
+  STAERKE.forEach(s => GROESSE.forEach(g => a.push(s.k + ':' + g.k)));
+  SCHNAPS.forEach(x => a.push(x.k)); return a; })();
 const leereZaehlung = () => { const z = {}; KOMBIS.forEach(k => z[k] = 0); return z; };
 function nameVon(key){
+  const x = schnapsVon(key);
+  if(x) return x.n;
   const {s,g} = teile(key);
   if(!s || !g) return '—';
   if(s.k === 'af') return 'Alkoholfrei ' + g.n;
@@ -983,6 +1014,8 @@ function nameVon(key){
   return s.n + ' ' + g.n;
 }
 function kurzVon(key){
+  const x = schnapsVon(key);
+  if(x) return x.kurz;
   const {s,g} = teile(key);
   if(!s || !g) return '—';
   if(s.k === 'af') return 'AF';
@@ -1027,7 +1060,7 @@ let state = {
   aktivWe:null, aktivTag:null, aktivOrt:null, wahlS:'normal', wahlG:'05',
   wahlOffen:false, stand:0
 };
-const wahlKey = () => state.wahlS + ':' + state.wahlG;
+const wahlKey = () => kombiKey(state.wahlS, state.wahlG);
 let neuKombi = {s:'normal', g:'05'};
 
 function standDaten(){
@@ -1303,8 +1336,10 @@ function tagebuch(ort, eintrag){
    und so lange bleibt die Frage stehen, bevor sie von selbst verschwindet. */
 const FRAGE_FENSTER = 180000;
 const FRAGE_DAUER   = 6000;
-const letzteRundeIm = ort => {
-  const l = (ort.log || []).filter(x => x.art === 'runde');
+/* Die letzte Runde an dieser Location – getrennt nach Kurzen und allem anderen. Eine
+   Runde Kurze gleich nach einer Runde Bier ist kein Doppeltipp, sondern der Normalfall. */
+const letzteRundeIm = (ort, kurze) => {
+  const l = (ort.log || []).filter(x => x.art === 'runde' && (x.key === KURZER) === !!kurze);
   return l.length ? l[l.length-1] : null;
 };
 /* Die letzte Eintragung, die diesen Namen betrifft – rückwärts gesucht und nur
@@ -1407,7 +1442,10 @@ const SORTE_ANDERE  = 2;
    Führungswechsel, den das nächste Bier zehn Sekunden später umdreht, war keiner. */
 const SAMMEL_FENSTER = 2 * 60000;
 /* Die Arten, die mehrere Leute sammeln (`m.pids`) – je Tag und Person höchstens einmal. */
-const SAMMEL_ARTEN  = new Set(['rekordnah', 'rekord', 'schlag', 'af']);
+const SAMMEL_ARTEN  = new Set(['rekordnah', 'rekord', 'schlag', 'af', 'abtruennig']);
+/* Abtrünnig ist, wer vor seinem ersten Longdrink des Abends mindestens so viele Biere
+   hatte. Kurze zählen dabei nicht: Ein Schnaps zwischendurch ist Beiwerk, kein Wechsel. */
+const ABTRUENNIG_BIER = 5;
 /* Und die, die das Fenster abwarten. Der Führungswechsel sammelt nicht, wartet aber. */
 const FENSTER_ARTEN = new Set([...SAMMEL_ARTEN, 'fuehrung']);
 /* So nah am Rekord gilt als „in Reichweite“. */
@@ -1733,6 +1771,30 @@ const URKUNDE_ERSATZ = {
     {text:'Neuer Rekord, aufgestellt von {name}: Die alte Marke von {rekord} Biereinheiten '
         + 'ist Geschichte. Genau so is des, NUR so.'}
   ],
+  /* Das Gegenstück zum Arschloch: erst stur beim Bier, dann doch der Longdrink. */
+  abtruennig: [
+    {kopf:'Abtrünnig: {name}',
+     text:'Erst hieß es stundenlang: Ich bleib beim Arschloch. Jetzt steht ein Longdrink vor '
+        + '{name}. Die Runde nimmt den Seitenwechsel ordnungspetergemäß zu Protokoll.'},
+    {kopf:'{name} wechselt die Seite',
+     text:'Ein Bier nach dem anderen, und dann das: ein Longdrink, bestellt von {name}. Des '
+        + 'sind normale Gedanken, heißt es.'},
+    {kopf:'Vom Bier abgefallen',
+     text:'Lange war es Bier, jetzt ist es ein Longdrink. {name}: Kleiner Scherz am Rande, aber '
+        + 'im Prinzip isses so – das Bier hat einen Anhänger verloren.'}
+  ],
+  /* Die erste Runde Kurze des Abends, für den ganzen Tisch. */
+  kurz: [
+    {kopf:'Kurzer Prozess',
+     text:'{zahl} Kurze auf einen Schlag, für {name}. Dann machts BAM! Der Abend hat die '
+        + 'nächste Stufe erreicht.'},
+    {kopf:'Die erste Runde Kurze',
+     text:'Soeben ausgeschenkt: Kurze für {name}. Bam, ba-bam! Flatsch, flatsch! Die Runde '
+        + 'hat sich entschieden, den Abend nicht mehr gemütlich zu nehmen.'},
+    {kopf:'Schnaps ist gekommen',
+     text:'Für {name} steht ein Kurzer auf dem Tisch. Des sin Sachen ausm Leeeeeben, und '
+        + 'ordnungspetergemäß erfasst sind sie auch.'}
+  ],
   /* Der Morgen danach: Tagessieger und Fahrer des Vortags in einer Meldung. */
   morgen: [
     {kopf:'Die Bilanz von gestern',
@@ -1883,6 +1945,31 @@ function schlagzahl(tg, pid){
   return false;
 }
 
+/* Die Getränke einer Person an einem Tag, in der Reihenfolge der Stationen. */
+const getraenkeAmTag = (tg, pid) => (tg.orte || []).reduce((a,o) =>
+  a.concat(((o.getraenke || {})[pid]) || []), []);
+/* Wie viele Biere vor dem ersten Longdrink des Tages – oder `null`, wenn es noch keinen
+   gibt. Abtrünnig ist, wer dabei auf `ABTRUENNIG_BIER` kommt. */
+function bierVorLongdrink(tg, pid){
+  let bier = 0;
+  for(const k of getraenkeAmTag(tg, pid)){
+    if(k === LONGDRINK) return bier;
+    if(istBier(k)) bier++;
+  }
+  return null;
+}
+const abtruennig = (tg, pid) => (bierVorLongdrink(tg, pid) || 0) >= ABTRUENNIG_BIER;
+/* Die erste Runde Kurze des Tages, aus dem Tagebuch – nur was als Runde getippt wurde,
+   nicht einzeln eingetragene Kurze. Eine zurückgenommene zählt nicht. */
+function ersteKurzeRunde(tg){
+  const l = [];
+  (tg.orte || []).forEach(o => (o.log || []).forEach(x => {
+    if(x.art === 'runde' && x.key === KURZER && !x.weg && (x.ids || []).length) l.push(x);
+  }));
+  l.sort((a,b) => a.t - b.t);
+  return l[0] || null;
+}
+
 /* Wer an diesem Tag Alkoholfreies auf der Liste hat. */
 const afLeute = tg => tagLeute(tg).filter(id => (tg.orte || []).some(o =>
   (((o.getraenke || {})[id]) || []).some(k => String(k).indexOf('af:') === 0)));
@@ -1968,6 +2055,14 @@ function markenAufraeumen(){
         const tg = tagVon(m);
         return !!tg && tagAbzeichen(tagAlsLog(tg)).zipfel.some(x => String(x) === String(m.pid));
       }
+      /* Weg ist der Kurze Prozess nur, wenn seine Runde ausdrücklich zurückgenommen wurde.
+         Dass sie irgendwann aus dem Tagebuch rutscht (es behält nur die letzten 40), nimmt
+         ihn nicht zurück. */
+      if(m.art === 'kurz'){
+        const tg = tagVon(m);
+        if(!tg) return false;
+        return !(tg.orte || []).some(o => (o.log || []).some(x => x.t === m.rundeT && x.weg));
+      }
       if(m.art === 'mangel') return mangel.has(String(m.pid));
       if(m.art === 'sorte')  return sorteTreu(w, m.pid) === m.sorte;
       /* Solange das Fenster offen ist, muss der Führungswechsel noch stimmen: Dreht das
@@ -1998,6 +2093,7 @@ function markeTraegt(m, tg, pid){
   if(m.art === 'rekordnah') return beAmTag(tg, pid) + REKORD_NAH + 1e-9 >= (m.rekord || 0);
   if(m.art === 'af')        return afLeute(tg).some(x => String(x) === String(pid));
   if(m.art === 'schlag')    return !fensterOffen(m) || schlagzahl(tg, pid);
+  if(m.art === 'abtruennig') return abtruennig(tg, pid);
   return true;
 }
 
@@ -2140,6 +2236,25 @@ function markenPruefen(){
         sammeln('schlag', tg, pid, {gross:String(SCHLAG_ANZAHL), einheit:'in 30 Minuten'});
     });
     afLeute(tg).forEach(pid => sammeln('af', tg, pid, {gross:'0,0', einheit:'Biereinheiten'}, true));
+
+    /* Abtrünnig: der erste Longdrink nach mindestens fünf Bieren. Wer an diesem Wochenende
+       schon für seine Sturheit ausgezeichnet wurde, ist der schönste Fall – das bekommt
+       die Anweisung mit. */
+    tagLeute(tg).forEach(pid => {
+      if(!abtruennig(tg, pid)) return;
+      const stur = we.marken.some(m => m.art === 'sorte' && String(m.pid) === String(pid));
+      sammeln('abtruennig', tg, pid, {gross:String(bierVorLongdrink(tg, pid)),
+        einheit:'Bier, dann Longdrink', mehr:{bier:bierVorLongdrink(tg, pid), stur}});
+    });
+
+    /* Kurzer Prozess: die erste Runde Kurze des Abends. Eine Meldung für den ganzen Tisch,
+       ohne Fenster – es ist ja ein einziger Tipp. */
+    const kr = ersteKurzeRunde(tg);
+    if(kr && !we.marken.some(m => m.art === 'kurz' && m.tagId === tg.id)){
+      const ids = kr.ids.map(String).filter(id => tagLeute(tg).indexOf(id) >= 0);
+      if(ids.length) anlegen('kurz', tg.id, ids[0], String(ids.length), 'Kurze auf einen Schlag',
+        Object.assign(amTag(tg, ids[0]), {pids:ids, rundeT:kr.t}));
+    }
 
     /* Der Bettzipfel, live beim ersten „Geht heim“ – für den Ersten. Wer binnen zehn
        Minuten mitgeht, teilt das Abzeichen, bekommt aber keine eigene Meldung. */
@@ -3133,6 +3248,9 @@ function ansichtZaehlen(){
       + (x.k==='af' ? '' : '<small>' + zahl(x.v,0) + '%</small>') + '</button>').join('');
   const wahlG = GROESSE.map(x => '<button class="chip" data-tu="wahlG" data-k="'+x.k+'" data-an="'
       + (state.wahlG===x.k?1:0) + '">' + x.n + '</button>').join('');
+  const wahlX = SCHNAPS.map(x => '<button class="chip" data-tu="wahlS" data-k="'+x.s+'" data-an="'
+      + (state.wahlS===x.s?1:0) + '">' + x.n + '<small>' + x.cl + ' cl</small></button>').join('');
+  const schnapsGewaehlt = SCHNAPS.some(x => x.s === state.wahlS);
 
   const k = kette();
   const pos = kettePos(k);
@@ -3154,7 +3272,8 @@ function ansichtZaehlen(){
     return '';
   }
   const buch = (ort.log || []);
-  const vorigeRunde = letzteRundeIm(ort);
+  const vorigeRunde = letzteRundeIm(ort, wahlKey() === KURZER);
+  const vorigeKurze = letzteRundeIm(ort, true);
   const letzterX = buch.length ? buch[buch.length-1] : null;
   const letzteEintrag = letzterX
     ? {txt:eintragText(letzterX), t:letzterX.t,
@@ -3177,8 +3296,11 @@ function ansichtZaehlen(){
     + '<span class="pille-pfeil">' + (auf ? '⌃' : '⌄') + '</span></button>'
     + (auf ? '<div class="wahl-auf"><div class="wahl-titel">Stärke</div>'
         + '<div class="chips">' + wahlS + '</div>'
-        + '<div class="wahl-titel" style="margin-top:10px">Größe</div>'
-        + '<div class="chips">' + wahlG + '</div>'
+        /* Beim Schnaps gibt es keine Größe zu wählen – die Reihe fällt dann weg. */
+        + (schnapsGewaehlt ? '' : '<div class="wahl-titel" style="margin-top:10px">Größe</div>'
+        + '<div class="chips">' + wahlG + '</div>')
+        + '<div class="wahl-titel" style="margin-top:10px">Kein Bier</div>'
+        + '<div class="chips">' + wahlX + '</div>'
         + '<button class="erklaerlink" data-tu="erklaerAuf" data-was="be">'
         + 'Was bedeutet BE?</button></div>' : '')
     + (rueck
@@ -3194,6 +3316,14 @@ function ansichtZaehlen(){
           + '<path d="M6 3h11l-1 15a3 3 0 0 1-3 3H10a3 3 0 0 1-3-3z"/>'
           + '<path d="M17 7h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2"/></svg>'
           + 'Runde für alle<span>' + amTisch.length + '×</span></button>')
+    /* Kurze kommen fast immer als Runde, und dafür soll niemand die Pille umstellen und
+       danach wieder zurück. Deshalb ein eigener, kleinerer Knopf. */
+    + (rueck ? ''
+        : nachfrage === 'rundeKurze' && vorigeKurze
+        ? '<button class="rundekurz warnung2" data-tu="rundeKurze">'
+          + vorWieGross(vorigeKurze.t) + ' gab es schon Kurze – nochmal tippen</button>'
+        : '<button class="rundekurz" data-tu="rundeKurze"' + (amTisch.length ? '' : ' disabled') + '>'
+          + 'Runde Kurze<span>' + amTisch.length + '×</span></button>')
     + (!rueck && eigen && !benennen
         ? '<div class="rueckband"><span>Getrennt' + (gOrt ? ' · Gruppe in ' + esc(gOrt.ort.name) : '')
           + '</span><button data-tu="zurGruppe">Wieder mitlaufen</button></div>' : '')
@@ -3335,10 +3465,14 @@ function kombiWaehler(tuHinzu, extra){
       + (neuKombi.s===x.k?1:0) + '">' + x.n + '</button>').join('');
   const cg = GROESSE.map(x => '<button class="chip mini-chip" data-tu="nkG" data-k="'+x.k+'" data-an="'
       + (neuKombi.g===x.k?1:0) + '">' + x.n + '</button>').join('');
-  const key = neuKombi.s + ':' + neuKombi.g;
+  const cx = SCHNAPS.map(x => '<button class="chip mini-chip" data-tu="nkS" data-k="'+x.s+'" data-an="'
+      + (neuKombi.s===x.s?1:0) + '">' + x.n + '</button>').join('');
+  const key = kombiKey(neuKombi.s, neuKombi.g);
+  const istSchnaps = !!schnapsVon(key);
   return '<div class="zufuegen"><p class="mini" style="margin:0 0 7px">Weitere Sorte eintragen</p>'
     + '<div class="chips" style="margin-bottom:6px">' + cs + '</div>'
-    + '<div class="chips" style="margin-bottom:9px">' + cg + '</div>'
+    + (istSchnaps ? '' : '<div class="chips" style="margin-bottom:6px">' + cg + '</div>')
+    + '<div class="chips" style="margin-bottom:9px">' + cx + '</div>'
     + '<button class="knopf leer" style="margin:0" data-tu="'+tuHinzu+'"'+(extra||'')+'>+ '
     + nameVon(key) + ' · ' + zahl(beVon(key),2) + ' BE</button></div>';
 }
@@ -3617,7 +3751,8 @@ function markeFinden(id){
 }
 /* Welche Arten oben eine Überschrift tragen. Die Stufen nicht: Da steht die Zahl groß
    darüber, ein Kopf wäre die dritte Zeile, die dasselbe sagt. */
-const MARKE_MIT_KOPF = new Set(['mangel', 'zipfel', 'af', 'schlag', 'rekordnah', 'morgen']);
+const MARKE_MIT_KOPF = new Set(['mangel', 'zipfel', 'af', 'schlag', 'rekordnah', 'morgen',
+                                'abtruennig', 'kurz']);
 
 function urkundeAnweisung(we, m){
   const nameZu = id => { const q = state.spieler.find(x => String(x.id) === String(id));
@@ -3707,6 +3842,20 @@ function urkundeAnweisung(we, m){
         + 'Klammern steht der neue Stand.' + BE,
       auftrag:'Schreib den Fließtext einer Urkunde für diesen Rekord. Zahl und Name stehen '
         + 'bereits groß darüber, zähl sie nicht noch einmal auf. Feierlich, aber trocken.'},
+    abtruennig: {was:'eine Eilmeldung', kern:'Seitenwechsel',
+      anlass:'Anlass: ' + namen + ' hat an diesem Abend ' + (m.bier || ABTRUENNIG_BIER)
+        + ' Biere getrunken und nichts anderes — und jetzt den ersten Longdrink bestellt.'
+        + (m.stur ? ' Dieselbe Person hat an diesem Wochenende die Urkunde „Ich bleib beim '
+          + 'Arschloch“ bekommen, für acht gleiche Getränke hintereinander. Nimm darauf Bezug.' : ''),
+      auftrag:'Schreib eine kurze Eilmeldung über diesen Seitenwechsel vom Bier zum Longdrink, '
+        + 'dazu eine Überschrift von höchstens sieben Wörtern. Augenzwinkernd, als hätte jemand '
+        + 'die Fahne gewechselt — nicht verletzend.'},
+    kurz: {was:'eine Eilmeldung', kern:'Kurze',
+      anlass:'Anlass: Soeben wurde die erste Runde Kurze des Abends ausgeschenkt, '
+        + ((m.pids || []).length || 1) + ' Stück, für ' + namen + '.',
+      auftrag:'Schreib eine kurze Eilmeldung darüber, dazu eine Überschrift von höchstens '
+        + 'sieben Wörtern. Trocken, mit dem Unterton, dass der Abend damit eine Stufe höher '
+        + 'geht.'},
     morgen: {was:'eine Morgenmeldung', kern:'Bilanz',
       anlass:'Anlass: die Bilanz des gestrigen Tages (' + (m.tag || 'Vortag') + '). Tagessieger '
         + 'mit den meisten Biereinheiten: ' + liste(m.sieger)
@@ -4550,7 +4699,8 @@ function ansichtInfo(){
     + '<li><strong>Runde für alle</strong> trägt das gewählte Getränk in einem Tipp bei jedem ein, '
     + 'der gerade an dieser Location steht. Direkt darunter erscheint dann „Runde zurücknehmen“, '
     + 'falls es doch nicht für alle war — wer nichts wollte, kann auch einzeln mit − abgezogen '
-    + 'werden.</li>'
+    + 'werden. Darunter steht <strong>Runde Kurze</strong>: dasselbe mit einem Kurzen für '
+    + 'jeden, ohne die Pille umzustellen.</li>'
     + '<li><strong>Schon eingetragen?</strong> Unter dem Runde-Knopf steht immer die letzte Eingabe '
     + 'mit Uhrzeit und Namen. Lag die vorige Eintragung weniger als drei Minuten zurück, fragt das '
     + 'Gerät einmal nach, bevor es die nächste einträgt — das fängt den Fall ab, dass zwei '
@@ -4747,6 +4897,12 @@ function ansichtInfo(){
     + '<p class="mini" style="margin:0 2px 10px">Normal 0,5 heißt in der App <em>Halbe</em>, '
     + 'Normal 1,0 heißt <em>Maß</em>. Über 8 % wird untertrieben — ein Doppelbock zählt wie ein '
     + 'gewöhnliches Starkbier.</p>'
+    + '<p><strong>Kein Bier.</strong> Longdrink und Kurzer stehen in der Pille unter „Kein Bier“. '
+    + 'Gerechnet wird der Schnaps, nicht das Glas: ein Longdrink mit 4 cl zu 40 % ergibt '
+    + '<strong>0,64</strong>, ein Kurzer mit 2 cl <strong>0,32</strong>. Eine Größe gibt es dafür '
+    + 'nicht zu wählen; wer doppelt einschenkt, trägt zwei ein. Bei den Litern zählt der Longdrink '
+    + 'mit 0,3, der Kurze mit 0,02. Für die Runde Kurze gibt es unter „Runde für alle“ einen '
+    + 'eigenen Knopf, damit niemand die Pille umstellen und danach wieder zurückstellen muss.</p>'
 
     + '<p>Jeder <strong>Tag</strong> ist ein Turnier, jeder gegen jeden. Für jedes Paar wird gerechnet:</p>'
     + '<div class="formel">'
@@ -4888,6 +5044,8 @@ const ERKLAERUNGEN = {
         + 'Liter × Volumenprozent ÷ 2,5.',
       'Eine Halbe Helles ergibt damit genau <b>1,00</b> — das ist der Maßstab. Ein kleines Pils '
       + 'zählt 0,66, ein starkes 0,33er 0,92, eine Maß 2,00. Alkoholfrei zählt 0,00.',
+      'Beim Schnaps zählt der Schnaps: ein Longdrink (4 cl, 40 %) <b>0,64</b>, ein Kurzer '
+      + '(2 cl) <b>0,32</b>.',
       'Gewertet wird also nicht, wie viele Gläser jemand hatte, sondern wie viel tatsächlich drin war. '
       + 'Drei kleine Biere schlagen nicht automatisch zwei große.']},
   kfaktor: {titel:'Was ist der K-Faktor?', para:'p7', paraName:'§ 7 Technische Daten',
@@ -5808,6 +5966,8 @@ function ansichtUrkunde(x){
     af:       {band:'Alkoholfrei-Alarm', kl:'u-af', chip:'0,0 BE'},
     schlag:   {band:'Schlagzahl', kl:'u-eil', chip:SCHLAG_ANZAHL + ' in 30 Minuten'},
     rekordnah:{band:'Rekord in Reichweite', kl:'u-eil', chip:'Rekord: ' + zahl(m.rekord || 0, 1) + ' BE'},
+    abtruennig:{band:'Abtrünnig', kl:'u-eil', chip:(m.bier || ABTRUENNIG_BIER) + ' Bier, dann Longdrink'},
+    kurz:     {band:'Kurzer Prozess', kl:'u-eil', chip:((m.pids || []).length || 1) + '× Kurzer'},
     morgen:   {band:'Morgenmeldung', kl:'u-eil', chip:'Bilanz ' + (m.tag || 'von gestern')}
   };
   if(EIL[m.art]){
@@ -6493,18 +6653,21 @@ const tu = {
     const weg = ort.getraenke[el.dataset.id].pop();
     tagebuch(ort, {art:'minus', key:weg, pid:el.dataset.id});
     sichern(); zeichnen(); },
-  runde(){
+  runde(){ tu.rundeGeben(wahlKey(), 'runde'); },
+  rundeKurze(){ tu.rundeGeben(KURZER, 'rundeKurze'); },
+  /* Eine Runde für alle am Tisch – vom Getränk der Pille oder, über den eigenen Knopf,
+     Kurze. Beide fragen nach, wenn es gerade erst eine derselben Sorte gab. */
+  rundeGeben(key, frage){
     const {tg, ort} = aktuell();
     const ids = Object.keys(ort.getraenke).filter(id => heimVon(tg, id) === undefined);
     if(!ids.length) return;
-    const vorige = letzteRundeIm(ort);
-    if(vorige && Date.now()-vorige.t < FRAGE_FENSTER && nachfrage !== 'runde'){
-      nachfrage = 'runde'; zeichnen();
-      setTimeout(() => { if(nachfrage === 'runde'){ nachfrage = null; zeichnen(); } }, FRAGE_DAUER);
+    const vorige = letzteRundeIm(ort, key === KURZER);
+    if(vorige && Date.now()-vorige.t < FRAGE_FENSTER && nachfrage !== frage){
+      nachfrage = frage; zeichnen();
+      setTimeout(() => { if(nachfrage === frage){ nachfrage = null; zeichnen(); } }, FRAGE_DAUER);
       return;
     }
     nachfrage = null;
-    const key = wahlKey();
     ids.forEach(id => ort.getraenke[id].push(key));
     tagebuch(ort, {art:'runde', key, n:ids.length, ids:ids.slice()});
     letzteRunde = {ortId:ort.id, ids:ids.slice(), key};
@@ -6540,7 +6703,7 @@ const tu = {
   },
   blattPlus(el){ blatt.z[el.dataset.k] = (blatt.z[el.dataset.k]||0) + 1; zeichnen(); },
   blattMinus(el){ blatt.z[el.dataset.k] = Math.max(0, (blatt.z[el.dataset.k]||0) - 1); zeichnen(); },
-  blattHinzu(){ const k = neuKombi.s + ':' + neuKombi.g;
+  blattHinzu(){ const k = kombiKey(neuKombi.s, neuKombi.g);
     blatt.z[k] = (blatt.z[k]||0) + 1; zeichnen(); },
   blattSpeichern(){
     const {ort} = aktuell();
@@ -6603,7 +6766,7 @@ const tu = {
   fotoMinus(el){ const t = foto.treffer[+el.dataset.i];
     t.z[el.dataset.k] = Math.max(0, (t.z[el.dataset.k]||0) - 1); zeichnen(); },
   fotoHinzu(el){ const t = foto.treffer[+el.dataset.i];
-    const k = neuKombi.s + ':' + neuKombi.g;
+    const k = kombiKey(neuKombi.s, neuKombi.g);
     t.z[k] = (t.z[k]||0) + 1; zeichnen(); },
   fotoRestAn(el){
     const k = el.dataset.k, id = el.dataset.id;

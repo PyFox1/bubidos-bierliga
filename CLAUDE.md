@@ -201,6 +201,11 @@ Wochenende → Tage → Locations → Getränke je Person
 Ein Getränk ist ein String `stärke:größe`, z. B. `normal:05`.
 Stärken: `leicht` (3 %), `normal` (5 %), `stark` (7 %), `af` (0 %).
 Größen: `033`, `05`, `10`.
+Dazu seit G58 zwei feste Schlüssel, die kein Bier sind (`SCHNAPS`): `lang:04` (Longdrink,
+4 cl zu 40 % = 0,64 BE, 0,3 l im Glas) und `kurz:02` (Kurzer, 2 cl = 0,32 BE, 0,02 l). Sie
+hängen hinten an `KOMBIS`, damit alles, was über die Kombinationen läuft — Zählung, Wertung,
+Sammel-Eingabe, Fazit —, sie ohne Sonderweg mitnimmt. `istBier()` trennt die beiden Welten,
+`kombiKey()` baut aus einer Wahl den Schlüssel (beim Schnaps zählt die Größe nicht).
 
 **Anwesenheit** = die Person ist ein Schlüssel im `getraenke`-Objekt der Location. Ein leeres
 Array heißt „war da, hat nichts getrunken" — das ist etwas völlig anderes als „war nicht da".
@@ -311,6 +316,17 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   ist das **keine Aufteilung**: Der Zeiger der Gruppe zieht mit, kein Pin. Sonst stünde die
   ganze Runde nach dem Gehen des Einen als „getrennt“ da.
   Beim Abgleich wird `tg.heim` je Person nach der Drei-Wege-Regel wie `einst` behandelt.
+- **Longdrink und Kurzer** (G58). Die Mengen sind gesetzt, nicht erfragt: 4 cl und 2 cl, je
+  40 %. Wer das anders will, ändert `SCHNAPS` — BE, Liter, Anleitung (§ 7) und Erklär-Blatt
+  hängen daran bzw. nennen die Zahlen. Eine Größenwahl gibt es beim Schnaps bewusst nicht;
+  wer einen Doppelten trinkt, trägt zwei ein.
+  **Die Runde Kurze hat einen eigenen Knopf** unter „Runde für alle“ (`rundeKurze`), weil
+  Kurze fast immer als Runde kommen und sonst jedes Mal die Pille umgestellt und danach
+  wieder zurückgestellt werden müsste — genau der Handgriff, der in fortgeschrittener Stunde
+  vergessen wird. Beide Knöpfe laufen über `rundeGeben(key, frage)`. Die Rückfrage vor der
+  doppelten Runde unterscheidet nach Sorte (`letzteRundeIm(ort, kurze)`): Eine Runde Kurze
+  gleich nach einer Runde Bier ist der Normalfall, kein Doppeltipp.
+  Das Foto-Zählen kennt Longdrink und Kurzer nicht; es liest weiter nur Bier.
 - **Zurückliegende Locations sind schreibgeschützt.** Man kann durch die Kette wischen, aber
   nicht versehentlich Bier am falschen Abend eintragen. Entsperren geht mit einem Tipp.
   Ausnahme: die Station, auf die `state.aktivOrt` zeigt, ist nie gesperrt — sonst stünde die
@@ -604,6 +620,8 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   | `af` | das erste Alkoholfreie des Abends, danach keins mehr | nein | ja |
   | `morgen` | „+ Tag“: Tagessieger, Fahrer und Bettzipfel des Vortags | ja | nein |
   | `ehrung` | „Wochenende abschließen“: Siegerehrung | ja | nein |
+  | `abtruennig` | erster Longdrink des Tages nach mindestens fünf Bieren (G58) | nein | ja |
+  | `kurz` | Kurzer Prozess: die erste *Runde* Kurze des Tages (G58) | nein | nein |
   **Das Sammelfenster** (`SAMMEL_FENSTER`, 2 min): Meldungen, die einen Vergleich anstellen,
   gehen nicht beim ersten Tipp auf. Wer im Fenster dazukommt, landet in derselben Meldung
   (`pids`). Anlass war die Frage am Tisch: Bestellen zwei gleichzeitig und wird der zweite
@@ -640,10 +658,16 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   **Beim Abgleich** vereinigt `markenVereinen()` die `pids` einer Sammelmeldung, egal welche
   Fassung sonst gewinnt — zwei Handys können verschiedene Leute aufgenommen haben.
   **Verworfen:** „Der Bettzipfel wackelt“ (hing am letzten Getränk, das zählt nicht mehr),
-  Mitternacht, fünfte Location, Maß. **Vorgemerkt für Longdrinks und Kurze:** *Abtrünnig*
-  (erster Longdrink nach mindestens fünf Bieren am Abend, Kurze zählen nicht) und *Kurzer
-  Prozess* (erste Runde Kurze); ob ein Kurzer die Arschloch-Strecke unterbricht (Vorschlag:
-  ja).
+  Mitternacht, fünfte Location, Maß.
+  **Mit Longdrink und Kurzem (G58):** *Abtrünnig* zählt die Biere des Tages vor dem ersten
+  Longdrink (`bierVorLongdrink()`); Kurze dazwischen stören nicht und zählen nicht mit — ein
+  Schnaps ist Beiwerk, kein Seitenwechsel. Wer an dem Wochenende schon den Arschloch hat,
+  ist der schönste Fall; die Anweisung bekommt das mit (`stur`). *Kurzer Prozess* liest die
+  erste Runde Kurze aus dem Tagebuch — einzeln eingetragene Kurze sind keine Runde. Weg ist
+  er nur, wenn genau diese Runde zurückgenommen wurde (`rundeT`), nicht schon, weil sie aus
+  dem Tagebuch rutscht (es behält nur 40 Einträge). Und ein Kurzer zwischendurch
+  **unterbricht** die Arschloch-Strecke, weil er ein anderer Schlüssel ist; wer Kurze trinkt,
+  hat für die Bedingung der zwei anderen „etwas anderes“ getrunken.
   Und für die Notizen gilt wie immer: Zu den Eilmeldungen steht dort **nichts**. Abzeichen
   und Pokale sind sichtbar und dürfen erwähnt werden, dass es zu ihnen Meldungen gibt, nicht.
   Was davon unberührt bleibt, steht darunter — es galt für den Tag und gilt genauso fürs

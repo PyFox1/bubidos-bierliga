@@ -34,7 +34,7 @@ await p.goto('http://localhost:8973/');
    schnelle Striche sind eine Schlagzahl. Um sie geht es in eilmeldung.mjs; hier zählen
    nur die Urkunden einer Person. */
 const URK = () => p.evaluate(() => { window.urkArt = m => m.pid !== null && m.pid !== undefined
-  && ['rekordnah','rekord','schlag','af','zipfel','morgen','ehrung'].indexOf(m.art) < 0; });
+  && ['rekordnah','rekord','schlag','af','zipfel','morgen','ehrung','abtruennig','kurz'].indexOf(m.art) < 0; });
 await URK();
 await p.evaluate(() => document.fonts.ready);
 await p.waitForTimeout(700);
