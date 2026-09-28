@@ -212,9 +212,12 @@ Treuepokal auch rückwirkend daraus gerechnet werden.
 
 Am Wochenende hängt außerdem `we.marken`: die ausgestellten Blätter, je eines
 `{id, art, stufe, pid, be, zahl, einheit, t, tag, ort, ortNr, text, kopf?, quelle, wendung}`.
-`art` ist `'stufe'` (18/25) oder `'mangel'` (die verfehlte Zehn). Die `id` ist fest aus
+`art` ist eine der Arten weiter unten (`stufe`, `mangel`, `sorte`, `fuehrung`, `runde`, und seit
+G57 `zipfel`, `rekordnah`, `rekord`, `schlag`, `af`, `morgen`, `ehrung`). Die `id` ist fest aus
 `weId:art:stufe:pid` gebaut und nicht gewürfelt — die Marke gehört **einer Person**, nicht der
-Stufe. `zahl` und `einheit` sind, was groß auf Karte und Bild steht; `tag`, `ort` und `ortNr`
+Stufe. Die Tagesmeldungen aus G57 tragen im Feld `stufe` die Kennung des Tages und dazu
+`tagId`; die sammelnden (`SAMMEL_ARTEN`) führen in `pids` alle, die im Fenster dazukamen, und
+`pid` ist der erste davon. `zahl` und `einheit` sind, was groß auf Karte und Bild steht; `tag`, `ort` und `ortNr`
 werden beim Anlegen festgehalten, weil die Runde weiterzieht und sich das später nicht mehr
 rekonstruieren ließe. Siehe Marken weiter unten.
 
@@ -540,21 +543,21 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
     die Zahl groß darüber; ein Kopf sagte dasselbe ein zweites Mal.
 - **Drei weitere Arten** (G53). Alle laufen durch dieselbe Maschinerie — `we.marken`,
   Abgleich, lokales Abhaken, Ersatztext zuerst —, unterscheiden sich aber im Anlass:
-  - **`sorte` — „Ich bleib beim Arschloch“.** Acht Getränke, alles dieselbe Sorte und
-    Größe. Geprüft werden die **ersten** acht, nicht die letzten: Nur so ist die Regel
-    nachrechenbar, und nur so nimmt ein späterer Ausreißer die Urkunde nicht wieder weg —
-    sie gehört einem Moment, nicht dem Endstand. Ein ↶ auf eines der ersten acht zählt
-    dagegen sehr wohl. Die Anweisung sagt ausdrücklich, dass die **Sturheit** gefeiert wird
-    und nicht die Menge; ohne den Satz liest das Modell „acht mal dasselbe“ als Mangel an
-    Fantasie und schreibt Spott, wo ein Lob stehen soll.
-    **Und ein Befund, der beim Bauen herausfiel:** Mit der Regel fielen 19 bestehende
-    Prüfungen um, quer durch alle Abschnitte — jeder Testaufbau füllt die Liste mit
-    `normal:05`, und damit bekam *jede* Person die Urkunde. Das ist nicht der Testfall,
-    das ist der Normalfall: Pille steht auf Halbe, jeder tippt `+`, und beim achten Bier
-    hat sie jeder. Die Aufbauten schieben deshalb ein `af:05` zwischen die ersten acht —
-    das kostet 0,00 BE und lässt jede Schwelle unberührt. Wer das ändern will, hat einen
-    Einzeiler: Sie fällt nur, wenn mindestens einer aus der Runde variiert hat. Bewusst
-    nicht gebaut — es war ausdrücklich so gewünscht.
+  - **`sorte` — „Ich bleib beim Arschloch“.** Acht gleiche Getränke **hintereinander**,
+    irgendwann am Wochenende (seit G57; vorher die ersten acht). Gesucht wird die erste
+    solche Strecke: Ein späterer Ausreißer nimmt die Urkunde nicht wieder weg — sie gehört
+    einem Moment —, ein ↶ mitten in die Strecke dagegen schon. Die Anweisung sagt
+    ausdrücklich, dass die **Sturheit** gefeiert wird und nicht die Menge; ohne den Satz
+    liest das Modell „acht mal dasselbe“ als Mangel an Fantasie und schreibt Spott, wo ein
+    Lob stehen soll.
+    **Die Bedingung, die in G57 dazukam:** Mindestens `SORTE_ANDERE` (2) andere müssen an
+    diesem Wochenende etwas anderes getrunken haben. Mit der Regel aus G53 bekam sonst
+    *jeder* die Urkunde — Pille auf Halbe, jeder tippt `+`, beim achten Bier hat sie jeder.
+    Das fiel damals an 19 Testaufbauten auf, die ein `af:05` zwischen die ersten acht
+    schoben, um sie herauszuhalten; die Einschübe sind mit G57 wieder raus (ein
+    Alkoholfreies löst inzwischen seine eigene Meldung aus). Trinkt die ganze Runde nur
+    Halbe, fällt der Arschloch nie — die Sturheit fällt erst neben jemandem auf, der nicht
+    stur war. Mit Longdrinks und Kurzen wird er von selbst häufiger.
   - **`fuehrung` — der Führungswechsel.** Ab `FUEHRUNG_MIN` (8 BE), und nur bei
     **Alleinführung**: Bei zwei gleichauf hat niemand überholt. Der *erste* Führende eines
     Wochenendes bekommt nichts — er hat niemanden überholt.
@@ -564,23 +567,85 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
     hätte der erste Wechsel oberhalb der Schwelle niemanden, den er überholt.
     Zurückgenommen wird sie nur, wenn die Striche den Stand nicht mehr hergeben: Dass
     später jemand zurücküberholt, macht den Wechsel nicht ungeschehen — sonst stünde am
-    Ende des Wochenendes nur noch eine da, die des Siegers.
+    Ende des Wochenendes nur noch eine da, die des Siegers. **Ausnahme seit G57:** Solange
+    das Sammelfenster offen ist, muss der Wechsel noch stimmen. Holt sich der Überholte die
+    Spitze binnen zwei Minuten zurück oder zieht gleich, war es keiner — die Meldung fällt
+    weg, und `we.fuehrer` geht auf ihn zurück, damit sein Rückwechsel nicht als neuer
+    Wechsel zählt. Vorbereitet wird der Führungswechsel seitdem nicht mehr: Er wartet
+    ohnehin das Fenster ab.
     Die Anweisung verbietet ausdrücklich Häme gegen den Überholten: ein Wochenende unter
     Freunden, kein Abstiegskampf.
   - **`runde` — die Meldung an die Runde.** 50 BE zusammen. Die einzige Marke **ohne
-    Person**, und damit die einzige, die **nie** die API fragt (`quelle:'fest'`): Ohne
-    Namen gibt es niemanden, dem ein Text gelten könnte, und ein Nachrichtenbezug wäre
-    Aufwand ohne Adressaten. Deshalb muss `urkundeReif()` sie durchlassen — sonst wartete
-    sie auf etwas, das nie kommt. Kein Name, kein Andenken, kein Knopf zum Sichern: Auf
+    Person**. Bis G56 fragte sie nie die API (`quelle:'fest'`); seit G57 schreibt die API
+    auch sie, **ohne Nachricht**, aber mit einer Wendung, die an dem Wochenende noch nicht
+    dran war — sonst liefen die drei festen Texte an der Regel „jede Wendung nur einmal“
+    vorbei und wären nach ein paar Wochenenden auswendig bekannt. Der feste Text ist nur
+    noch der Rückfall; `quelle:'fest'` lässt `urkundeReif()` für alte Bestände weiter
+    durch. Kein Name, kein Andenken, kein Knopf zum Sichern: Auf
     einem Blatt ohne Namen findet sich niemand wieder. Gedämpftes Band statt Rot oder
     Malz, damit sie sich neben einer echten Urkunde nicht vordrängt.
     Sie ist die **leichte** Form, von der es gerne mehr geben darf — weder Lob noch Tadel,
     und sie kostet nichts.
   Wer eine Art dazunimmt: `ansichtUrkunde()` entscheidet nach **Art**, nicht nach Stufe, und
   fällt auf die Karte in der Mitte zurück. So landet eine neue Art nicht versehentlich in
-  der Ehrenurkunde. Vorbereitet (`urkundeVorbereiten()`) wird jede Art, bei der der
-  Auslösende **selbst wartet** — Stufen, Sortentreue, Führungswechsel. Nicht die
-  Mängelanzeige (die löst ein anderer aus) und nicht die Meldung (die fragt nie).
+  der Ehrenurkunde. Vorbereitet (`urkundeVorbereiten()`) werden Stufen und Sortentreue —
+  dort wartet der Auslösende **selbst**. Nicht die Mängelanzeige (die löst ein anderer
+  aus), nicht der Führungswechsel (der wartet seit G57 das Fenster ab) und keine der
+  Tagesmeldungen aus G57.
+- **Die Eilmeldungen aus G57** hängen an Abzeichen und Wanderpokalen und an ein paar
+  Anlässen „zum Spaß“. Ausgedacht mit dem Ziel des ganzen Katalogs: möglichst viel Zeit
+  miteinander, und die Menge bleibt das Wichtigste.
+  | Art | Anlass | Nachricht | Fenster |
+  |---|---|---|---|
+  | `zipfel` | erster „Geht heim“ des Tages, sofort | nein | nein |
+  | `rekordnah` | 1 BE unter dem besten Tag *vor* diesem | nein | ja |
+  | `rekord` | über dem besten Tag vor diesem, Gleichziehen reicht nicht | ja | ja |
+  | `schlag` | drei Getränke binnen 30 min, nur live getippte | nein | ja |
+  | `af` | das erste Alkoholfreie des Abends, danach keins mehr | nein | ja |
+  | `morgen` | „+ Tag“: Tagessieger, Fahrer und Bettzipfel des Vortags | ja | nein |
+  | `ehrung` | „Wochenende abschließen“: Siegerehrung | ja | nein |
+  **Das Sammelfenster** (`SAMMEL_FENSTER`, 2 min): Meldungen, die einen Vergleich anstellen,
+  gehen nicht beim ersten Tipp auf. Wer im Fenster dazukommt, landet in derselben Meldung
+  (`pids`). Anlass war die Frage am Tisch: Bestellen zwei gleichzeitig und wird der zweite
+  zehn Sekunden später eingetragen, darf nicht nur der erste in der Meldung stehen. Die API
+  fragt erst das Gerät, das die Meldung angelegt hat, und erst nach dem Fenster
+  (`setTimeout`); die Wartezeit auf den Text (`reifBasis()`) läuft ab dem Fensterende.
+  Jede Person höchstens einmal je Tag und Art.
+  **Nachricht nur bei den großen** (`MIT_NACHRICHT`: `stufe`, `rekord`, `morgen`, `ehrung`).
+  Die Suche kostet rund fünfzehn Sekunden, und spontane Anlässe lassen sich nicht vorbereiten
+  — dort käme die Meldung zu spät. Und an einem Abend liefert die eine Suche immer dieselben
+  Schlagzeilen. Ohne Nachricht geht der Aufruf ohne das Suchwerkzeug hinaus (`anKIText(…,
+  false)`), verlangt keinen `bezug` und meldet dessen Fehlen auch nicht als Mangel.
+  Mängelanzeige, Führungswechsel und Arschloch sind damit seit G57 ohne Nachricht.
+  **Jede Nachricht nur einmal je Wochenende:** Die Anweisung nennt die `bezug`-Werte der
+  anderen Marken des Wochenendes als ausgeschlossen — dieselbe Regel wie bei den Wendungen.
+  **Morgenmeldung und Siegerehrung sind je eine Meldung statt mehrerer.** Beim Abschließen
+  kämen sonst bis zu fünf hintereinander (Krone, Treuepokal, Rekord, Sieger, Fahrer), und
+  fünfmal Wegtippen ist keine Siegerehrung. Die Siegerehrung ist die einzige Marke, die auf
+  einem **abgeschlossenen** Wochenende noch aufgeht: `markenKandidaten()` nimmt sie
+  `EHRUNG_TAGE` (7) Tage lang mit, `abgeschlossenAufraeumen()` lässt ihr den Text so lange —
+  wer sein Handy in der Tasche hatte, soll sie am Morgen danach noch vorfinden. Auf dem
+  abschließenden Gerät steht zuerst das Fazit, die Siegerehrung danach. Wird das
+  Wochenende wieder geöffnet, räumt `markenAufraeumen()` sie weg.
+  **Der Bettzipfel geht live**, ohne Fenster: Er soll kommen, während der Betroffene die
+  Jacke anzieht. Wer binnen zehn Minuten mitgeht, teilt das Abzeichen, bekommt aber keine
+  eigene Meldung. Wird die Heim-Zeit so berichtigt, dass ein anderer der Erste ist, fällt
+  die Meldung weg.
+  **Die Schlagzahl zählt nur, was im Moment getippt wurde** (Tagebuch: Striche und Runden
+  mit `ids`, ein Minus nimmt das jüngste weg, `weg` zählt nicht). Drei Biere, am Morgen über
+  die Sammel-Eingabe nachgetragen, wären sonst drei Biere in einer Minute.
+  **Rekord und Reichweite messen gegen den besten Tag vor diesem** (`rekordVor()`): Am
+  allerersten Abend gibt es nichts zu brechen, und was heute passiert, ist erst morgen die
+  Messlatte. Wer mit einer Maß über die Reichweite springt, bekommt gleich den Rekord.
+  **Beim Abgleich** vereinigt `markenVereinen()` die `pids` einer Sammelmeldung, egal welche
+  Fassung sonst gewinnt — zwei Handys können verschiedene Leute aufgenommen haben.
+  **Verworfen:** „Der Bettzipfel wackelt“ (hing am letzten Getränk, das zählt nicht mehr),
+  Mitternacht, fünfte Location, Maß. **Vorgemerkt für Longdrinks und Kurze:** *Abtrünnig*
+  (erster Longdrink nach mindestens fünf Bieren am Abend, Kurze zählen nicht) und *Kurzer
+  Prozess* (erste Runde Kurze); ob ein Kurzer die Arschloch-Strecke unterbricht (Vorschlag:
+  ja).
+  Und für die Notizen gilt wie immer: Zu den Eilmeldungen steht dort **nichts**. Abzeichen
+  und Pokale sind sichtbar und dürfen erwähnt werden, dass es zu ihnen Meldungen gibt, nicht.
   Was davon unberührt bleibt, steht darunter — es galt für den Tag und gilt genauso fürs
   Wochenende:
   - **Jeder bekommt seine eigene.** Die Kennung trägt die Person.

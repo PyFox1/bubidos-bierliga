@@ -42,7 +42,10 @@ const aufbau = () => p.evaluate(() => {
   letzteRunde = null; pinLoeschen(); zeichnen();
 });
 const tag = () => p.evaluate(() => JSON.parse(JSON.stringify(state.we[0].tage[0])));
-const klick = sel => p.click(sel);
+/* Seit G57 geht beim ersten „Geht heim“ eine Meldung auf, die über allem liegt. Hier
+   geht es um das Heimgehen selbst – sie wird weggetippt, wie man es am Tisch auch tut. */
+const weg = () => p.evaluate(() => { let n = 0; while(offeneUrkunde() && n++ < 20) tu.urkundeWeg(); });
+const klick = async sel => { await weg(); await p.click(sel, {timeout:5000}); await weg(); };
 
 await aufbau();
 

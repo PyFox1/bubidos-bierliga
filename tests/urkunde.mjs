@@ -30,6 +30,12 @@ await p.route('**/api.github.com/**', r => r.fulfill({status:404,
 await p.route('**/api.anthropic.com/**', r => r.abort());
 await p.addInitScript(() => localStorage.setItem('bubidos-token', 'github_pat_test'));
 await p.goto('http://localhost:8973/');
+/* Die Meldungen aus G57 hängen an einem Tag und stellen sich hier nebenbei ein – drei
+   schnelle Striche sind eine Schlagzahl. Um sie geht es in eilmeldung.mjs; hier zählen
+   nur die Urkunden einer Person. */
+const URK = () => p.evaluate(() => { window.urkArt = m => m.pid !== null && m.pid !== undefined
+  && ['rekordnah','rekord','schlag','af','zipfel','morgen','ehrung'].indexOf(m.art) < 0; });
+await URK();
 await p.evaluate(() => document.fonts.ready);
 await p.waitForTimeout(700);
 
@@ -41,16 +47,11 @@ const schritt = async (name, fn) => {
 /* Vier Leute, ein laufender Tag, zwei Locations. `v.be` gibt je Person die Vorbelegung. */
 const aufbau = v => p.evaluate(v => {
   localStorage.removeItem('bubidos-urkunden');
-  /* Ein Alkoholfreies mitten in die ersten acht. Das kostet **keine** BE (0,00), lässt also
-     jede Schwelle unverändert – verhindert aber, dass diese Aufbauten nebenbei die
-     Sortentreue-Urkunde auslösen. Die wird in ihrem eigenen Abschnitt geprüft, und hier
-     geht es um die Stufen.
-     Dass das überhaupt nötig ist, sagt etwas über die Regel: Wer acht Halbe hintereinander
-     tippt, bekommt sie – und genau das tut in dieser Runde jeder, der die Pille nie
-     anfasst. */
-  const bier = k => k > 3
-    ? [...Array(3).fill('normal:05'), 'af:05', ...Array(k - 3).fill('normal:05')]
-    : Array(k).fill('normal:05');
+  /* Bis G56 stand hier ein Alkoholfreies mitten in den ersten acht, damit diese Aufbauten
+     nicht nebenbei die Sortentreue auslösen. Seit G57 braucht die zwei andere, die etwas
+     anderes getrunken haben – bei lauter Halben fällt sie von selbst nicht. Und ein
+     Alkoholfreies löst inzwischen seine eigene Meldung aus. */
+  const bier = k => Array(k).fill('normal:05');
   const g = {};
   Object.keys(v.be).forEach(id => g[id] = bier(v.be[id]));
   state.spieler = [{id:1,name:v.name || 'Korbi'},{id:2,name:'Fifu'},
@@ -69,7 +70,7 @@ const aufbau = v => p.evaluate(v => {
    wird über `rundenMarke()` geprüft – sonst zählte sie hier überall mit, wo es um
    Urkunden geht, und jede Zahl wäre um eins daneben. */
 const marken = () => p.evaluate(() => (state.we[0].marken || [])
-  .filter(m => m.pid !== null && m.pid !== undefined).map(m =>
+  .filter(m => urkArt(m)).map(m =>
   ({id:m.id, art:m.art, stufe:m.stufe, pid:m.pid, quelle:m.quelle, text:m.text, kopf:m.kopf,
     ort:m.ort, ortNr:m.ortNr, be:m.be, zahl:m.zahl, tag:m.tag})));
 const blende = () => p.evaluate(() => {
@@ -191,7 +192,7 @@ await schritt('Sie kommen nacheinander, jede mit einem Namen und einem Knopf', a
      die Runde steht also mit in der Schlange. Sie hat keinen Namen und gehört damit
      nicht in diese Prüfung; dass *sie* kommt, steht in ihrem eigenen Abschnitt. */
   await p.evaluate(() => {
-    state.we[0].marken = state.we[0].marken.filter(m => m.pid !== null);
+    state.we[0].marken = state.we[0].marken.filter(m => urkArt(m));
     zeichnen();
   });
   await p.waitForTimeout(120);
@@ -219,9 +220,7 @@ console.log('\n══ Führungswechsel ══');
 /* Setzt die BE je Person neu und prüft. `frisch` beginnt das Wochenende von vorn,
    sonst wird auf dem vorigen Stand weitergespielt – der Führungszeiger ist ja Gedaechtnis. */
 const feld = (be, frisch) => p.evaluate(([be, frisch]) => {
-  const bier = k => k > 3
-    ? [...Array(3).fill('normal:05'), 'af:05', ...Array(k - 3).fill('normal:05')]
-    : Array(k).fill('normal:05');
+  const bier = k => Array(k).fill('normal:05');
   if(frisch){
     localStorage.removeItem('bubidos-urkunden');
     state.spieler = be.map((x,i) => ({id:i+1, name:'P' + (i+1)}));
@@ -233,6 +232,10 @@ const feld = (be, frisch) => p.evaluate(([be, frisch]) => {
     state.einst = {k:40, kiSchluessel:''};
     ansicht = null; letzteRunde = null; nachfrage = null; pinLoeschen();
   }
+  /* Zwischen zwei Schritten vergeht hier mehr als das Sammelfenster: Jeder Schritt ist
+     ein Stand, der gehalten hat. Was innerhalb der zwei Minuten passiert – ein Wechsel,
+     den das nächste Bier zurückdreht –, prüft eilmeldung.mjs. */
+  (state.we[0].marken || []).forEach(m => { m.t = (m.t || 0) - 3 * 60000; });
   const g = state.we[0].tage[0].orte[0].getraenke;
   be.forEach((x,i) => g[String(i+1)] = bier(x));
   markenPruefen();
@@ -308,9 +311,10 @@ await schritt('Die Anweisung nennt den Überholten und verbietet Häme', async (
   const t = await p.evaluate(() => urkundeAnweisung(state.we[0],
     {id:'900:fuehrung:8:3', art:'fuehrung', pid:'3', stufe:8, be:9, ueber:'2',
      ort:'Augustiner', tag:'1. Tag', wendung:'Peter'}));
-  ['überholt', 'P2', 'Keine Häme', 'Nachricht', 'JSON']
+  ['überholt', 'P2', 'Keine Häme', 'JSON']
     .forEach(w => { if(t.indexOf(w) < 0) throw new Error('„' + w + '" fehlt'); });
   if(/"kopf"/.test(t)) throw new Error('es wird eine Überschrift verlangt, die niemand zeigt');
+  if(/echte Nachricht/.test(t)) throw new Error('verlangt seit G57 keine Nachricht mehr');
   return t.length + ' Zeichen';
 });
 
@@ -339,20 +343,28 @@ await schritt('Ist die Schwelle voll, kommt sie – mit der Summe', async () => 
   return m.zahl + ' BE';
 });
 
-/* Sie fragt die API nie – es gibt keinen Namen, auf den sich ein Text schreiben ließe.
-   Also muss sie auch sofort aufgehen dürfen, sonst wartete sie auf etwas, das nie kommt. */
-await schritt('Sie holt keinen Text und wartet auf keinen', async () => {
+/* Seit G57 schreibt auch sie die API – mit einer Wendung, aber ohne Nachricht: Ohne
+   Namen gibt es niemanden, dem ein Nachrichtenbezug gelten könnte. Ohne Schlüssel steht
+   der feste Text sofort da. */
+await schritt('Sie holt ihren Text von der API, ohne Nachricht', async () => {
   const x = await p.evaluate(() => {
     const m = (state.we[0].marken || []).find(y => y.art === 'runde');
+    const ohne = urkundeReif(m);
     state.einst.kiSchluessel = 'sk-test';          // Schlüssel liegt vor
-    const reif = urkundeReif(m);
+    const mit = urkundeReif(m);
+    const t = urkundeAnweisung(state.we[0], m);
     state.einst.kiSchluessel = '';
-    return {quelle:m.quelle, reif, pid:m.pid};
+    return {quelle:m.quelle, ohne, mit, pid:m.pid, wendung:m.wendung,
+            nachricht:/echte Nachricht/.test(t), runde:/ganze Runde/.test(t)};
   });
-  if(x.quelle !== 'fest') throw new Error('Quelle: ' + x.quelle);
-  if(!x.reif) throw new Error('sie wartet auf einen Text, der nie kommt');
+  if(x.quelle !== 'ersatz') throw new Error('Quelle: ' + x.quelle);
+  if(!x.ohne) throw new Error('ohne Schlüssel wartet sie');
+  if(x.mit) throw new Error('mit Schlüssel geht der Ersatztext sofort auf');
   if(x.pid !== null) throw new Error('sie hängt an einer Person: ' + x.pid);
-  return 'fest und sofort reif';
+  if(!x.wendung) throw new Error('keine Wendung reserviert');
+  if(x.nachricht) throw new Error('verlangt eine Nachricht');
+  if(!x.runde) throw new Error('die Anweisung spricht nicht die Runde an');
+  return 'Wendung, keine Nachricht';
 });
 
 await schritt('Kein Name, kein Knopf zum Sichern', async () => {
@@ -418,7 +430,7 @@ await schritt('Acht gleiche stellen die Urkunde aus', async () => {
   if(m.length !== 1) throw new Error('Urkunden an: ' + m.map(x => x.pid).join(','));
   if(m[0].pid !== '1') throw new Error('an P' + m[0].pid);
   if(m[0].id !== '900:sorte:8:1') throw new Error('Kennung: ' + m[0].id);
-  if(m[0].einheit !== 'mal Halbe, und nichts sonst')
+  if(m[0].einheit !== 'mal Halbe hintereinander')
     throw new Error('Einheit: ' + m[0].einheit);
   if(m[0].text.indexOf('Halbe') < 0) throw new Error('die Sorte fehlt im Text: ' + m[0].text);
   if(/\{sorte\}|\{n\}|\{name\}/.test(m[0].text)) throw new Error('Platzhalter steht noch drin');
@@ -431,17 +443,20 @@ await schritt('Sieben gleiche und eins daneben geben nichts', async () => {
   return 'still';
 });
 
-/* Geprüft werden die **ersten** acht. Sonst nähme ein späterer Ausreißer die Urkunde
-   wieder weg – und die gehört einem Moment, nicht dem Endstand. */
+/* Gesucht wird die erste Strecke von acht. Ein späterer Ausreißer nimmt die Urkunde nicht
+   wieder weg – sie gehört einem Moment, nicht dem Endstand. Seit G57 braucht sie dazu
+   zwei andere, die gewechselt haben; darum hier die Pils und die Maß. */
+const anders = {'2':[...halbe(2), 'normal:033'], '3':[...halbe(2), 'normal:10']};
 await schritt('Ein Ausreißer nach den ersten acht nimmt sie nicht weg', async () => {
-  const m = await sorten({'1':[...halbe(8), 'stark:033', 'af:05'], '2':halbe(3), '3':halbe(3)});
+  const m = await sorten(Object.assign({'1':[...halbe(8), 'stark:033', 'leicht:05']}, anders));
   if(m.length !== 1) throw new Error('sie ist weg');
   return 'bleibt';
 });
 
 /* Ein ↶ auf eines der ersten acht zählt dagegen sehr wohl – dann waren es nie acht. */
 await schritt('Ein Minus auf eines der ersten acht nimmt sie weg', async () => {
-  await sorten({'1':halbe(8), '2':halbe(3), '3':halbe(3)});
+  const vorher = await sorten(Object.assign({'1':halbe(8)}, anders));
+  if(vorher.length !== 1) throw new Error('vorher keine');
   const n = await p.evaluate(() => {
     state.we[0].tage[0].orte[0].getraenke['1'] = Array(7).fill('normal:05');
     markenAufraeumen();
@@ -460,7 +475,7 @@ await schritt('Auf der Maß steht auch Maß', async () => {
 });
 
 await schritt('Sie kommt als Karte in der Mitte, nicht als Ehrenurkunde', async () => {
-  await sorten({'1':halbe(8), '2':halbe(3), '3':halbe(3)});
+  await sorten(Object.assign({'1':halbe(8)}, anders));
   const e = await blende();
   if(!e) throw new Error('keine Blende');
   if(!/\bs2\b/.test(e.klasse)) throw new Error('Klasse ' + e.klasse);
@@ -476,9 +491,11 @@ await schritt('Die Anweisung feiert die Sturheit, nicht die Menge', async () => 
   const t = await p.evaluate(() => urkundeAnweisung(state.we[0],
     {id:'900:sorte:8:1', art:'sorte', pid:'1', stufe:8, be:8, sorte:'normal:05',
      ort:'Augustiner', tag:'1. Tag', wendung:'Ich bleib beim Arschloch'}));
-  ['Sturheit', 'ausdrücklich ein Lob', 'Halbe', 'Nachricht', 'JSON']
+  ['Sturheit', 'ausdrücklich ein Lob', 'Halbe', 'hintereinander', 'JSON']
     .forEach(w => { if(t.indexOf(w) < 0) throw new Error('„' + w + '" fehlt'); });
   if(/"kopf"/.test(t)) throw new Error('es wird eine Überschrift verlangt, die niemand zeigt');
+  /* Seit G57 ohne Nachricht: Die Sortentreue gehört zu den kleinen Meldungen. */
+  if(/echte Nachricht/.test(t)) throw new Error('verlangt eine Nachricht');
   return t.length + ' Zeichen';
 });
 
@@ -497,10 +514,7 @@ console.log('\n══ Die Mängelanzeige: wer die Zehn als Einziger nicht hat �
    viele drunter stehen *und* wie viele drüber. `be` ist die Liste der BE je Person. */
 const runde = be => p.evaluate(be => {
   localStorage.removeItem('bubidos-urkunden');
-  /* Wie oben: das Alkoholfreie hält die Sortentreue aus diesem Abschnitt heraus. */
-  const bier = k => k > 3
-    ? [...Array(3).fill('normal:05'), 'af:05', ...Array(k - 3).fill('normal:05')]
-    : Array(k).fill('normal:05');
+  const bier = k => Array(k).fill('normal:05');
   const g = {};
   state.spieler = be.map((x,i) => ({id:i+1, name:'P' + (i+1)}));
   be.forEach((x,i) => g[String(i+1)] = bier(x));
@@ -605,7 +619,7 @@ await schritt('Eine Runde kann Urkunde und Mängelanzeige zugleich auslösen', a
   await runde([17, 17, 17, 5]);
   const x = await p.evaluate(() => {
     tu.runde();
-    return (state.we[0].marken || []).filter(m => m.pid !== null)
+    return (state.we[0].marken || []).filter(m => urkArt(m))
       .map(m => m.art + ':' + m.pid).sort();
   });
   const soll = ['mangel:4', 'stufe:1', 'stufe:2', 'stufe:3'].join(' ');
@@ -878,7 +892,7 @@ await p.evaluate(async () => {
 });
 await p.waitForTimeout(400);
 await p.locator('#ub').screenshot({path: ORDNER + 'u-bild-25.png'});
-await p.reload(); await p.waitForTimeout(600);
+await p.reload(); await p.waitForTimeout(600); await URK();
 
 console.log('\n══ Abhaken gilt nur für dieses Handy ══');
 
@@ -1166,17 +1180,20 @@ await schritt('Zu jeder Art gibt es mehrere Ersatztexte', async () => {
 
 /* Die Mängelanzeige ist die einzige mit einer Überschrift – die Eilmeldung braucht eine,
    bei den Stufen steht die Zahl groß darüber und ein Kopf sägte dasselbe ein zweites Mal. */
-await schritt('Nur die Mängelanzeige bringt Überschriften mit', async () => {
+/* Überschriften tragen nur die Eilmeldungen – seit G57 mehrere. Jede Art mit Kopf muss
+   in allen Ersatztexten einen haben, und keine Urkunde darf einen mitbringen, den
+   niemand zeigt. */
+await schritt('Nur die Eilmeldungen bringen Überschriften mit', async () => {
   const x = await p.evaluate(() => ({
-    mangel: URKUNDE_ERSATZ.mangel.every(v => !!v.kopf),
-    rest: MARKEN_STUFEN.some(st => URKUNDE_ERSATZ[st].some(v => v.kopf)),
+    ohne: [...MARKE_MIT_KOPF].filter(a => !(URKUNDE_ERSATZ[a] || []).every(v => !!v.kopf)),
+    zuviel: Object.keys(URKUNDE_ERSATZ).filter(a => !MARKE_MIT_KOPF.has(a)
+      && URKUNDE_ERSATZ[a].some(v => v.kopf)),
     liste: [...MARKE_MIT_KOPF]
   }));
-  if(!x.mangel) throw new Error('bei der Mängelanzeige fehlt eine Überschrift');
-  if(x.rest) throw new Error('18 oder 25 bringt eine Überschrift mit, die niemand zeigt');
-  if(x.liste.join(',') !== 'mangel')
-    throw new Error('MARKE_MIT_KOPF und die Texte laufen auseinander: ' + x.liste.join(','));
-  return 'nur mangel';
+  if(x.ohne.length) throw new Error('ohne Überschrift: ' + x.ohne.join(', '));
+  if(x.zuviel.length) throw new Error('Überschrift, die niemand zeigt: ' + x.zuviel.join(', '));
+  if(!x.liste.includes('mangel')) throw new Error('die Mängelanzeige fehlt');
+  return x.liste.join(', ');
 });
 
 /* Der Stand der Person gehört in den Text: „sechs von zehn" ist der Vorwurf. Ohne die
@@ -1207,8 +1224,11 @@ await schritt('Die Mängel-Anweisung richtet den Spott auf die Bilanz', async ()
   const t = await p.evaluate(() => urkundeAnweisung(state.we[0],
     {id:'900:mangel:10:1', art:'mangel', pid:'1', stufe:10, be:6, ort:'Augustiner',
      tag:'1. Tag', wendung:'Peter'}));
-  ['Mängelanzeige', 'Bilanz', 'nie dem Menschen', 'Nachricht', 'JSON']
+  ['Mängelanzeige', 'Bilanz', 'nie dem Menschen', 'JSON']
     .forEach(w => { if(t.indexOf(w) < 0) throw new Error('„' + w + '" fehlt'); });
+  /* Seit G57 ohne Nachricht: Sie lässt sich nicht vorbereiten, und die Suche kostete
+     fünfzehn Sekunden, auf die hier niemand warten soll. */
+  if(/echte Nachricht/.test(t)) throw new Error('verlangt eine Nachricht');
   if(!/nicht hat|nicht\./.test(t)) throw new Error('der umgedrehte Anlass fehlt');
   if(!/"kopf"/.test(t)) throw new Error('die Überschrift wird nicht verlangt');
   if(/hat an diesem Wochenende die Marke von 10 Biereinheiten gerissen/.test(t))
@@ -1356,7 +1376,7 @@ await p.waitForTimeout(200);
 await schritt('Eine Runde für alle vergibt drei verschiedene Wendungen', async () => {
   await p.evaluate(() => tu.runde());
   const w = await p.evaluate(() => (state.we[0].marken || [])
-    .filter(m => m.pid !== null).map(m => m.wendung));
+    .filter(m => urkArt(m)).map(m => m.wendung));
   if(w.length !== 3) throw new Error('es sind ' + w.length + ' Marken');
   if(w.some(x => !x)) throw new Error('eine Marke ohne Wendung: ' + JSON.stringify(w));
   if(new Set(w).size !== 3) throw new Error('doppelt vergeben: ' + w.join(' | '));
@@ -1366,7 +1386,7 @@ await schritt('Eine Runde für alle vergibt drei verschiedene Wendungen', async 
 await schritt('Zuerst sind die Kern-Wendungen dran', async () => {
   const schlecht = await p.evaluate(() => {
     const kern = SLANG.filter(s => s.kern).map(s => s.w);
-    return (state.we[0].marken || []).filter(m => m.pid !== null).map(m => m.wendung)
+    return (state.we[0].marken || []).filter(m => urkArt(m)).map(m => m.wendung)
       .filter(w => kern.indexOf(w) < 0);
   });
   if(schlecht.length) throw new Error('aus dem Fundus statt dem Kern: ' + schlecht.join(', '));
@@ -1381,7 +1401,7 @@ await schritt('Auch über alle Stufen hinweg wiederholt sich keine', async () =>
       tg.orte[1].getraenke[id] = Array(25).fill('normal:05');
     });
     markenPruefen();
-    return (state.we[0].marken || []).filter(m => m.pid !== null).map(m => m.wendung);
+    return (state.we[0].marken || []).filter(m => urkArt(m)).map(m => m.wendung);
   });
   if(w.length < 8) throw new Error('nur ' + w.length + ' Marken');
   if(w.some(x => !x)) throw new Error('eine Marke ohne Wendung');

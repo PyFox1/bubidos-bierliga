@@ -71,13 +71,10 @@ await p.waitForTimeout(700);
 const aufbau = v => p.evaluate(v => {
   localStorage.removeItem('bubidos-urkunden');
   urkundeVorrat.clear();
-  /* Ein Alkoholfreies mitten in die ersten acht: kostet 0,00 BE, lässt also jede Schwelle
-     unverändert – hält aber die Sortentreue-Urkunde aus dieser Datei heraus. Ohne das
-     schiebt sich bei jedem Aufbau eine zweite Marke davor, denn acht gleiche Halbe hat
-     hier jeder. */
-  const bier = k => k > 3
-    ? [...Array(3).fill('normal:05'), 'af:05', ...Array(k - 3).fill('normal:05')]
-    : Array(k).fill('normal:05');
+  /* Lauter Halbe. Bis G56 stand hier ein Alkoholfreies dazwischen, um die Sortentreue
+     herauszuhalten – seit G57 braucht die zwei andere, die gewechselt haben, und ein
+     Alkoholfreies löst seine eigene Meldung aus. */
+  const bier = k => Array(k).fill('normal:05');
   const g = {}; Object.keys(v.be).forEach(id => g[id] = bier(v.be[id]));
   state.spieler = [{id:1,name:'Korbi'},{id:2,name:'Fifu'},{id:3,name:'Sperry'}];
   state.we = [{id:900, titel:'Nockherberg', datum:'2026-09-10', zu:false, dabei:[1,2,3],
@@ -193,11 +190,13 @@ await schritt('Der Bezug muss im JSON mitgeliefert werden', async () => {
      wo eines gebraucht wird. */
   if(!/\{"text":"…","bezug":"…"\}/.test(t))
     throw new Error('das JSON-Muster der Stufe nennt den Bezug nicht');
+  /* Die Mängelanzeige hat seit G57 keine Nachricht mehr, also auch keinen Bezug – dafür
+     weiter eine Überschrift. */
   const tm = await p.evaluate(() => urkundeAnweisung(state.we[0],
     {id:'x', art:'mangel', pid:'1', stufe:10, be:6, wendung:'Peter'}));
-  if(!/\{"kopf":"…","text":"…","bezug":"…"\}/.test(tm))
-    throw new Error('das Muster der Mängelanzeige verlangt keine Überschrift');
-  return 'bezug in beiden Mustern';
+  if(!/\{"kopf":"…","text":"…"\}/.test(tm))
+    throw new Error('das Muster der Mängelanzeige: ' + (tm.match(/\{"[^}]*\}/) || [''])[0]);
+  return 'bezug bei der Stufe, Kopf ohne Bezug bei der Mängelanzeige';
 });
 
 console.log('\n══ Was ankommt ══');
