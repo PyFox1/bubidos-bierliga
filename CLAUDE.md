@@ -320,12 +320,15 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   40 %. Wer das anders will, ändert `SCHNAPS` — BE, Liter, Anleitung (§ 7) und Erklär-Blatt
   hängen daran bzw. nennen die Zahlen. Eine Größenwahl gibt es beim Schnaps bewusst nicht;
   wer einen Doppelten trinkt, trägt zwei ein.
-  **Die Runde Kurze hat einen eigenen Knopf** unter „Runde für alle“ (`rundeKurze`), weil
-  Kurze fast immer als Runde kommen und sonst jedes Mal die Pille umgestellt und danach
-  wieder zurückgestellt werden müsste — genau der Handgriff, der in fortgeschrittener Stunde
-  vergessen wird. Beide Knöpfe laufen über `rundeGeben(key, frage)`. Die Rückfrage vor der
-  doppelten Runde unterscheidet nach Sorte (`letzteRundeIm(ort, kurze)`): Eine Runde Kurze
-  gleich nach einer Runde Bier ist der Normalfall, kein Doppeltipp.
+  **Einfach vor allem** (G59): In der Oberfläche stehen keine cl-Angaben, nur „Longdrink“
+  und „Kurzer“ mit ihrer BE; die cl nennt allein § 7 als Grundlage der Rechnung.
+  **Die Runde Kurze hat keinen eigenen Knopf.** In G58 stand kurz einer unter „Runde für
+  alle“, damit niemand die Pille umstellen muss; die Runde wollte ihn nicht — „Runde für
+  alle“ nutzt sie ohnehin schon für verschiedene Getränke. Also: Pille auf Kurzer, Runde für
+  alle. Nicht wieder einbauen, ohne zu fragen. Geblieben ist die Rückfrage vor der doppelten
+  Runde **nach Sorte** (`letzteRundeIm(ort, kurze)`): Eine Runde Kurze gleich nach einer
+  Runde Bier ist der Normalfall, kein Doppeltipp. `runde()` läuft dafür über
+  `rundeGeben(key, frage)`.
   Das Foto-Zählen kennt Longdrink und Kurzer nicht; es liest weiter nur Bier.
 - **Zurückliegende Locations sind schreibgeschützt.** Man kann durch die Kette wischen, aber
   nicht versehentlich Bier am falschen Abend eintragen. Entsperren geht mit einem Tipp.

@@ -1,4 +1,4 @@
-// Longdrink und Kurzer (G58): wie sie zählen, wie man sie einträgt, die Runde Kurze –
+// Longdrink und Kurzer (G58/G59): wie sie zählen, wie man sie einträgt, die Runde Kurze –
 // und was an ihnen hängt: Abtrünnig, Kurzer Prozess, der Kurze in der Arschloch-Strecke.
 import { chromium } from 'playwright-core';
 import http from 'http';
@@ -76,6 +76,7 @@ await schritt('Die Pille bietet sie unter „Kein Bier“, ohne Größe', async 
   if(r.key !== 'kurz:02') throw new Error(r.key);
   if(!/Kein Bier/.test(r.text) || !/Kurzer/.test(r.text)) throw new Error(r.text);
   if(r.groesse) throw new Error('die Größe steht noch da');
+  if(/\bcl\b/.test(r.text)) throw new Error('cl-Angabe in der Pille: ' + r.text);
   await p.click('.wahl-auf [data-tu="wahlS"][data-k="normal"]');
   const k = await p.evaluate(() => wahlKey());
   if(k !== 'normal:05') throw new Error('zurück zum Bier: ' + k);
@@ -90,19 +91,25 @@ await schritt('Die Sammel-Eingabe kann sie auch', async () => {
 });
 
 console.log('\n== Runde Kurze ==');
+/* Seit G59 ohne eigenen Knopf: Pille auf Kurzer, Runde für alle. */
+const kurze = () => p.evaluate(() => { state.wahlS = 'kurz'; tu.runde(); });
+const zurBier = () => p.evaluate(() => { state.wahlS = 'normal'; state.wahlG = '05'; zeichnen(); });
 await aufbau({'1':h(2), '2':h(2), '3':h(2)});
-await schritt('Ein eigener Knopf gibt jedem am Tisch einen Kurzen – die Pille bleibt auf Halbe', async () => {
-  const k = await p.$('[data-tu="rundeKurze"]');
-  if(!k) throw new Error('kein Knopf');
-  await p.click('[data-tu="rundeKurze"]');
-  const r = await p.evaluate(() => ({g:state.we[0].tage[0].orte[0].getraenke, pille:wahlKey()}));
-  if(Object.values(r.g).some(x => x[x.length - 1] !== 'kurz:02')) throw new Error(JSON.stringify(r.g));
-  if(r.pille !== 'normal:05') throw new Error('Pille: ' + r.pille);
+await schritt('Es gibt keinen eigenen Knopf für die Runde Kurze', async () => {
+  if(await p.$('[data-tu="rundeKurze"]')) throw new Error('Knopf noch da');
+  if(/Runde Kurze/.test(await p.evaluate(() => document.getElementById('app').textContent)))
+    throw new Error('Text „Runde Kurze“ steht noch da');
+});
+await schritt('Pille auf Kurzer und Runde für alle gibt jedem einen Kurzen', async () => {
+  await kurze();
+  const g = await p.evaluate(() => state.we[0].tage[0].orte[0].getraenke);
+  if(Object.values(g).some(x => x[x.length - 1] !== 'kurz:02')) throw new Error(JSON.stringify(g));
+  await zurBier();
 });
 await schritt('Wer heim ist, bekommt keinen', async () => {
   await p.evaluate(() => { state.we[0].tage[0].heim = {'3': Date.now()}; });
   await spulen(4); await weg();
-  await p.click('[data-tu="rundeKurze"]');
+  await kurze(); await zurBier();
   const g = await p.evaluate(() => state.we[0].tage[0].orte[0].getraenke['3']);
   if(g.filter(x => x === 'kurz:02').length !== 1) throw new Error(g.join());
   await p.evaluate(() => { state.we[0].tage[0].heim = {}; });
@@ -110,22 +117,24 @@ await schritt('Wer heim ist, bekommt keinen', async () => {
 await schritt('Gleich danach eine Runde Bier fragt nicht nach', async () => {
   await weg();
   await p.evaluate(() => { nachfrage = null; tu.runde(); });
-  const r = await p.evaluate(() => ({nachfrage, n:state.we[0].tage[0].orte[0].getraenke['1'].length}));
+  const r = await p.evaluate(() => ({nachfrage}));
   if(r.nachfrage) throw new Error('fragt: ' + r.nachfrage);
   return 'Kurze und Bier sind zwei Sorten Runde';
 });
 await schritt('Eine zweite Runde Kurze binnen Minuten fragt nach', async () => {
   await weg();
   const vor = await p.evaluate(() => state.we[0].tage[0].orte[0].getraenke['1'].length);
-  await p.evaluate(() => { nachfrage = null; tu.rundeKurze(); });
+  await p.evaluate(() => { nachfrage = null; });
+  await kurze();
   const r = await p.evaluate(() => ({nachfrage, n:state.we[0].tage[0].orte[0].getraenke['1'].length,
-    knopf:document.querySelector('[data-tu="rundeKurze"]').textContent}));
-  if(r.nachfrage !== 'rundeKurze' || r.n !== vor) throw new Error(JSON.stringify(r));
-  if(!/schon Kurze/.test(r.knopf)) throw new Error(r.knopf);
+    knopf:document.querySelector('[data-tu="runde"]').textContent}));
+  if(r.nachfrage !== 'runde' || r.n !== vor) throw new Error(JSON.stringify(r));
+  if(!/gab es schon eine/.test(r.knopf)) throw new Error(r.knopf);
+  await zurBier();
 });
 await schritt('„Runde zurücknehmen“ nimmt auch die Kurzen zurück', async () => {
   await aufbau({'1':h(2), '2':h(2)});
-  await p.evaluate(() => { tu.rundeKurze(); tu.rundeZurueck(); });
+  await kurze(); await p.evaluate(() => tu.rundeZurueck()); await zurBier();
   const g = await p.evaluate(() => state.we[0].tage[0].orte[0].getraenke);
   if(Object.values(g).some(x => x.includes('kurz:02'))) throw new Error(JSON.stringify(g));
 });
@@ -133,7 +142,7 @@ await schritt('„Runde zurücknehmen“ nimmt auch die Kurzen zurück', async (
 console.log('\n== Kurzer Prozess ==');
 await schritt('Die erste Runde Kurze des Abends ist eine Meldung für den Tisch', async () => {
   await aufbau({'1':h(2), '2':h(2), '3':h(2)});
-  await p.evaluate(() => tu.rundeKurze());
+  await kurze(); await zurBier();
   const m = await marken('kurz');
   if(m.length !== 1 || m[0].pids.length !== 3) throw new Error(JSON.stringify(m.map(x => x.pids)));
   const o = await p.evaluate(() => { const u = offeneUrkunde(); return u ? ansichtUrkunde(u) : ''; });
@@ -141,7 +150,7 @@ await schritt('Die erste Runde Kurze des Abends ist eine Meldung für den Tisch'
   await weg();
 });
 await schritt('Eine zweite Runde Kurze meldet nichts mehr', async () => {
-  await spulen(10); await p.evaluate(() => { nachfrage = null; tu.rundeKurze(); });
+  await spulen(10); await p.evaluate(() => { nachfrage = null; }); await kurze(); await zurBier();
   const m = await marken('kurz');
   if(m.length !== 1) throw new Error(m.length);
 });
@@ -153,7 +162,7 @@ await schritt('Einzeln eingetragene Kurze sind keine Runde', async () => {
 });
 await schritt('Zurückgenommen ist er wieder weg', async () => {
   await aufbau({'1':h(2), '2':h(2)});
-  await p.evaluate(() => { tu.rundeKurze(); tu.rundeZurueck(); });
+  await kurze(); await p.evaluate(() => tu.rundeZurueck()); await zurBier();
   const m = await marken('kurz');
   if(m.length) throw new Error('bleibt');
 });

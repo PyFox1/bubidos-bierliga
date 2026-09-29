@@ -438,11 +438,6 @@ table.rechnung td.schlecht{color:#E09084}
   padding:13px;border-radius:5px;background:var(--deckel);color:var(--tinte);
   font-weight:800;font-size:15px;letter-spacing:.01em}
 .rundeknopf span{font-family:var(--mono);font-size:12px;opacity:.6;font-weight:400}
-.rundekurz{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:6px;
-  padding:9px;border-radius:5px;border:1px solid var(--linie);color:var(--deckel);
-  font-weight:700;font-size:13.5px}
-.rundekurz span{font-family:var(--mono);font-size:11px;opacity:.6;font-weight:400}
-.rundekurz:disabled{opacity:.4}
 .rundeknopf:active{transform:translateY(1px)}
 .rundeknopf[disabled]{opacity:.4}
 .rundezurueck{display:block;width:100%;margin-top:7px;padding:9px;border-radius:5px;
@@ -721,7 +716,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-28 16:45 · G58 (GitHub)';
+const FASSUNG = '2026-09-29 09:57 · G59 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -736,13 +731,11 @@ const FASSUNG = '2026-09-28 16:45 · G58 (GitHub)';
 const NOTIZ_START  = 1;
 const NOTIZ_ANZAHL = 3;
 const NOTIZEN = [
-  {f:'G58', d:'28.09.2026', z:'16:45', punkte:[
+  {f:'G59', d:'29.09.2026', z:'09:57', punkte:[
     'Longdrinks und Kurze lassen sich eintragen. Sie stehen in der Pille unter „Kein Bier“ '
-    + 'und in der Sammel-Eingabe; gerechnet wird der Schnaps: ein Longdrink 0,64, ein '
-    + 'Kurzer 0,32.',
-    'Unter „Runde für alle“ gibt es einen eigenen Knopf für eine Runde Kurze. Die Pille '
-    + 'muss dafür nicht umgestellt werden, und eine Runde Kurze gleich nach einer Runde Bier '
-    + 'fragt nicht nach, ob es die schon gab.']},
+    + 'und in der Sammel-Eingabe. Ein Longdrink zählt 0,64, ein Kurzer 0,32.',
+    'Eine Runde Kurze: Pille auf Kurzer, dann Runde für alle. Kommt sie gleich nach einer '
+    + 'Runde Bier, fragt die App nicht nach, ob es die schon gab.']},
   {f:'G56', d:'28.09.2026', z:'10:31', punkte:[
     'Die alten Orden sind durch Abzeichen und Wanderpokale ersetzt. Abzeichen gibt es an '
     + 'jedem Tag: Tagessieger, Fahrer des Abends für den, der am wenigsten getrunken hat, '
@@ -3249,7 +3242,7 @@ function ansichtZaehlen(){
   const wahlG = GROESSE.map(x => '<button class="chip" data-tu="wahlG" data-k="'+x.k+'" data-an="'
       + (state.wahlG===x.k?1:0) + '">' + x.n + '</button>').join('');
   const wahlX = SCHNAPS.map(x => '<button class="chip" data-tu="wahlS" data-k="'+x.s+'" data-an="'
-      + (state.wahlS===x.s?1:0) + '">' + x.n + '<small>' + x.cl + ' cl</small></button>').join('');
+      + (state.wahlS===x.s?1:0) + '">' + x.n + '</button>').join('');
   const schnapsGewaehlt = SCHNAPS.some(x => x.s === state.wahlS);
 
   const k = kette();
@@ -3273,7 +3266,6 @@ function ansichtZaehlen(){
   }
   const buch = (ort.log || []);
   const vorigeRunde = letzteRundeIm(ort, wahlKey() === KURZER);
-  const vorigeKurze = letzteRundeIm(ort, true);
   const letzterX = buch.length ? buch[buch.length-1] : null;
   const letzteEintrag = letzterX
     ? {txt:eintragText(letzterX), t:letzterX.t,
@@ -3316,14 +3308,6 @@ function ansichtZaehlen(){
           + '<path d="M6 3h11l-1 15a3 3 0 0 1-3 3H10a3 3 0 0 1-3-3z"/>'
           + '<path d="M17 7h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2"/></svg>'
           + 'Runde für alle<span>' + amTisch.length + '×</span></button>')
-    /* Kurze kommen fast immer als Runde, und dafür soll niemand die Pille umstellen und
-       danach wieder zurück. Deshalb ein eigener, kleinerer Knopf. */
-    + (rueck ? ''
-        : nachfrage === 'rundeKurze' && vorigeKurze
-        ? '<button class="rundekurz warnung2" data-tu="rundeKurze">'
-          + vorWieGross(vorigeKurze.t) + ' gab es schon Kurze – nochmal tippen</button>'
-        : '<button class="rundekurz" data-tu="rundeKurze"' + (amTisch.length ? '' : ' disabled') + '>'
-          + 'Runde Kurze<span>' + amTisch.length + '×</span></button>')
     + (!rueck && eigen && !benennen
         ? '<div class="rueckband"><span>Getrennt' + (gOrt ? ' · Gruppe in ' + esc(gOrt.ort.name) : '')
           + '</span><button data-tu="zurGruppe">Wieder mitlaufen</button></div>' : '')
@@ -4699,8 +4683,7 @@ function ansichtInfo(){
     + '<li><strong>Runde für alle</strong> trägt das gewählte Getränk in einem Tipp bei jedem ein, '
     + 'der gerade an dieser Location steht. Direkt darunter erscheint dann „Runde zurücknehmen“, '
     + 'falls es doch nicht für alle war — wer nichts wollte, kann auch einzeln mit − abgezogen '
-    + 'werden. Darunter steht <strong>Runde Kurze</strong>: dasselbe mit einem Kurzen für '
-    + 'jeden, ohne die Pille umzustellen.</li>'
+    + 'werden. Eine Runde Kurze geht genauso: Pille auf Kurzer, dann Runde für alle.</li>'
     + '<li><strong>Schon eingetragen?</strong> Unter dem Runde-Knopf steht immer die letzte Eingabe '
     + 'mit Uhrzeit und Namen. Lag die vorige Eintragung weniger als drei Minuten zurück, fragt das '
     + 'Gerät einmal nach, bevor es die nächste einträgt — das fängt den Fall ab, dass zwei '
@@ -4898,11 +4881,10 @@ function ansichtInfo(){
     + 'Normal 1,0 heißt <em>Maß</em>. Über 8 % wird untertrieben — ein Doppelbock zählt wie ein '
     + 'gewöhnliches Starkbier.</p>'
     + '<p><strong>Kein Bier.</strong> Longdrink und Kurzer stehen in der Pille unter „Kein Bier“. '
-    + 'Gerechnet wird der Schnaps, nicht das Glas: ein Longdrink mit 4 cl zu 40 % ergibt '
-    + '<strong>0,64</strong>, ein Kurzer mit 2 cl <strong>0,32</strong>. Eine Größe gibt es dafür '
-    + 'nicht zu wählen; wer doppelt einschenkt, trägt zwei ein. Bei den Litern zählt der Longdrink '
-    + 'mit 0,3, der Kurze mit 0,02. Für die Runde Kurze gibt es unter „Runde für alle“ einen '
-    + 'eigenen Knopf, damit niemand die Pille umstellen und danach wieder zurückstellen muss.</p>'
+    + 'Ein Longdrink zählt <strong>0,64</strong>, ein Kurzer <strong>0,32</strong>. Eine Größe gibt '
+    + 'es dafür nicht; wer einen Doppelten trinkt, trägt zwei ein. Zugrunde liegt, wie beim Bier, '
+    + 'der Alkohol im Glas: 4 beziehungsweise 2 cl Schnaps zu 40 %. Eine Runde Kurze ist eine '
+    + 'Runde für alle mit Kurzer in der Pille.</p>'
 
     + '<p>Jeder <strong>Tag</strong> ist ein Turnier, jeder gegen jeden. Für jedes Paar wird gerechnet:</p>'
     + '<div class="formel">'
@@ -5044,8 +5026,7 @@ const ERKLAERUNGEN = {
         + 'Liter × Volumenprozent ÷ 2,5.',
       'Eine Halbe Helles ergibt damit genau <b>1,00</b> — das ist der Maßstab. Ein kleines Pils '
       + 'zählt 0,66, ein starkes 0,33er 0,92, eine Maß 2,00. Alkoholfrei zählt 0,00.',
-      'Beim Schnaps zählt der Schnaps: ein Longdrink (4 cl, 40 %) <b>0,64</b>, ein Kurzer '
-      + '(2 cl) <b>0,32</b>.',
+      'Ein Longdrink zählt <b>0,64</b>, ein Kurzer <b>0,32</b> — auch hier nach dem Alkohol im Glas.',
       'Gewertet wird also nicht, wie viele Gläser jemand hatte, sondern wie viel tatsächlich drin war. '
       + 'Drei kleine Biere schlagen nicht automatisch zwei große.']},
   kfaktor: {titel:'Was ist der K-Faktor?', para:'p7', paraName:'§ 7 Technische Daten',
@@ -6654,9 +6635,9 @@ const tu = {
     tagebuch(ort, {art:'minus', key:weg, pid:el.dataset.id});
     sichern(); zeichnen(); },
   runde(){ tu.rundeGeben(wahlKey(), 'runde'); },
-  rundeKurze(){ tu.rundeGeben(KURZER, 'rundeKurze'); },
-  /* Eine Runde für alle am Tisch – vom Getränk der Pille oder, über den eigenen Knopf,
-     Kurze. Beide fragen nach, wenn es gerade erst eine derselben Sorte gab. */
+  /* Eine Runde für alle am Tisch, mit dem Getränk aus der Pille – auch Kurze: Pille auf
+     Kurzer, Runde für alle. Einen eigenen Knopf dafür gab es kurz, er war der Runde zu
+     viel (G59). Gefragt wird nur, wenn es gerade erst eine derselben Sorte gab. */
   rundeGeben(key, frage){
     const {tg, ort} = aktuell();
     const ids = Object.keys(ort.getraenke).filter(id => heimVon(tg, id) === undefined);
