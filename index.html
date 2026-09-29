@@ -716,7 +716,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-29 09:57 · G59 (GitHub)';
+const FASSUNG = '2026-09-29 11:06 · G60 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -731,6 +731,10 @@ const FASSUNG = '2026-09-29 09:57 · G59 (GitHub)';
 const NOTIZ_START  = 1;
 const NOTIZ_ANZAHL = 3;
 const NOTIZEN = [
+  {f:'G60', d:'29.09.2026', z:'11:06', punkte:[
+    'Beim Heimgehen steht neben „Geht heim“ gleich die Uhrzeit. Sie steht auf jetzt; wer '
+    + 'schon vor einer halben Stunde gegangen ist, wird zurückgestellt und dann eingetragen – '
+    + 'ohne das Blatt ein zweites Mal zu öffnen.']},
   {f:'G59', d:'29.09.2026', z:'09:57', punkte:[
     'Longdrinks und Kurze lassen sich eintragen. Sie stehen in der Pille unter „Kein Bier“ '
     + 'und in der Sammel-Eingabe. Ein Longdrink zählt 0,64, ein Kurzer 0,32.',
@@ -1030,6 +1034,9 @@ let ansicht = null;
 let fazitOffen = null, frage = null, foto = null, blatt = null;
 /* Das Heim-Blatt aus dem Zwischenstand: {tag, id}. */
 let heimBlatt = null;
+/* Die im Heim-Feld eingestellte Uhrzeit, {schl:'tagId:pid', wert:'HH:MM'} – das Blatt
+   kann zwischendurch neu gezeichnet werden, etwa durch den Abgleich im Zwischenstand. */
+let heimEingabe = null;
 /* Läuft gerade eine Zählung, steckt hier ihr Abbruch. */
 let fotoLauf = null;
 let wechsler = false, detailId = null, personId = null;
@@ -3469,12 +3476,21 @@ function heimTeil(we, tg, pid){
   if(!we || !tg) return '';
   const hz = heimVon(tg, pid);
   const an = ' data-tag="' + tg.id + '" data-id="' + esc(pid) + '"';
+  /* Das Feld überlebt ein Neuzeichnen nicht – was darin eingestellt wurde, steht in
+     `heimEingabe`. Ohne Eingabe steht dort die Uhrzeit von jetzt bzw. die eingetragene. */
+  const schl = tg.id + ':' + pid;
+  const vorgabe = zeitKurz(hz === undefined ? Date.now() : hz);
+  const wert = heimEingabe && heimEingabe.schl === schl ? heimEingabe.wert : vorgabe;
+  const feld = '<input id="heimZeit" type="time" value="' + esc(wert) + '" data-schl="' + esc(schl)
+    + '" data-vorgabe="' + vorgabe + '">';
   if(hz === undefined)
-    return '<div class="heimteil"><button class="knopf leer" data-tu="heimJetzt"' + an + '>Geht heim</button>'
-      + '<p class="mini" style="margin:6px 2px 0">Hält die Uhrzeit fest. Wer als Erster geht, '
-      + 'bekommt den Goldenen Bettzipfel.</p></div>';
+    return '<div class="heimteil"><div class="wahl-titel">Heimgehen</div>'
+      + '<div class="feld heimfeld">' + feld
+      + '<button data-tu="heimJetzt"' + an + '>Geht heim</button></div>'
+      + '<p class="mini" style="margin:6px 2px 0">Steht auf jetzt. Wer schon früher gegangen ist: '
+      + 'erst die Uhrzeit zurückstellen. Wer als Erster geht, bekommt den Goldenen Bettzipfel.</p></div>';
   return '<div class="heimteil"><div class="wahl-titel">Heimgegangen</div>'
-    + '<div class="feld heimfeld"><input id="heimZeit" type="time" value="' + zeitKurz(hz) + '">'
+    + '<div class="feld heimfeld">' + feld
     + '<button data-tu="heimSetzen"' + an + '>Uhrzeit ändern</button></div>'
     + '<p class="mini" style="margin:6px 2px 0">Eine Uhrzeit vor zwölf zählt zur Nacht danach.</p>'
     + '<button class="knopf leer" data-tu="heimWeg"' + an + '>Doch noch da</button></div>';
@@ -4853,8 +4869,9 @@ function ansichtInfo(){
     + 'jemand bis zum Schluss geblieben ist. Wer ein Wochenende auslässt, fängt bei null an. Hat '
     + 'niemand drei in Folge, steht der Pokal im Schrank.</td></tr></table>'
     + '<p><strong>6.3 Heimgehen.</strong> Wer geht, wird über seinen Namen am Zählbildschirm als '
-    + 'heimgegangen eingetragen — „Geht heim“ hält die Uhrzeit fest, die sich danach berichtigen '
-    + 'lässt; eine Uhrzeit vor zwölf gilt als Nacht danach. Bleibt bei „+ Location“ genau einer '
+    + 'heimgegangen eingetragen — „Geht heim“ hält die Uhrzeit im Feld daneben fest. Die steht auf '
+    + 'jetzt; wer schon früher gegangen ist, wird vorher zurückgestellt, und berichtigen lässt '
+    + 'sie sich auch danach. Eine Uhrzeit vor zwölf gilt als Nacht danach. Bleibt bei „+ Location“ genau einer '
     + 'zurück, bietet das Blatt dasselbe an. Nachträge, auch für frühere Stationen, gehen im '
     + 'Zwischenstand. Wer heim ist, bekommt aus der Runde für alle kein Bier mehr und wird bei '
     + '„Wer geht mit?“ nicht angeboten. Das Nichteintragen einer Heim-Zeit gilt als Anwesenheit bis '
@@ -6680,6 +6697,7 @@ const tu = {
   blattAuf(el){
     const {ort} = aktuell();
     blatt = {id:el.dataset.id, z:zaehlung(ort.getraenke[el.dataset.id])};
+    heimEingabe = null;
     zeichnen();
   },
   blattPlus(el){ blatt.z[el.dataset.k] = (blatt.z[el.dataset.k]||0) + 1; zeichnen(); },
@@ -6694,12 +6712,20 @@ const tu = {
   },
   blattZu(){ blatt = null; zeichnen(); },
   heimJetzt(el){
-    const {tg} = tagSuchen(el.dataset.tag);
+    const {we, tg} = tagSuchen(el.dataset.tag);
     if(!tg) return;
+    /* Unverändert heißt jetzt, sekundengenau. Wer die Uhrzeit zurückgestellt hat, meint
+       die eingestellte – dann läuft sie durch dieselbe Deutung wie beim Berichtigen. */
+    const f = document.getElementById('heimZeit');
+    let t = Date.now();
+    if(f && f.value !== f.dataset.vorgabe){
+      t = heimZeitAus(we, tg, f.value);
+      if(t === null){ toast('Keine gültige Uhrzeit'); return; }
+    }
     tg.heim = Object.assign({}, tg.heim);
-    tg.heim[el.dataset.id] = Date.now();
+    tg.heim[el.dataset.id] = t;
     const q = state.spieler.find(x => String(x.id) === String(el.dataset.id));
-    blatt = null; nachfrage = null;
+    blatt = null; nachfrage = null; heimEingabe = null;
     /* Der erste „Geht heim“ des Abends ist der Bettzipfel – eine Eintragung wie ein Bier. */
     markenPruefen();
     sichern(); zeichnen();
@@ -6713,6 +6739,7 @@ const tu = {
     if(t === null){ toast('Keine gültige Uhrzeit'); return; }
     tg.heim = Object.assign({}, tg.heim);
     tg.heim[el.dataset.id] = t;
+    heimEingabe = null;
     markenPruefen();
     sichern(); zeichnen(); toast('Heim um ' + zeitKurz(t));
   },
@@ -6721,10 +6748,11 @@ const tu = {
     if(!tg || !tg.heim) return;
     tg.heim = Object.assign({}, tg.heim);
     delete tg.heim[el.dataset.id];
+    heimEingabe = null;
     sichern(); zeichnen();
   },
-  heimAuf(el){ heimBlatt = {tag:el.dataset.tag, id:el.dataset.id}; zeichnen(); },
-  heimZu(){ heimBlatt = null; zeichnen(); },
+  heimAuf(el){ heimBlatt = {tag:el.dataset.tag, id:el.dataset.id}; heimEingabe = null; zeichnen(); },
+  heimZu(){ heimBlatt = null; heimEingabe = null; zeichnen(); },
   /* Nur ein Tipp wirklich daneben schließt – im Blatt steckt ein Uhrzeitfeld. */
   heimHintergrund(){ tu.heimZu(); },
   blattHintergrund(){},
@@ -6931,12 +6959,15 @@ document.addEventListener('click', ev => {
   }
 });
 document.addEventListener('change', ev => {
+  /* Manche Uhrzeit-Auswahlen melden sich nur mit change, nicht mit input. */
+  if(ev.target.id === 'heimZeit') heimEingabe = {schl:ev.target.dataset.schl, wert:ev.target.value};
   const s = ev.target.closest('[data-zuord]');
   if(s && foto) foto.treffer[+s.dataset.zuord].ziel = s.value || null;
 });
 document.addEventListener('input', ev => {
   /* Das Blatt kann zwischendurch neu gezeichnet werden – Getipptes festhalten. */
   if(ev.target.id === 'ortNameNeu' && benennen) benennen.name = ev.target.value;
+  if(ev.target.id === 'heimZeit') heimEingabe = {schl:ev.target.dataset.schl, wert:ev.target.value};
   if(ev.target.id === 'ortName'){
     const {ort} = aktuell();
     if(ort){ ort.name = ev.target.value; clearTimeout(window.__ot);

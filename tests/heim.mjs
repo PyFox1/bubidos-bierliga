@@ -133,6 +133,44 @@ await schritt('„Doch noch da“ nimmt es zurück', async () => {
   await klick('.blende [data-tu="blattZu"]');
 });
 
+console.log('\n== Gleich mit der richtigen Uhrzeit ==');
+await schritt('Neben „Geht heim“ steht die Uhrzeit, vorbelegt mit jetzt', async () => {
+  await klick('button.pname[data-id="4"]');
+  const r = await p.evaluate(() => {
+    const f = document.querySelector('.blende #heimZeit');
+    const k = document.querySelector('.blende [data-tu="heimJetzt"]');
+    return {wert:f && f.value, jetzt:zeitKurz(Date.now()), nebeneinander:!!(f && k && f.parentNode === k.parentNode)};
+  });
+  if(r.wert !== r.jetzt) throw new Error(r.wert + ' statt ' + r.jetzt);
+  if(!r.nebeneinander) throw new Error('Feld und Knopf nicht in einer Zeile');
+});
+await schritt('Zurückgestellt und ein Tipp: eingetragen ist die eingestellte Uhrzeit', async () => {
+  const soll = await p.evaluate(() => zeitKurz(Date.now() - 30*60000));
+  await p.fill('#heimZeit', soll);
+  /* Ein Neuzeichnen zwischendurch – etwa ein Plus-Tipp im selben Blatt – darf die
+     eingestellte Uhrzeit nicht auf jetzt zurückwerfen. */
+  await p.evaluate(() => zeichnen());
+  const nach = await p.$eval('.blende #heimZeit', f => f.value);
+  if(nach !== soll) throw new Error('nach dem Neuzeichnen ' + nach);
+  await klick('.blende [data-tu="heimJetzt"]');
+  const r = await p.evaluate(() => {
+    const t = state.we[0].tage[0].heim['4'];
+    return {zeit:zeitKurz(t), vorJetzt:(Date.now() - t) / 60000};
+  });
+  if(r.zeit !== soll) throw new Error(r.zeit + ' statt ' + soll);
+  if(r.vorJetzt < 29 || r.vorJetzt > 32) throw new Error(r.vorJetzt.toFixed(1) + ' min');
+  if(await p.$('.blende')) throw new Error('Blatt noch offen');
+  return soll + ', ein Blatt, ein Tipp';
+});
+await schritt('Beim nächsten Öffnen steht wieder die eingetragene Uhrzeit, nicht die alte Eingabe', async () => {
+  await p.evaluate(() => { delete state.we[0].tage[0].heim['4']; zeichnen(); });
+  await klick('button.pname[data-id="4"]');
+  const r = await p.evaluate(() => ({wert:document.querySelector('.blende #heimZeit').value,
+    jetzt:zeitKurz(Date.now())}));
+  if(r.wert !== r.jetzt) throw new Error(r.wert);
+  await klick('.blende [data-tu="blattZu"]');
+});
+
 console.log('\n== + Location ==');
 await schritt('Wer heim ist, wird bei „Wer geht mit?“ nicht angeboten', async () => {
   await p.evaluate(() => { state.we[0].tage[0].heim = {'4':Date.now()}; zeichnen(); tu.ortNeu(); });

@@ -302,7 +302,14 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   Personenansicht), *Rote Laterne* (zeigt die letzte Tabellenzeile schon), Bettzipfel über
   das letzte Getränk (eine „Runde für alle“ nach dem Gehen verschöbe ihn auf den Falschen).
 - **Heimgehen wird von Hand eingetragen, mit Uhrzeit** (G56). Tipp auf den Namen, „Geht
-  heim“ hält den Zeitpunkt fest; berichtigen lässt er sich im selben Blatt und im
+  heim“ hält den Zeitpunkt fest. Seit G60 steht das Uhrzeitfeld **neben** dem Knopf, vorbelegt
+  mit jetzt: Wer erst nach einer halben Stunde merkt, dass einer fehlt, stellt zurück und
+  tippt einmal — vorher waren es zwei Anläufe (eintragen, Blatt wieder öffnen, berichtigen).
+  Unverändert heißt „jetzt, sekundengenau“ (`data-vorgabe` am Feld), sonst läuft die Eingabe
+  durch `heimZeitAus()`. Die Eingabe steht in `heimEingabe`, weil ein Plus-Tipp im selben
+  Blatt oder der Abgleich im Zwischenstand neu zeichnet; geleert wird sie beim Öffnen und
+  nach jedem Eintragen, sonst stünde beim nächsten Öffnen eine alte Uhrzeit drin.
+  Berichtigen lässt sich der Zeitpunkt im selben Blatt und im
   Zwischenstand (`heimBlatt`) — dort auch für den, der an einer früheren Station
   zurückgeblieben ist und am Zählbildschirm gar nicht mehr steht. Eine Uhrzeit wird relativ
   zum frühesten bekannten Zeitpunkt des Tages gelesen (`heimZeitAus()`): mehr als drei
