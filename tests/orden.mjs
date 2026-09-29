@@ -29,9 +29,13 @@ const schritt = async (name, fn) => {
 
 /* Vier Wochenenden, drei abgeschlossen, eines läuft.
    W1: alle vier, Gerry geht früh.       Krone Korbi 6 · Rekord Korbi 6
+       Fifu und Sperry kommen binnen einer Minute auf die Schlagzahl, Korbi eine Stunde
+       später – Fifu und Sperry teilen den Schrittmacher.
    W2: ohne Gerry, zwei Tage.            Krone Fifu 9
        Tag 1: Sperry und Korbi gehen binnen fünf Minuten – geteilter Bettzipfel.
+       Korbi allein auf der Schlagzahl – Schrittmacher.
    W3: alle vier.                        Krone Korbi 8 · Rekord Korbi 8
+       Alle vier mit derselben Runde auf der Schlagzahl – keiner hat vorgelegt.
        Serien: Korbi, Fifu, Sperry je 3, Gerry 1 – Fifu blieb am öftesten bis zum Schluss.
    W4 läuft: Fifu 9 an einem Tag.        Rekord Fifu 9, noch mitten am Abend. */
 const T0 = new Date('2025-05-01T22:00:00').getTime();
@@ -41,15 +45,17 @@ await p.evaluate(({T0}) => {
   state.einst = {k:40};
   state.we = [
     {id:100, titel:'Erstes', datum:'2025-05-01', zu:true, dabei:[1,2,3,4], tage:[
-      {id:101, label:'1. Tag', heim:{'4':T0}, orte:[{id:11, name:'A',
+      {id:101, label:'1. Tag', heim:{'4':T0},
+       schlag:{'2':T0 - 3*3600000, '3':T0 - 3*3600000 + 60000, '1':T0 - 2*3600000}, orte:[{id:11, name:'A',
         getraenke:{'1':h(6),'2':h(4),'3':h(3),'4':h(2)}}]}]},
     {id:200, titel:'Zweites', datum:'2025-09-01', zu:true, dabei:[1,2,3], tage:[
-      {id:201, label:'1. Tag', heim:{'3':T0, '1':T0 + 5*60000}, orte:[{id:21, name:'B',
+      {id:201, label:'1. Tag', heim:{'3':T0, '1':T0 + 5*60000}, schlag:{'1':T0 - 3600000},
+       orte:[{id:21, name:'B',
         getraenke:{'1':h(3),'2':h(5),'3':h(4)}}]},
       {id:202, label:'2. Tag', orte:[{id:22, name:'C',
         getraenke:{'1':h(3),'2':h(4),'3':h(2)}}]}]},
     {id:300, titel:'Drittes', datum:'2026-05-01', zu:true, dabei:[1,2,3,4], tage:[
-      {id:301, label:'1. Tag', orte:[{id:31, name:'D',
+      {id:301, label:'1. Tag', schlag:{'1':T0, '2':T0, '3':T0, '4':T0}, orte:[{id:31, name:'D',
         getraenke:{'1':h(8),'2':h(5),'3':h(5),'4':h(5)}}]}]},
     {id:400, titel:'Läuft', datum:'2026-09-26', zu:false, dabei:[1,2,3], tage:[
       {id:401, label:'1. Tag', orte:[{id:41, name:'E',
@@ -63,7 +69,8 @@ const eh = await p.evaluate(() => {
   const n = ids => ids.map(id => state.spieler.find(x => String(x.id) === String(id)).name).sort().join('+');
   return {
     zahlen: r.zahlen,
-    chronik: r.chronik.map(c => ({tag:c.tagId, sieger:n(c.a.sieger), fahrer:n(c.a.fahrer), zipfel:n(c.a.zipfel)})),
+    chronik: r.chronik.map(c => ({tag:c.tagId, sieger:n(c.a.sieger), fahrer:n(c.a.fahrer),
+      schlag:n(c.a.schlag), zipfel:n(c.a.zipfel)})),
     halter: Object.fromEntries(Object.keys(r.halter).map(k => [k, {wer:n(r.halter[k].wer), wert:r.halter[k].wert}])),
     verlauf: Object.fromEntries(Object.keys(r.verlauf).map(k => [k, r.verlauf[k].map(v => n(v.wer) + '@' + v.weId)]))
   };
@@ -71,7 +78,8 @@ const eh = await p.evaluate(() => {
 
 console.log('\n══ Abzeichen je Tag ══');
 eh.chronik.forEach(c => console.log('  ' + c.tag + '  Sieger ' + (c.sieger || '—').padEnd(8)
-  + ' Fahrer ' + (c.fahrer || '—').padEnd(18) + ' Zipfel ' + (c.zipfel || '—')));
+  + ' Fahrer ' + (c.fahrer || '—').padEnd(18) + ' Schritt ' + (c.schlag || '—').padEnd(12)
+  + ' Zipfel ' + (c.zipfel || '—')));
 
 const tag = id => eh.chronik.find(c => c.tag === id);
 await schritt('Tagessieger ist, wer an dem Tag die meisten BE hat', async () => {
@@ -94,6 +102,14 @@ await schritt('Bettzipfel: binnen zehn Minuten geteilt, ohne Heim-Zeit keiner', 
   if(tag(201).zipfel !== 'Korbi+Sperry') throw new Error('W2/1: ' + tag(201).zipfel);
   if(tag(202).zipfel !== '') throw new Error('W2/2: ' + tag(202).zipfel);
   return 'Sperry und Korbi fünf Minuten auseinander';
+});
+
+await schritt('Schrittmacher: der Erste, binnen zwei Minuten geteilt, alle zugleich keiner', async () => {
+  if(tag(101).schlag !== 'Fifu+Sperry') throw new Error('W1: ' + tag(101).schlag);
+  if(tag(201).schlag !== 'Korbi') throw new Error('W2/1: ' + tag(201).schlag);
+  if(tag(202).schlag !== '') throw new Error('W2/2 ohne Zeiten: ' + tag(202).schlag);
+  if(tag(301).schlag !== '') throw new Error('W3, alle mit derselben Runde: ' + tag(301).schlag);
+  return 'Fifu und Sperry · Korbi · keiner';
 });
 
 console.log('\n══ Grenzfälle, einzeln gerechnet ══');
@@ -211,6 +227,8 @@ await schritt('Das Fazit zeigt die Abzeichen mit begründendem Wert', async () =
     if(!texte.fazit.includes(s)) throw new Error('fehlt: ' + s);
   if(!texte.fazit2.includes('Goldener Bettzipfel') || !/heim um \d\d:\d\d/.test(texte.fazit2))
     throw new Error('Bettzipfel ohne Uhrzeit');
+  if(!texte.fazit2.includes('Schrittmacher') || !/das dritte um \d\d:\d\d/.test(texte.fazit2))
+    throw new Error('Schrittmacher ohne Uhrzeit');
 });
 await schritt('Das Fazit zeigt, was mit den Pokalen passiert ist', async () => {
   for(const s of ['Deckelkrone', 'von Fifu', 'Treuepokal', 'Erstverleihung', 'Rekordhalter'])
@@ -242,8 +260,8 @@ await schritt('Die Ehrenhalle zeigt Halter, Verlauf, Abzeichen und Chronik', asy
   for(const s of ['Deckelkrone', 'Rekordhalter', 'Treuepokal', 'Erstes', 'Chronik', 'Goldener Bettzipfel'])
     if(!t.app.includes(s)) throw new Error('fehlt: ' + s);
   const korbi = t.zeilen.find(z => z.startsWith('Korbi'));
-  if(korbi !== 'Korbi211') throw new Error('Korbi-Zeile: ' + korbi);
-  return 'Korbi: 2 Siege, 1 Fahrer, 1 Zipfel';
+  if(korbi !== 'Korbi2111') throw new Error('Korbi-Zeile: ' + korbi);
+  return 'Korbi: 2 Siege, 1 Fahrer, 1 Schrittmacher, 1 Zipfel';
 });
 await schritt('Der Zurück-Pfeil führt aus der Ehrenhalle zurück', async () => {
   await p.evaluate(() => tu.zurueckNavi());
@@ -253,7 +271,8 @@ await schritt('Der Zurück-Pfeil führt aus der Ehrenhalle zurück', async () =>
 await schritt('Die Personenansicht zählt Abzeichen und Pokale', async () => {
   await p.evaluate(() => { tu.personAuf({dataset:{id:2}}); });
   const t = await p.evaluate(() => document.getElementById('app').textContent);
-  for(const s of ['Tagessieger3×', 'Rekordhalter', 'hält ihn', 'Treuepokal', 'Dabei: 4 von 4 Wochenenden'])
+  for(const s of ['Tagessieger3×', 'Schrittmacher1×', 'Rekordhalter', 'hält ihn', 'Treuepokal',
+                   'Dabei: 4 von 4 Wochenenden'])
     if(!t.includes(s)) throw new Error('fehlt: ' + s);
   if(t.includes('Orden')) throw new Error('„Orden“ steht noch da');
 });

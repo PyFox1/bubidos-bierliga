@@ -67,9 +67,9 @@ Die Variable `ansicht` überschreibt das für Unteransichten. Werte: `null` (aut
 | `ansichtArchiv` | Tabelle + Wochenendliste | Startseite ohne laufendes Wochenende |
 | `ansichtNeuesWe` | Wochenende eröffnen **oder** nachbessern | Knopf im Archiv, ‹ an der ersten Location |
 | `ansichtZaehlen` | Getränke zählen | Startseite bei laufendem Wochenende |
-| `ansichtZwischen` | Zwischenstand Tag für Tag | Balkensymbol im Zählkopf |
+| `ansichtZwischen` | Zwischenstand Tag für Tag, mit Knopf zur Ehrenhalle | Balkensymbol im Zählkopf |
 | `ansichtPerson` | Kacheln, Anwesenheit, Abzeichen, Pokale, Wochenenden | Tipp auf einen Namen in der Tabelle |
-| `ansichtRuhm` | Ehrenhalle: Pokale mit Verlauf, Abzeichen, Chronik | Knopf unter der Tabelle, Personenansicht |
+| `ansichtRuhm` | Ehrenhalle: Pokale mit Verlauf, Abzeichen, Chronik | Knopf unter der Tabelle, Personenansicht, Zwischenstand |
 | `ansichtWeDetail` | Fazit eines Wochenendes | Tipp auf eine Wochenendzeile |
 | `ansichtEinst` | Nachschlagen, Verwaltung, Änderungen | Zahnrad |
 | `ansichtInfo` | Betriebsanleitung, §1–§11 | aus den Einstellungen oder Erklär-Blättern |
@@ -105,7 +105,8 @@ falschen Tag und nimmt die Leute vom falschen Tresen mit. Gilt für jedes Blatt,
 - `berechnen()` — rechnet die gesamte Historie neu: Punkte, Siege, BE-Summen, Höchststände
 - `fazitVon(e)` — Wochenendbilanz samt Abzeichen je Tag und Pokal-Wechseln
 - `ehrungen()` / `tagAbzeichen(t)` — Abzeichen, Wanderpokale und ihr Verlauf, aus der ganzen
-  Historie gerechnet; `frueherGegangen()` und `heimVon()` lesen die Heim-Zeiten
+  Historie gerechnet; `frueherGegangen()` und `heimVon()` lesen die Heim-Zeiten,
+  `schlagVon()` die Schrittmacher-Zeiten, die `schlagFesthalten()` aus `schlagZeit()` ablegt
 - `rangDaten()` / `rangZeilen()` — die sortierbare Tabelle, Spalten in `SPALTEN`
 - `laden()` / `sichern()` / `schreiben()` — GitHub-Anbindung
 - `zusammenfuehren()` — Drei-Wege-Abgleich bei gleichzeitiger Änderung, samt `listeVereinen()`
@@ -210,10 +211,12 @@ Sammel-Eingabe, Fazit —, sie ohne Sonderweg mitnimmt. `istBier()` trennt die b
 **Anwesenheit** = die Person ist ein Schlüssel im `getraenke`-Objekt der Location. Ein leeres
 Array heißt „war da, hat nichts getrunken" — das ist etwas völlig anderes als „war nicht da".
 
-Am Tag hängt `tg.heim = {pid: zeitstempel}`: wer wann heimgegangen ist. Das ist das Einzige, was
-die Ehrungen an eigenen Daten brauchen, alles andere rechnen sie aus den Strichen. `heim`
-überlebt den Abschluss des Wochenendes (anders als das Tagebuch), weil Bettzipfel und
-Treuepokal auch rückwirkend daraus gerechnet werden.
+Am Tag hängt `tg.heim = {pid: zeitstempel}`: wer wann heimgegangen ist. Seit G61 daneben
+`tg.schlag = {pid: zeitstempel}`: wann jemand an dem Tag zum ersten Mal drei Getränke binnen
+einer halben Stunde hatte (die Zeit des dritten). Das ist alles, was die Ehrungen an eigenen
+Daten brauchen, den Rest rechnen sie aus den Strichen. Beide überleben den Abschluss des
+Wochenendes (anders als das Tagebuch), weil Bettzipfel, Schrittmacher und Treuepokal auch
+rückwirkend daraus gerechnet werden.
 
 Am Wochenende hängt außerdem `we.marken`: die ausgestellten Blätter, je eines
 `{id, art, stufe, pid, be, zahl, einheit, t, tag, ort, ortNr, text, kopf?, quelle, wendung}`.
@@ -246,6 +249,7 @@ die Heim-Zeiten (`tg.heim`) liegen im Bestand.
 |---|---|
 | Tagessieger | die meisten BE — dieselbe Regel wie die Spalte „Siege“, damit beide gleich zählen |
 | Fahrer des Abends | die wenigsten BE, erst ab `FAHRER_MIN` (3) am Tisch, nicht bei Gleichstand aller |
+| Schrittmacher | die früheste Schlagzahl (`tg.schlag`); wer binnen `SCHLAG_GLEICH` (2 min) nachzog, teilt; alle zugleich: keiner |
 | Goldener Bettzipfel | die früheste Heim-Zeit; wer binnen `HEIM_GLEICH` (10 min) mitging, teilt |
 
 | Wanderpokal | hält ihn | wandert |
@@ -263,7 +267,8 @@ Wie die Orden vorher stehen sie an **drei Stellen**: vergeben in `tagAbzeichen()
 erklärt in `ERKLAERUNGEN.abzeichen` und `.pokale`, nachgeschlagen in **§ 6**. Wer einen
 anfasst, fasst alle drei an; `tests/orden.mjs` prüft sie gegeneinander und rechnet die Regeln
 an einer kleinen Historie nach. Jede Zeile trägt den Wert, der sie begründet — Menge bei Sieger,
-Fahrer, Krone und Rekord, die Uhrzeit beim Bettzipfel, die Serie beim Treuepokal.
+Fahrer, Krone und Rekord, die Uhrzeit bei Schrittmacher („das dritte um …“) und Bettzipfel,
+die Serie beim Treuepokal.
 
 Gezeigt wird das an fünf Stellen: Symbole neben dem Namen in der Tabelle (`pokaleVon()`,
 gezeichnete SVG, keine Emojis), das Fazit je Wochenende (je Tag die Abzeichen, darunter die
@@ -301,6 +306,38 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   und vier bleiben — dann bekämen es jeden Abend vier; die Zahl steht als Statistik in der
   Personenansicht), *Rote Laterne* (zeigt die letzte Tabellenzeile schon), Bettzipfel über
   das letzte Getränk (eine „Runde für alle“ nach dem Gehen verschöbe ihn auf den Falschen).
+- **Schrittmacher: der Erste mit drei Getränken binnen einer halben Stunde** (G61). Kam als
+  Wunsch, die Schlagzahl-Eilmeldung zum Abzeichen zu machen, und wurde vorher kritisch
+  abgeklopft. Als **Schwelle** war sie untauglich — an einem flotten Abend hätten sie vier
+  von fünf, dasselbe Argument wie gegen die *Sperrstunde*. Deshalb **der Erste**, ein
+  Gewinner je Tag wie bei den anderen Abzeichen. Die Einwände, die bewusst in Kauf genommen
+  sind: Meist wird über „Runde für alle“ getrunken, dann kommt der Tisch gleichzeitig hin
+  (die Runde meinte: je später der Abend, desto öfter einzeln); und er geht oft an den,
+  der ohnehin Tagessieger wird.
+  - **Wie beim Bettzipfel:** wer binnen `SCHLAG_GLEICH` (2 min, das Maß des Sammelfensters)
+    nachzieht, hat mitbestellt und teilt; kommen alle mit derselben Runde hin, hat keiner
+    vorgelegt — dann gibt es an dem Tag keinen. Umdrehen (dann hätten ihn alle) wäre eine
+    Zeile in `tagAbzeichen()`, aber erst nach Rückfrage.
+  - **Nachgetragenes zählt nicht** — das war die Bedingung der Runde. Gemessen wird der
+    Tipp, nicht das Trinken, und drei vergessene Biere auf einmal nachgetippt wären drei in
+    einer Minute, für immer in der Ehrenhalle. Ein Nachtrag trägt im Tagebuch `nach:true`:
+    ein Strich oder eine Runde, die erst **nach der Rückfrage** („gab es schon eins“)
+    bestätigt wurde, oder an einer **entsperrten früheren Station** (`istRueckblick(true)`).
+    Die Sammel-Eingabe zählte ohnehin nie. Voll gewertet wird der Nachtrag trotzdem, nur
+    nicht für die Schlagzahl — und die gilt damit auch für die Eilmeldung.
+  - **Die Zeit liegt im Bestand** (`tg.schlag`), weil das Tagebuch sie nicht halten kann:
+    Es behält je Station nur 40 Einträge und wird beim Abschließen gelöscht.
+    `schlagFesthalten()` legt beim Eintragen an (wie die Marken, nie beim Abgleich) und
+    folgt, solange der Moment frisch ist (`SAMMEL_FENSTER`), dem Tagebuch in beide
+    Richtungen — ein Minus gleich danach nimmt sie zurück. Danach kann sie nur noch
+    **früher** werden, nie später: Dass das Tagebuch den Anfang des Abends vergessen hat,
+    macht den Moment nicht ungeschehen. `weSchliessen()` hält vor dem Löschen noch fest,
+    was das Tagebuch hergibt.
+  - **Beim Abgleich** wie `tg.heim` je Person nach der Drei-Wege-Regel
+    (`zeitenVereinen()`), nur dass bei zwei verschieden gesetzten Zeiten die frühere gilt.
+  - Die Morgenmeldung und die Siegerehrung nennen ihn mit, und die Meldung zur Schlagzahl
+    sagt dem, der damit Schrittmacher wird, dass er es ist.
+  `tests/schrittmacher.mjs` hält das alles fest, samt Tagebuch, das ihn vergisst.
 - **Heimgehen wird von Hand eingetragen, mit Uhrzeit** (G56). Tipp auf den Namen, „Geht
   heim“ hält den Zeitpunkt fest. Seit G60 steht das Uhrzeitfeld **neben** dem Knopf, vorbelegt
   mit jetzt: Wer erst nach einer halben Stunde merkt, dass einer fehlt, stellt zurück und
@@ -626,7 +663,7 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   | `zipfel` | erster „Geht heim“ des Tages, sofort | nein | nein |
   | `rekordnah` | 1 BE unter dem besten Tag *vor* diesem | nein | ja |
   | `rekord` | über dem besten Tag vor diesem, Gleichziehen reicht nicht | ja | ja |
-  | `schlag` | drei Getränke binnen 30 min, nur live getippte | nein | ja |
+  | `schlag` | drei Getränke binnen 30 min, nur live getippte, ohne Nachträge (G61) | nein | ja |
   | `af` | das erste Alkoholfreie des Abends, danach keins mehr | nein | ja |
   | `morgen` | „+ Tag“: Tagessieger, Fahrer und Bettzipfel des Vortags | ja | nein |
   | `ehrung` | „Wochenende abschließen“: Siegerehrung | ja | nein |
@@ -661,7 +698,9 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   die Meldung weg.
   **Die Schlagzahl zählt nur, was im Moment getippt wurde** (Tagebuch: Striche und Runden
   mit `ids`, ein Minus nimmt das jüngste weg, `weg` zählt nicht). Drei Biere, am Morgen über
-  die Sammel-Eingabe nachgetragen, wären sonst drei Biere in einer Minute.
+  die Sammel-Eingabe nachgetragen, wären sonst drei Biere in einer Minute. Seit G61 auch
+  nicht, was `nach` trägt (siehe Schrittmacher), und die Meldung hängt an `tg.schlag`,
+  nicht mehr direkt am Tagebuch.
   **Rekord und Reichweite messen gegen den besten Tag vor diesem** (`rekordVor()`): Am
   allerersten Abend gibt es nichts zu brechen, und was heute passiert, ist erst morgen die
   Messlatte. Wer mit einer Maß über die Reichweite springt, bekommt gleich den Rekord.

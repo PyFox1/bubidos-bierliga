@@ -390,8 +390,9 @@ table.rechnung td.schlecht{color:#E09084}
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rzeile .rwert{font-family:var(--mono);font-size:11px;color:var(--malz);flex:0 0 auto}
 .abztab{border:1px solid var(--linie);border-radius:5px;overflow:hidden}
-.abzkopf,.abzzeile{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:6px;align-items:center;
-  padding:8px 10px}
+/* Eine Spalte je Abzeichen, so viele es eben gibt – die erste ist der Name. */
+.abzkopf,.abzzeile{display:grid;grid-template-columns:1.3fr;grid-auto-columns:1fr;
+  grid-auto-flow:column;gap:6px;align-items:center;padding:8px 10px}
 .abzkopf{background:var(--zinn-tief);font-family:var(--mono);font-size:9px;letter-spacing:.06em;
   text-transform:uppercase;color:#8A929C;line-height:1.3}
 .abzkopf span,.abzzeile b{text-align:center}
@@ -716,7 +717,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-29 11:06 · G60 (GitHub)';
+const FASSUNG = '2026-09-29 15:18 · G61 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -731,6 +732,14 @@ const FASSUNG = '2026-09-29 11:06 · G60 (GitHub)';
 const NOTIZ_START  = 1;
 const NOTIZ_ANZAHL = 3;
 const NOTIZEN = [
+  {f:'G61', d:'29.09.2026', z:'15:18', punkte:[
+    'Neues Abzeichen: Schrittmacher. Es bekommt, wer an einem Tag als Erster drei Getränke '
+    + 'binnen einer halben Stunde hat. Wer es binnen zwei Minuten ebenso schafft, teilt es; '
+    + 'kommen alle mit derselben Runde hin, bekommt es keiner.',
+    'Nachgetragenes zählt dafür nicht: weder die Sammel-Eingabe noch ein Getränk, das erst '
+    + 'nach der Rückfrage bestätigt oder an einer früheren Station eingetragen wurde. In der '
+    + 'Tabelle zählt es wie immer voll.',
+    'In die Ehrenhalle kommt man jetzt auch vom Zwischenstand aus, ganz unten.']},
   {f:'G60', d:'29.09.2026', z:'11:06', punkte:[
     'Beim Heimgehen steht neben „Geht heim“ gleich die Uhrzeit. Sie steht auf jetzt; wer '
     + 'schon vor einer halben Stunde gegangen ist, wird zurückgestellt und dann eingetragen – '
@@ -1197,6 +1206,21 @@ function markenVereinen(mein, fremd){
   });
   return [...nach.values()].sort((a,b) => (a.t || 0) - (b.t || 0));
 }
+/* Zeiten je Person (`tg.heim`, `tg.schlag`) im Drei-Wege-Abgleich: Wer eine gegenüber
+   der Basis gesetzt, geändert oder gelöscht hat, behält recht. Haben beide Seiten sie
+   verschieden gesetzt, entscheidet `beide` – ohne bleibt die eigene. */
+function zeitenVereinen(basis, meins, fremd, beide){
+  const b = basis || {}, m = meins || {}, f = fremd || {};
+  const r = Object.assign({}, m);
+  new Set(Object.keys(f).concat(Object.keys(b))).forEach(k => {
+    if(m[k] === b[k] && f[k] !== b[k]){
+      if(f[k] === undefined) delete r[k]; else r[k] = f[k];
+    } else if(beide && m[k] !== b[k] && f[k] !== b[k] && m[k] !== undefined && f[k] !== undefined){
+      r[k] = beide(m[k], f[k]);
+    }
+  });
+  return r;
+}
 function zusammenfuehren(basis, meins, fremd){
   if(!basis) return meins;
   const raus = Object.assign({}, meins);
@@ -1248,14 +1272,12 @@ function zusammenfuehren(basis, meins, fremd){
 
       /* Heim-Zeiten je Person wie die Einstellungen: Wer sie gegenüber der Basis
          geändert oder gelöscht hat, behält recht. */
-      const bh = (bt && bt.heim) || {}, mh = mt.heim || {}, fh = ft.heim || {};
-      const h = Object.assign({}, mh);
-      new Set(Object.keys(fh).concat(Object.keys(bh))).forEach(k => {
-        if(mh[k] === bh[k] && fh[k] !== bh[k]){
-          if(fh[k] === undefined) delete h[k]; else h[k] = fh[k];
-        }
-      });
+      const h = zeitenVereinen(bt && bt.heim, mt.heim, ft.heim);
       if(Object.keys(h).length || mt.heim) mt.heim = h;
+      /* Die Schrittmacher-Zeiten nach derselben Regel – nur dass bei zwei verschiedenen
+         Zeiten die frühere gilt: Das Abzeichen gehört dem Ersten. */
+      const sz = zeitenVereinen(bt && bt.schlag, mt.schlag, ft.schlag, Math.min);
+      if(Object.keys(sz).length) mt.schlag = sz; else delete mt.schlag;
 
       mt.orte = (mt.orte || []).map(o => Object.assign({}, o));
       (ft.orte || []).forEach(fo => {
@@ -1924,25 +1946,57 @@ function rekordVor(tg){
   return best;
 }
 
-/* Drei Getränke binnen einer halben Stunde, aus dem Tagebuch. Gezählt wird nur, was im
-   Moment getippt wurde – ein Strich oder eine Runde, an der er beteiligt war. Was über
-   die Sammel-Eingabe nachgetragen wird, zählt nicht: Drei Biere, am Morgen nachgetragen,
-   wären drei Biere in einer Minute. Ein Minus nimmt das jüngste wieder weg, eine
-   zurückgenommene Runde (`weg`) zählt nicht. */
-function schlagzahl(tg, pid){
+/* Wann jemand an diesem Tag zum ersten Mal drei Getränke binnen einer halben Stunde
+   hatte – der Zeitpunkt des dritten –, oder `null`. Aus dem Tagebuch, und gezählt wird
+   nur, was im Moment getippt wurde: ein Strich oder eine Runde, an der er beteiligt war.
+   Nachgetragenes zählt nicht. Die Sammel-Eingabe ohnehin nicht, und seit G61 auch kein
+   Strich und keine Runde mit `nach`: bestätigt erst nach der Rückfrage „gab es schon
+   eins“, oder an einer eigens entsperrten früheren Station getippt. Drei vergessene
+   Biere, auf einmal nachgetippt, wären sonst drei Biere in einer Minute – und seit die
+   Schlagzahl ein Abzeichen ist, stünde das für immer in der Ehrenhalle.
+   Ein Minus nimmt das jüngste wieder weg, auch ein nachgetragenes; eine zurückgenommene
+   Runde (`weg`) zählt nicht. */
+function schlagZeit(tg, pid){
   const ev = [];
   (tg.orte || []).forEach(o => (o.log || []).forEach(x => {
     if(x.weg) return;
-    if(x.art === 'einzel' && String(x.pid) === String(pid)) ev.push({t:x.t, d:1});
-    else if(x.art === 'runde' && (x.ids || []).some(i => String(i) === String(pid))) ev.push({t:x.t, d:1});
+    if(x.art === 'einzel' && String(x.pid) === String(pid)) ev.push({t:x.t, d:1, nach:!!x.nach});
+    else if(x.art === 'runde' && (x.ids || []).some(i => String(i) === String(pid)))
+      ev.push({t:x.t, d:1, nach:!!x.nach});
     else if(x.art === 'minus' && String(x.pid) === String(pid)) ev.push({t:x.t, d:-1});
   }));
   ev.sort((a,b) => a.t - b.t);
-  const zeiten = [];
-  ev.forEach(e => { if(e.d > 0) zeiten.push(e.t); else zeiten.pop(); });
+  const stapel = [];
+  ev.forEach(e => { if(e.d > 0) stapel.push(e); else stapel.pop(); });
+  const zeiten = stapel.filter(e => !e.nach).map(e => e.t);
   for(let i = SCHLAG_ANZAHL - 1; i < zeiten.length; i++)
-    if(zeiten[i] - zeiten[i - SCHLAG_ANZAHL + 1] <= SCHLAG_ZEIT) return true;
-  return false;
+    if(zeiten[i] - zeiten[i - SCHLAG_ANZAHL + 1] <= SCHLAG_ZEIT) return zeiten[i];
+  return null;
+}
+const schlagVon = (tg, pid) => (tg && tg.schlag) ? tg.schlag[pid] : undefined;
+/* Hält in `tg.schlag` fest, wann jemand die Schlagzahl zum ersten Mal erreicht hat – das
+   braucht das Abzeichen Schrittmacher. Aus dem Tagebuch allein ginge es nicht: Das
+   behält je Station nur die letzten vierzig Einträge und wird beim Abschließen gelöscht,
+   das Abzeichen aber bleibt.
+   Solange der Moment frisch ist (`SAMMEL_FENSTER`), folgt die Zeit dem Tagebuch in beide
+   Richtungen – ein Minus gleich danach nimmt sie zurück. Danach steht sie; ersetzen kann
+   sie nur noch eine frühere, etwa wenn der Abgleich Striche von drüben bringt. Später
+   dürfte sie nie werden: Dass das Tagebuch den Anfang des Abends vergessen hat, macht
+   den Moment nicht ungeschehen.
+   Angelegt wird nur beim Eintragen (`neu`), wie die Marken; zurückgenommen überall. */
+function schlagFesthalten(w, neu){
+  (w.tage || []).forEach(tg => {
+    const s = Object.assign({}, tg.schlag || {});
+    let anders = false;
+    tagLeute(tg).forEach(pid => {
+      const t = schlagZeit(tg, pid), war = s[pid];
+      if(war !== undefined && Date.now() < war + SAMMEL_FENSTER){
+        if(t === null){ delete s[pid]; anders = true; }
+        else if(t !== war){ s[pid] = t; anders = true; }
+      } else if(neu && t !== null && (war === undefined || t < war)){ s[pid] = t; anders = true; }
+    });
+    if(anders){ if(Object.keys(s).length) tg.schlag = s; else delete tg.schlag; }
+  });
 }
 
 /* Die Getränke einer Person an einem Tag, in der Reihenfolge der Stationen. */
@@ -2026,7 +2080,10 @@ function personOrt(tg, pid){
    getragen werden. */
 function markenAufraeumen(){
   (state.we || []).forEach(w => {
-    if(w.zu || !w.marken || !w.marken.length) return;
+    if(w.zu) return;
+    /* Zuerst die Schrittmacher-Zeiten: Die Meldung zur Schlagzahl hängt daran. */
+    schlagFesthalten(w, false);
+    if(!w.marken || !w.marken.length) return;
     /* Die Mängelanzeige geht nach zwei Seiten wieder weg, und beide sind richtig: Der
        Gescholtene holt auf — dann ist sie erledigt —, oder ein Dritter fällt zurück,
        dann ist es keine Minderheit mehr und der Vorwurf trägt nicht. Ein Stups, kein
@@ -2092,7 +2149,7 @@ function markeTraegt(m, tg, pid){
   if(m.art === 'rekord')    return beAmTag(tg, pid) > (m.rekord || 0) + 1e-9;
   if(m.art === 'rekordnah') return beAmTag(tg, pid) + REKORD_NAH + 1e-9 >= (m.rekord || 0);
   if(m.art === 'af')        return afLeute(tg).some(x => String(x) === String(pid));
-  if(m.art === 'schlag')    return !fensterOffen(m) || schlagzahl(tg, pid);
+  if(m.art === 'schlag')    return !fensterOffen(m) || schlagVon(tg, pid) !== undefined;
   if(m.art === 'abtruennig') return abtruennig(tg, pid);
   return true;
 }
@@ -2220,6 +2277,7 @@ function markenPruefen(){
     anlegen('mangel', MANGEL_STUFE, pid, zahl(beAmWe(we, pid), 1), 'statt zehn Biereinheiten'));
 
   /* Was einem Tag gehört: Rekord, Reichweite, Schlagzahl, Alkoholfreies, Bettzipfel. */
+  schlagFesthalten(we, true);
   (we.tage || []).forEach(tg => {
     const rek = rekordVor(tg);
     tagLeute(tg).forEach(pid => {
@@ -2232,7 +2290,7 @@ function markenPruefen(){
       else if(rek > 0 && be + REKORD_NAH + 1e-9 >= rek)
         sammeln('rekordnah', tg, pid, {gross:zahl(rek, 1), einheit:'Biereinheiten Rekord',
                                        mehr:{rekord:rek}});
-      if(schlagzahl(tg, pid))
+      if(schlagVon(tg, pid) !== undefined)
         sammeln('schlag', tg, pid, {gross:String(SCHLAG_ANZAHL), einheit:'in 30 Minuten'});
     });
     afLeute(tg).forEach(pid => sammeln('af', tg, pid, {gross:'0,0', einheit:'Biereinheiten'}, true));
@@ -2295,8 +2353,10 @@ function morgenAnlegen(we, tg){
   const m = {id, art:'morgen', stufe:tg.id, pid:null, pids:a.sieger.map(String), t:Date.now(),
     quelle:'ersatz', tagId:tg.id, tag:tg.label, zahl:tg.label, einheit:'Bilanz',
     sieger:a.sieger.map(String), fahrer:a.fahrer.map(String), zipfel:a.zipfel.map(String),
+    schlag:a.schlag.map(String),
     werte:{sieger:a.wert.sieger, fahrer:a.wert.fahrer,
-           zipfel:a.wert.zipfel !== undefined ? zeitKurz(a.wert.zipfel) : null}};
+           zipfel:a.wert.zipfel !== undefined ? zeitKurz(a.wert.zipfel) : null,
+           schlag:a.wert.schlag !== undefined ? zeitKurz(a.wert.schlag) : null}};
   ersatzFuellen(we, m);
   m.wendung = wendungWaehlen();
   we.marken.push(m);
@@ -2327,7 +2387,7 @@ function ehrungAnlegen(we){
     zahl:zahl(krone.wert, 1), einheit:'Biereinheiten · Deckelkrone',
     tag:(letzt && letzt.label) || '', krone:kurz(krone), treue:kurz(treue), rekordNeu:kurz(rekord),
     abend: c ? {label:letzt.label, sieger:c.a.sieger.map(String), fahrer:c.a.fahrer.map(String),
-                zipfel:c.a.zipfel.map(String)} : null};
+                schlag:c.a.schlag.map(String), zipfel:c.a.zipfel.map(String)} : null};
   ersatzFuellen(we, m);
   m.wendung = wendungWaehlen();
   we.marken.push(m);
@@ -2840,6 +2900,7 @@ function fazitVon(e){
 const ABZEICHEN = [
   {k:'sieger',  name:'Tagessieger'},
   {k:'fahrer',  name:'Fahrer des Abends'},
+  {k:'schlag',  name:'Schrittmacher'},
   {k:'zipfel',  name:'Goldener Bettzipfel'}
 ];
 const POKALE = [
@@ -2849,6 +2910,9 @@ const POKALE = [
 ];
 /* Wer binnen zehn Minuten nach dem Ersten geht, ist mit ihm gegangen. */
 const HEIM_GLEICH = 10 * 60000;
+/* Wer binnen zwei Minuten nach dem Ersten auf die Schlagzahl kommt, war gleichzeitig –
+   zusammen bestellt, nacheinander getippt. Dasselbe Maß wie das Sammelfenster. */
+const SCHLAG_GLEICH = 2 * 60000;
 /* Den Fahrer gibt es erst ab drei am Tisch – bei zweien wäre er bloß „der andere“. */
 const FAHRER_MIN = 3;
 /* Der Treuepokal braucht eine Serie von mindestens drei Wochenenden. */
@@ -2866,12 +2930,12 @@ function frueherGegangen(tg, ids){
   return mit.filter(id => heimVon(tg, id) < ende - HEIM_GLEICH);
 }
 
-/* Die drei Abzeichen eines Tages. `t` ist ein Eintrag aus `berechnen().log[..].tagLog`. */
+/* Die Abzeichen eines Tages. `t` ist ein Eintrag aus `berechnen().log[..].tagLog`. */
 function tagAbzeichen(t){
   const ids = Object.keys(t.erg);
   const be = id => t.erg[id].be;
   const gleich = (a, b) => Math.abs(a - b) < 1e-9;
-  const r = {sieger:[], fahrer:[], zipfel:[], wert:{}};
+  const r = {sieger:[], fahrer:[], schlag:[], zipfel:[], wert:{}};
   if(!ids.length) return r;
   const max = Math.max.apply(null, ids.map(be));
   const min = Math.min.apply(null, ids.map(be));
@@ -2886,6 +2950,15 @@ function tagAbzeichen(t){
     const erst = Math.min.apply(null, heim.map(id => heimVon(t.tag, id)));
     const gruppe = heim.filter(id => heimVon(t.tag, id) <= erst + HEIM_GLEICH);
     if(gruppe.length < ids.length){ r.zipfel = gruppe; r.wert.zipfel = erst; }
+  }
+  /* Der Schrittmacher: wer als Erster drei Getränke binnen einer halben Stunde hatte, und
+     wer binnen zwei Minuten ebenso. Dieselbe Regel wie beim Bettzipfel: Kommen alle mit
+     derselben Runde hin, hat keiner vorgelegt – das Tempo hat die Runde gemacht. */
+  const schnell = ids.filter(id => schlagVon(t.tag, id) !== undefined);
+  if(schnell.length){
+    const erst = Math.min.apply(null, schnell.map(id => schlagVon(t.tag, id)));
+    const gruppe = schnell.filter(id => schlagVon(t.tag, id) <= erst + SCHLAG_GLEICH);
+    if(gruppe.length < ids.length){ r.schlag = gruppe; r.wert.schlag = erst; }
   }
   return r;
 }
@@ -3126,11 +3199,13 @@ function kettePos(k){
   const i = tg && ort ? k.findIndex(x => x.tagId === tg.id && x.ortId === ort.id) : -1;
   return i < 0 ? k.length - 1 : i;
 }
-function istRueckblick(){
+/* `trotzEntsperrt`: wäre es Rückblick, wenn niemand entsperrt hätte? Wer dort etwas
+   einträgt, trägt nach – das braucht die Schlagzahl. */
+function istRueckblick(trotzEntsperrt){
   const k = kette();
   if(k.length < 2) return false;
   const {ort} = aktuell();
-  if(!ort || ort.id === entsperrt) return false;
+  if(!ort || (ort.id === entsperrt && !trotzEntsperrt)) return false;
   /* Wo die Gruppe steht, ist nie Rückblick – auch dann nicht, wenn die
      Vorausgezogenen inzwischen eine weitere Station aufgemacht haben. */
   if(ort.id === state.aktivOrt) return false;
@@ -3771,6 +3846,9 @@ function urkundeAnweisung(we, m){
   const BE = ' Eine Biereinheit ist eine Halbe Helles.';
   const liste = a => (a && a.length) ? a.map(nameZu).join(', ') : 'keiner';
   const nachricht = MIT_NACHRICHT.has(m.art);
+  /* Wer von den Genannten mit diesem Tempo gerade Schrittmacher des Tages ist. */
+  const schritt = m.art === 'schlag' && tg
+    ? tagAbzeichen(tagAlsLog(tg)).schlag.filter(x => ids.some(y => String(y) === String(x))) : [];
 
   /* Anlass, Auftrag und das Wort, mit dem sich die Nachricht verweben soll – je Art. */
   const art = {
@@ -3827,7 +3905,11 @@ function urkundeAnweisung(we, m){
         + 'Wörtern. Trocken, mit hochgezogener Braue, nicht verletzend — es kann auch einer '
         + 'sein, der heute fährt.'},
     schlag: {was:'eine Eilmeldung', kern:'Tempo',
-      anlass:'Anlass: ' + namen + ' hat drei Getränke innerhalb einer halben Stunde getrunken.',
+      anlass:'Anlass: ' + namen + ' hat drei Getränke innerhalb einer halben Stunde getrunken.'
+        + (schritt.length ? ' ' + liste(schritt) + (schritt.length === 1
+            ? ' ist damit als Erster an diesem Tag so schnell und bekommt'
+            : ' sind damit als Erste an diesem Tag so schnell und bekommen')
+          + ' dafür das Abzeichen Schrittmacher.' : ''),
       auftrag:'Schreib eine kurze Eilmeldung über dieses Tempo, dazu eine Überschrift von '
         + 'höchstens sieben Wörtern. Anerkennend und trocken.'},
     rekordnah: {was:'eine Eilmeldung', kern:'Rekordjagd',
@@ -3862,7 +3944,10 @@ function urkundeAnweisung(we, m){
         + (m.werte && m.werte.sieger !== undefined ? ' (' + zahl(m.werte.sieger, 1) + ')' : '')
         + '. Fahrer des Abends mit den wenigsten: ' + liste(m.fahrer)
         + (m.werte && m.werte.fahrer !== undefined ? ' (' + zahl(m.werte.fahrer, 1) + ')' : '')
-        + '.' + ((m.zipfel && m.zipfel.length) ? ' Als Erster heimgegangen, dafür der Goldene '
+        + '.' + ((m.schlag && m.schlag.length) ? ' Als Erster auf drei Getränke binnen einer halben '
+        + 'Stunde gekommen, dafür das Abzeichen Schrittmacher: ' + liste(m.schlag)
+        + (m.werte && m.werte.schlag ? ' um ' + m.werte.schlag : '') + '.' : '')
+        + ((m.zipfel && m.zipfel.length) ? ' Als Erster heimgegangen, dafür der Goldene '
         + 'Bettzipfel: ' + liste(m.zipfel) + (m.werte && m.werte.zipfel ? ' um ' + m.werte.zipfel : '')
         + '.' : '') + BE,
       auftrag:'Schreib eine kurze Morgenmeldung mit dieser Bilanz, dazu eine Überschrift von '
@@ -3882,7 +3967,9 @@ function urkundeAnweisung(we, m){
             + liste(m.treue.wer) + ' (' + m.treue.wert + ' Wochenenden in Folge).'
             : ' Der Treuepokal ist vorerst unvergeben.') : '')
         + (m.abend ? ' Letzter Abend: Tagessieger ' + liste(m.abend.sieger) + ', Fahrer des Abends '
-            + liste(m.abend.fahrer) + (m.abend.zipfel.length ? ', als Erster heim ' + liste(m.abend.zipfel) : '')
+            + liste(m.abend.fahrer)
+            + ((m.abend.schlag || []).length ? ', Schrittmacher ' + liste(m.abend.schlag) : '')
+            + (m.abend.zipfel.length ? ', als Erster heim ' + liste(m.abend.zipfel) : '')
             + '.' : '') + BE,
       auftrag:'Schreib den Fließtext der Siegerehrung, wie eine Laudatio: kreativ, feierlich und '
         + 'trotzdem trocken. Die Deckelkrone steht im Mittelpunkt; was sonst vergeben wurde, '
@@ -4333,6 +4420,7 @@ function abzeichenZeilen(a, label){
   };
   return zeile('sieger', a.wert.sieger !== undefined ? zahl(a.wert.sieger, 2) + ' BE' : '')
     + zeile('fahrer', a.wert.fahrer !== undefined ? zahl(a.wert.fahrer, 2) + ' BE' : '')
+    + zeile('schlag', a.wert.schlag !== undefined ? 'das dritte um ' + zeitKurz(a.wert.schlag) : '')
     + zeile('zipfel', a.wert.zipfel !== undefined ? 'heim um ' + zeitKurz(a.wert.zipfel) : '');
 }
 
@@ -4363,9 +4451,9 @@ function fazitBlock(f, mitKnopf){
       + (f.tage === 1 ? 'Tag' : 'Tagen') + '</span>'
       + '<span>' + l.orte + ' ' + (l.orte === 1 ? 'Location' : 'Locations') + '</span></div></div>';
   }).join('');
-  /* Je Tag die drei Abzeichen, darunter, was mit den Wanderpokalen passiert ist. Jede
-     Zeile trägt den Wert, der sie begründet – Menge bei Sieger und Fahrer, Uhrzeit beim
-     Bettzipfel. */
+  /* Je Tag die Abzeichen, darunter, was mit den Wanderpokalen passiert ist. Jede Zeile
+     trägt den Wert, der sie begründet – Menge bei Sieger und Fahrer, Uhrzeit beim
+     Schrittmacher und beim Bettzipfel. */
   const mehrereTage = f.abzeichen.length > 1;
   const orden = f.abzeichen.map(x => {
       const z = abzeichenZeilen(x.a, null);
@@ -4852,6 +4940,12 @@ function ansichtInfo(){
     + '<tr><td class="wert">Fahrer des Abends</td><td>Die wenigsten Biereinheiten des Tages. Erst ab '
     + 'drei Anwesenden, und nur, wenn nicht alle gleichauf liegen. Wer den Abend über Alkoholfreies '
     + 'trinkt, erfüllt die Bezeichnung wörtlich.</td></tr>'
+    + '<tr><td class="wert">Schrittmacher</td><td>Wer als Erster drei Getränke binnen einer halben '
+    + 'Stunde hat. Wer binnen zwei Minuten ebenso weit ist, hat mitbestellt und teilt. Kommen '
+    + 'alle mit derselben Runde hin, hat keiner vorgelegt. Nachgetragenes zählt nicht: weder die '
+    + 'Sammel-Eingabe noch ein Getränk, das erst nach der Rückfrage bestätigt oder an einer '
+    + 'früheren Station eingetragen wurde. Wer drei vergessene Biere auf einmal nachtippt, war '
+    + 'schnell am Telefon, nicht am Glas.</td></tr>'
     + '<tr><td class="wert">Goldener Bettzipfel</td><td>Wer als Erster heimgeht. Maßgeblich ist die '
     + 'eingetragene Heim-Zeit (6.3). Wer binnen zehn Minuten mitgeht, teilt sich den Zipfel. Gehen '
     + 'alle gemeinsam, geht keiner zuerst.</td></tr></table>'
@@ -4876,7 +4970,8 @@ function ansichtInfo(){
     + 'Zwischenstand. Wer heim ist, bekommt aus der Runde für alle kein Bier mehr und wird bei '
     + '„Wer geht mit?“ nicht angeboten. Das Nichteintragen einer Heim-Zeit gilt als Anwesenheit bis '
     + 'zum Schluss und ist der häufigste Grund für einen unverdienten Bettzipfel beim Nächsten.</p>'
-    + '<p><strong>6.4 Ehrenhalle.</strong> Unter der Tabelle. Dort stehen die jetzigen Halter der '
+    + '<p><strong>6.4 Ehrenhalle.</strong> Unter der Tabelle, und während ein Wochenende läuft '
+    + 'auch im Zwischenstand. Dort stehen die jetzigen Halter der '
     + 'Pokale samt Verlauf, die gesammelten Abzeichen je Person und Tag für Tag, wer was bekam.</p>'
     + '<p><strong>Zur unterschiedlichen Anreise:</strong> Wer einen Tag verpasst, verliert dadurch '
     + 'keine Punkte — er kommt in der Wertung dieses Tages schlicht nicht vor. Abzeichen gibt es je '
@@ -5056,9 +5151,11 @@ const ERKLAERUNGEN = {
       + 'wenig für ein kleines K. Deshalb steht er ab Werk auf <b>40</b>.',
       'Wer ihn ändert, ändert die gesamte Historie mit: Die Punkte sind nirgends gespeichert, '
       + 'sondern werden bei jedem Laden neu aus den Getränkelisten gerechnet.']},
-  abzeichen: {titel:'Die drei Abzeichen', para:'p6', paraName:'§ 6 Abzeichen und Wanderpokale',
+  abzeichen: {titel:'Die vier Abzeichen', para:'p6', paraName:'§ 6 Abzeichen und Wanderpokale',
     text:['<b>Tagessieger</b> — die meisten Biereinheiten des Tages.',
       '<b>Fahrer des Abends</b> — die wenigsten Biereinheiten des Tages, ab drei am Tisch.',
+      '<b>Schrittmacher</b> — wer als Erster drei Getränke binnen einer halben Stunde hat. '
+      + 'Nachgetragenes zählt nicht.',
       '<b>Goldener Bettzipfel</b> — wer als Erster heimgeht. Zählt nur, wenn die Heim-Zeit '
       + 'eingetragen ist: Tipp auf den Namen, dann „Geht heim“.',
       'Abzeichen gibt es je Tag, sie werden gesammelt. Alle stehen in der Ehrenhalle.']},
@@ -5350,7 +5447,9 @@ function ansichtZwischen(){
     + '<div class="abschnitt oben">Tag für Tag</div>' + tage
     + '<div class="abschnitt">Bisher zusammen</div>' + gzeilen
     + '<button class="knopf voll" data-tu="geheZaehlen">Zurück zum Zählen</button>'
-    + '<button class="knopf leer" data-tu="geheArchiv">Gesamttabelle ansehen</button>';
+    + '<button class="knopf leer" data-tu="geheArchiv">Gesamttabelle ansehen</button>'
+    + '<button class="knopf leer" data-tu="geheRuhm">' + pokalSymbol('krone', 15)
+    + ' Ehrenhalle</button>';
 }
 
 function ansichtPerson(){
@@ -5973,6 +6072,7 @@ function ansichtUrkunde(x){
     const bilanz = m.art !== 'morgen' ? '' : '<div class="u-bilanz">' + [
         ['Tagessieger', m.sieger, m.werte && m.werte.sieger !== undefined ? zahl(m.werte.sieger, 2) + ' BE' : ''],
         ['Fahrer des Abends', m.fahrer, m.werte && m.werte.fahrer !== undefined ? zahl(m.werte.fahrer, 2) + ' BE' : ''],
+        ['Schrittmacher', m.schlag, m.werte && m.werte.schlag ? 'das dritte um ' + m.werte.schlag : ''],
         ['Goldener Bettzipfel', m.zipfel, m.werte && m.werte.zipfel ? 'heim um ' + m.werte.zipfel : '']
       ].filter(z => z[1] && z[1].length).map(z => '<div><span>' + z[0] + '</span><b>'
         + esc(namenListe(z[1])) + '</b>' + (z[2] ? '<em>' + z[2] + '</em>' : '') + '</div>').join('')
@@ -6011,6 +6111,7 @@ function ansichtUrkunde(x){
     if(m.abend){
       neben.push([esc(m.abend.label || 'Letzter Abend') + ' · Tagessieger', namenListe(m.abend.sieger), '']);
       if(m.abend.fahrer.length) neben.push(['Fahrer des Abends', namenListe(m.abend.fahrer), '']);
+      if((m.abend.schlag || []).length) neben.push(['Schrittmacher', namenListe(m.abend.schlag), '']);
       if(m.abend.zipfel.length) neben.push(['Goldener Bettzipfel', namenListe(m.abend.zipfel), '']);
     }
     return ''
@@ -6635,7 +6736,8 @@ const tu = {
        fragen, dann eintragen – und dabei nichts anfassen, sonst verschwindet das
        „Runde zurücknehmen“, obwohl noch gar nichts passiert ist. */
     const vorige = letzteGabeFuer(ort, pid);
-    if(vorige && Date.now()-vorige.t < FRAGE_FENSTER && String(nachfrage) !== String(pid)){
+    const frisch = vorige && Date.now()-vorige.t < FRAGE_FENSTER;
+    if(frisch && String(nachfrage) !== String(pid)){
       nachfrage = String(pid); zeichnen();
       setTimeout(() => { if(String(nachfrage) === String(pid)){ nachfrage = null; zeichnen(); } },
         FRAGE_DAUER);
@@ -6643,7 +6745,10 @@ const tu = {
     }
     letzteRunde = null; nachfrage = null;
     ort.getraenke[pid].push(wahlKey());
-    tagebuch(ort, {art:'einzel', key:wahlKey(), pid});
+    /* Nach der Rückfrage bestätigt oder an einer früheren Station: ein Nachtrag. Der
+       zählt voll, nur nicht für die Schlagzahl. */
+    tagebuch(ort, Object.assign({art:'einzel', key:wahlKey(), pid},
+      frisch || istRueckblick(true) ? {nach:true} : {}));
     markenPruefen();
     sichern(); zeichnen(); },
   minus(el){ letzteRunde = null; nachfrage = null;
@@ -6660,14 +6765,16 @@ const tu = {
     const ids = Object.keys(ort.getraenke).filter(id => heimVon(tg, id) === undefined);
     if(!ids.length) return;
     const vorige = letzteRundeIm(ort, key === KURZER);
-    if(vorige && Date.now()-vorige.t < FRAGE_FENSTER && nachfrage !== frage){
+    const frisch = vorige && Date.now()-vorige.t < FRAGE_FENSTER;
+    if(frisch && nachfrage !== frage){
       nachfrage = frage; zeichnen();
       setTimeout(() => { if(nachfrage === frage){ nachfrage = null; zeichnen(); } }, FRAGE_DAUER);
       return;
     }
     nachfrage = null;
     ids.forEach(id => ort.getraenke[id].push(key));
-    tagebuch(ort, {art:'runde', key, n:ids.length, ids:ids.slice()});
+    tagebuch(ort, Object.assign({art:'runde', key, n:ids.length, ids:ids.slice()},
+      frisch || istRueckblick(true) ? {nach:true} : {}));
     letzteRunde = {ortId:ort.id, ids:ids.slice(), key};
     markenPruefen();
     sichern(); zeichnen();
@@ -6835,6 +6942,8 @@ const tu = {
 
   weSchliessen(){
     const we = state.we.find(w => w.id === state.aktivWe);
+    /* Bevor das Tagebuch weg ist: Was es an Schlagzahlen noch hergibt, festhalten. */
+    schlagFesthalten(we, true);
     we.zu = true; fazitOffen = we.id;
     /* Die Siegerehrung entsteht hier, und nur hier – auf dem Gerät, das abschließt. Sie
        geht auf, sobald das Fazit weggetippt ist; die anderen Handys bekommen sie über
