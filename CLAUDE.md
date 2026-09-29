@@ -342,13 +342,15 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
     (`zeitenVereinen()`), nur dass bei zwei verschieden gesetzten Zeiten die frühere gilt.
   - Die Morgenmeldung und die Siegerehrung nennen ihn mit, und die Meldung zur Schlagzahl
     sagt dem, der damit das Zugpferd des Tages wird, dass er es ist.
-  - **Das Zeichen ist ein fremdes** (G68): „horse-head“ aus **Font Awesome Free 7.3.1**
-    (Icons: CC BY 4.0, verlangt Namensnennung — die steht im Quelltext an `ABZEICHEN` und am Fuß
-    der Betriebsanleitung; wer das Zeichen tauscht, nimmt beides mit). Drei eigene Anläufe
+  - **Das Zeichen ist ein fremdes** (G69): das ganze Pferd „horse“ aus den **Material Design
+    Icons** (Pictogrammers, Apache 2.0 — die Nennung steht im Quelltext an `ABZEICHEN` und am
+    Fuß der Betriebsanleitung; wer das Zeichen tauscht, nimmt beides mit). Drei eigene Anläufe
     (Linien, gefüllt mit Mähne, gefüllt mit anderem Ohr) sahen nach Kinderzeichnung aus:
     Tiere aus selbstgeschriebenen Kurven sind ein Fehlschlag, bei Bildern mit Wiedererkennung
-    besser ein gezeichnetes Symbol aus einer freien Sammlung nehmen. Die Vorlage ist 512 groß
-    und wird per `transform` auf das 24er-Feld gerechnet.
+    besser ein gezeichnetes Symbol aus einer freien Sammlung nehmen. In G68 stand kurz der
+    Pferdekopf aus Font Awesome; aus vier fertigen Symbolen (Font Awesome, Game-Icons, zweimal
+    Material Design) hat die Runde das ganze Tier gewählt. Die Vorlage ist 24 groß und passt
+    ohne Umrechnung ins Feld.
   `tests/zugpferd.mjs` hält das alles fest, samt Tagebuch, das ihn vergisst.
 - **Die Ehrenhalle spricht die Sprache der Abzeichen-Karten** (G62). Zwei Entwurfsrunden,
   sechs Entwürfe. Aus der ersten (Vitrine mit Pokalen im Glasschrank, Ehrentafel aus Holz
