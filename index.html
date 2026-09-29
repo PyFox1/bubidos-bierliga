@@ -784,7 +784,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-29 19:08 · G65 (GitHub)';
+const FASSUNG = '2026-09-29 19:33 · G66 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -799,6 +799,8 @@ const FASSUNG = '2026-09-29 19:08 · G65 (GitHub)';
 const NOTIZ_START  = 1;
 const NOTIZ_ANZAHL = 3;
 const NOTIZEN = [
+  {f:'G66', d:'29.09.2026', z:'19:33', punkte:[
+    'Das Zugpferd hat einen Pferdekopf als Zeichen bekommen, statt der Stoppuhr.']},
   {f:'G65', d:'29.09.2026', z:'19:08', punkte:[
     'Beim Zählen steht neben dem Namen jetzt auch das Zeichen der Wanderpokale, die jemand gerade '
     + 'hält – wie in der Tabelle. Bricht einer mitten am Abend den Rekord, wandert der Blitz gleich mit.']},
@@ -2981,7 +2983,7 @@ function fazitVon(e){
    bei jedem Laden aus den Strichen gerechnet und kann der Tabelle nie widersprechen. */
 /* Farbe und Symbol stehen hier und nicht im Stylesheet: Wer ein Abzeichen dazunimmt,
    kann sie so nicht vergessen – ohne stünde in der Ehrenhalle eine leere Medaille.
-   Gezeichnet wie die Pokal-Symbole: Stern, Lenkrad, Stoppuhr, Zipfelmütze. */
+   Gezeichnet wie die Pokal-Symbole: Stern, Lenkrad, Pferdekopf, Zipfelmütze. */
 const ABZEICHEN = [
   {k:'sieger',  name:'Tagessieger',         farbe:'#D59A2E',
    pfad:'<path d="M12 3.2l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7z"/>'},
@@ -2989,7 +2991,9 @@ const ABZEICHEN = [
    pfad:'<circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="12" r="2.3"/>'
       + '<path d="M3.6 10.6h6.2M14.2 10.6h6.2M12 14.3v8"/>'},
   {k:'schlag',  name:'Zugpferd',       farbe:'#9E3226',
-   pfad:'<circle cx="12" cy="13.6" r="7.6"/><path d="M12 13.6V9.4M9.8 2.6h4.4M12 2.6V6M18.2 7.2l1.6-1.6"/>'},
+   pfad:'<path d="M8.4 6 9.2 2.4l3 2.3c2.4.3 4.6 1.6 6 3.7l1.9 3.3c.5.9.3 2-.5 2.6l-.9.6c-.8.6-1.9.4-2.5-.4l-1.3-1.7c-.7-.9-1.8-.4-1.8.8L12.6 21.5"/>'
+      + '<path d="M8.4 6C6.5 9 5.6 14.2 6 21.5M6.7 9.2l-2 .3M6.1 12.4l-2.1.4M5.9 15.8l-2.1.6"/>'
+      + '<circle cx="12.4" cy="8.2" r=".8" fill="currentColor" stroke="none"/>'},
   {k:'zipfel',  name:'Goldener Bettzipfel', farbe:'#1C5FA8',
    pfad:'<path d="M3.2 17.4h13.6v3H3.2z"/><path d="M4.6 17.4C4.8 10.6 8.2 5.2 13.4 4.6c3.4-.4 6 2.2 6.3 6"/>'
       + '<path d="M15.2 17.4c-.2-3.4.4-6 2-7.9"/><circle cx="19.8" cy="12.9" r="2.1"/>'}
@@ -5075,7 +5079,7 @@ function ansichtInfo(){
     + '<p><strong>6.4 Ehrenhalle.</strong> Unter der Tabelle, und während ein Wochenende läuft '
     + 'auch im Zwischenstand. Oben die drei Wanderpokale mit ihren Haltern. Darunter die '
     + 'Ehrenliste: je Person die gehaltenen Pokale und die gesammelten Abzeichen, als Medaille '
-    + 'mit der Zahl daran — Stern für den Tagessieger, Lenkrad für den Fahrer, Stoppuhr für das '
+    + 'mit der Zahl daran — Stern für den Tagessieger, Lenkrad für den Fahrer, Pferdekopf für das '
     + 'Zugpferd, Zipfelmütze für den Bettzipfel. Wer keines von einer Sorte hat, bei dem '
     + 'bleibt die Medaille blass. Dann die Wanderwege, auf denen jeder Pokal von Halter zu Halter '
     + 'gegangen ist, und die Chronik: Tag für Tag, wer was bekam. Ein Tipp auf einen Namen führt '
@@ -5266,7 +5270,7 @@ const ERKLAERUNGEN = {
       '<b>Goldener Bettzipfel</b> — wer als Erster heimgeht. Zählt nur, wenn die Heim-Zeit '
       + 'eingetragen ist: Tipp auf den Namen, dann „Geht heim“.',
       'Abzeichen gibt es je Tag, sie werden gesammelt. In der Ehrenhalle stehen sie als Medaillen: '
-      + 'Stern, Lenkrad, Stoppuhr und Zipfelmütze, die Zahl daran zählt.']},
+      + 'Stern, Lenkrad, Pferdekopf und Zipfelmütze, die Zahl daran zählt.']},
   pokale: {titel:'Die drei Wanderpokale', para:'p6', paraName:'§ 6 Abzeichen und Wanderpokale',
     text:['<b>Deckelkrone</b> — die meisten Biereinheiten eines Wochenendes. Wandert beim Abschließen.',
       '<b>Rekordhalter</b> — der beste Tag aller Zeiten. Wer ihn übertrifft, übernimmt ihn, '
