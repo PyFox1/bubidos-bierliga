@@ -1,4 +1,4 @@
-// Das Abzeichen Schrittmacher (G61): wer als Erster drei Getränke binnen einer halben
+// Das Abzeichen Zugpferd (G61): wer als Erster drei Getränke binnen einer halben
 // Stunde hat. Vergeben wird es am Tag, gezählt wird nur, was im Moment getippt wurde –
 // Nachgetragenes nicht. Die Zeit wird festgehalten, weil das Tagebuch beim Abschließen
 // verschwindet und je Station nur vierzig Einträge behält.
@@ -74,7 +74,7 @@ await schritt('Drei Striche binnen einer halben Stunde: die Zeit des dritten wir
   korbiZeit = dritter;
   return 'Korbi';
 });
-await schritt('Korbi ist Schrittmacher, allein', async () => {
+await schritt('Korbi ist Zugpferd, allein', async () => {
   const a = await abz();
   if(a.wer !== '1' || a.wert !== korbiZeit) throw new Error(JSON.stringify(a));
 });
@@ -199,7 +199,7 @@ await schritt('Nach dem Abschließen ist das Tagebuch weg, das Abzeichen nicht',
   if(r.log) throw new Error('Tagebuch noch da');
   if(!r.schlag.includes('2')) throw new Error('Chronik: ' + r.schlag.join());
   if(r.zahl !== 1) throw new Error('gezählt: ' + r.zahl);
-  if(!/Schrittmacher/.test(r.fazit) || !/das dritte um \d\d:\d\d/.test(r.fazit)) throw new Error('Fazit');
+  if(!/Zugpferd/.test(r.fazit) || !/das dritte um \d\d:\d\d/.test(r.fazit)) throw new Error('Fazit');
   return 'Chronik, Zählung und Fazit';
 });
 
@@ -226,7 +226,7 @@ await schritt('Der Zwischenstand zeigt ihn unter „Stand jetzt“, mit Uhrzeit'
   await p.evaluate(() => { let n = 0; while(offeneUrkunde() && n++ < 20) tu.urkundeWeg();
     tu.geheZwischen(); });
   const t = await p.evaluate(() => document.querySelector('.tagblock').textContent);
-  if(!/Stand jetzt/.test(t) || !/SchrittmacherSperry/.test(t) || !/das dritte um \d\d:\d\d/.test(t))
+  if(!/Stand jetzt/.test(t) || !/ZugpferdSperry/.test(t) || !/das dritte um \d\d:\d\d/.test(t))
     throw new Error(t.slice(-200));
 });
 await schritt('Vom Zwischenstand führt ein Knopf in die Ehrenhalle und zurück', async () => {
@@ -247,19 +247,19 @@ await schritt('Die Ehrenhalle hat eine Medaille für ihn', async () => {
     return {legende:document.querySelector('.eh-legende').textContent,
             sperry:[...document.querySelector('.eh-person[data-id="3"]').querySelectorAll('.eh-med')]
               .map(m => m.getAttribute('aria-label')).join('|')}; });
-  if(!/Schrittmacher/.test(r.legende)) throw new Error(r.legende);
+  if(!/Zugpferd/.test(r.legende)) throw new Error(r.legende);
   /* Tagessieger ist er in dem Moment auch – niemand sonst hat etwas. */
-  if(r.sperry !== 'Tagessieger: 1|Fahrer des Abends: 0|Schrittmacher: 1|Goldener Bettzipfel: 0')
+  if(r.sperry !== 'Tagessieger: 1|Fahrer des Abends: 0|Zugpferd: 1|Goldener Bettzipfel: 0')
     throw new Error(r.sperry);
   await p.evaluate(() => tu.zurueckNavi());
 });
-await schritt('Die Meldung zur Schlagzahl sagt dem Ersten, dass er Schrittmacher ist', async () => {
+await schritt('Die Meldung zur Schlagzahl sagt dem Ersten, dass er Zugpferd ist', async () => {
   const r = await p.evaluate(() => {
     const we = state.we[0];
     const m = we.marken.find(x => x.art === 'schlag');
     return {erste:urkundeAnweisung(we, m)};
   });
-  if(!/Abzeichen Schrittmacher/.test(r.erste)) throw new Error('nicht erwähnt');
+  if(!/Abzeichen Zugpferd/.test(r.erste)) throw new Error('nicht erwähnt');
 });
 await schritt('Wer erst später so schnell ist, bekommt die Meldung ohne das Abzeichen', async () => {
   await spulen(10);
@@ -271,9 +271,9 @@ await schritt('Wer erst später so schnell ist, bekommt die Meldung ohne das Abz
     return m ? urkundeAnweisung(we, m) : null;
   });
   if(!r) throw new Error('keine Meldung für Korbi');
-  if(/Abzeichen Schrittmacher/.test(r)) throw new Error('Korbi als Schrittmacher erwähnt');
+  if(/Abzeichen Zugpferd/.test(r)) throw new Error('Korbi als Zugpferd erwähnt');
 });
-await schritt('Die Morgenmeldung nennt den Schrittmacher des Vortags', async () => {
+await schritt('Die Morgenmeldung nennt den Zugpferd des Vortags', async () => {
   await p.evaluate(() => { let n = 0; while(offeneUrkunde() && n++ < 20) tu.urkundeWeg(); });
   const r = await p.evaluate(() => {
     const we = state.we[0];
@@ -283,8 +283,8 @@ await schritt('Die Morgenmeldung nennt den Schrittmacher des Vortags', async () 
             html:ansichtUrkunde({m, we})};
   });
   if(r.schlag.join() !== '3') throw new Error('schlag: ' + r.schlag.join());
-  if(!/Schrittmacher: Sperry/.test(r.text)) throw new Error('Anweisung');
-  if(!/Schrittmacher/.test(r.html) || !r.html.includes('das dritte um ' + r.uhr)) throw new Error('Anzeige');
+  if(!/Zugpferd: Sperry/.test(r.text)) throw new Error('Anweisung');
+  if(!/Zugpferd/.test(r.html) || !r.html.includes('das dritte um ' + r.uhr)) throw new Error('Anzeige');
 });
 
 await schritt('Kein Zeichnen ist fehlgeschlagen', async () => {

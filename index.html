@@ -781,7 +781,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-29 15:45 · G62 (GitHub)';
+const FASSUNG = '2026-09-29 16:39 · G63 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -796,6 +796,9 @@ const FASSUNG = '2026-09-29 15:45 · G62 (GitHub)';
 const NOTIZ_START  = 1;
 const NOTIZ_ANZAHL = 3;
 const NOTIZEN = [
+  {f:'G63', d:'29.09.2026', z:'16:39', punkte:[
+    'Das Abzeichen für den Ersten mit drei Getränken binnen einer halben Stunde heißt jetzt Zugpferd '
+    + '(vorher Schrittmacher).']},
   {f:'G62', d:'29.09.2026', z:'15:45', punkte:[
     'Die Ehrenhalle ist neu: oben die drei Wanderpokale, darunter die Ehrenliste mit den Pokalen '
     + 'und Abzeichen jeder Person auf einen Blick. Die Abzeichen sind Medaillen mit der Zahl daran.',
@@ -1344,7 +1347,7 @@ function zusammenfuehren(basis, meins, fremd){
          geändert oder gelöscht hat, behält recht. */
       const h = zeitenVereinen(bt && bt.heim, mt.heim, ft.heim);
       if(Object.keys(h).length || mt.heim) mt.heim = h;
-      /* Die Schrittmacher-Zeiten nach derselben Regel – nur dass bei zwei verschiedenen
+      /* Die Zugpferd-Zeiten nach derselben Regel – nur dass bei zwei verschiedenen
          Zeiten die frühere gilt: Das Abzeichen gehört dem Ersten. */
       const sz = zeitenVereinen(bt && bt.schlag, mt.schlag, ft.schlag, Math.min);
       if(Object.keys(sz).length) mt.schlag = sz; else delete mt.schlag;
@@ -2045,7 +2048,7 @@ function schlagZeit(tg, pid){
 }
 const schlagVon = (tg, pid) => (tg && tg.schlag) ? tg.schlag[pid] : undefined;
 /* Hält in `tg.schlag` fest, wann jemand die Schlagzahl zum ersten Mal erreicht hat – das
-   braucht das Abzeichen Schrittmacher. Aus dem Tagebuch allein ginge es nicht: Das
+   braucht das Abzeichen Zugpferd. Aus dem Tagebuch allein ginge es nicht: Das
    behält je Station nur die letzten vierzig Einträge und wird beim Abschließen gelöscht,
    das Abzeichen aber bleibt.
    Solange der Moment frisch ist (`SAMMEL_FENSTER`), folgt die Zeit dem Tagebuch in beide
@@ -2151,7 +2154,7 @@ function personOrt(tg, pid){
 function markenAufraeumen(){
   (state.we || []).forEach(w => {
     if(w.zu) return;
-    /* Zuerst die Schrittmacher-Zeiten: Die Meldung zur Schlagzahl hängt daran. */
+    /* Zuerst die Zugpferd-Zeiten: Die Meldung zur Schlagzahl hängt daran. */
     schlagFesthalten(w, false);
     if(!w.marken || !w.marken.length) return;
     /* Die Mängelanzeige geht nach zwei Seiten wieder weg, und beide sind richtig: Der
@@ -2976,7 +2979,7 @@ const ABZEICHEN = [
   {k:'fahrer',  name:'Fahrer des Abends',   farbe:'#3D6B45',
    pfad:'<circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="12" r="2.3"/>'
       + '<path d="M3.6 10.6h6.2M14.2 10.6h6.2M12 14.3v8"/>'},
-  {k:'schlag',  name:'Schrittmacher',       farbe:'#9E3226',
+  {k:'schlag',  name:'Zugpferd',       farbe:'#9E3226',
    pfad:'<circle cx="12" cy="13.6" r="7.6"/><path d="M12 13.6V9.4M9.8 2.6h4.4M12 2.6V6M18.2 7.2l1.6-1.6"/>'},
   {k:'zipfel',  name:'Goldener Bettzipfel', farbe:'#1C5FA8',
    pfad:'<path d="M3.2 17.4h13.6v3H3.2z"/><path d="M4.6 17.4C4.8 10.6 8.2 5.2 13.4 4.6c3.4-.4 6 2.2 6.3 6"/>'
@@ -3030,7 +3033,7 @@ function tagAbzeichen(t){
     const gruppe = heim.filter(id => heimVon(t.tag, id) <= erst + HEIM_GLEICH);
     if(gruppe.length < ids.length){ r.zipfel = gruppe; r.wert.zipfel = erst; }
   }
-  /* Der Schrittmacher: wer als Erster drei Getränke binnen einer halben Stunde hatte, und
+  /* Der Zugpferd: wer als Erster drei Getränke binnen einer halben Stunde hatte, und
      wer binnen zwei Minuten ebenso. Dieselbe Regel wie beim Bettzipfel: Kommen alle mit
      derselben Runde hin, hat keiner vorgelegt – das Tempo hat die Runde gemacht. */
   const schnell = ids.filter(id => schlagVon(t.tag, id) !== undefined);
@@ -3925,7 +3928,7 @@ function urkundeAnweisung(we, m){
   const BE = ' Eine Biereinheit ist eine Halbe Helles.';
   const liste = a => (a && a.length) ? a.map(nameZu).join(', ') : 'keiner';
   const nachricht = MIT_NACHRICHT.has(m.art);
-  /* Wer von den Genannten mit diesem Tempo gerade Schrittmacher des Tages ist. */
+  /* Wer von den Genannten mit diesem Tempo gerade das Zugpferd des Tages ist. */
   const schritt = m.art === 'schlag' && tg
     ? tagAbzeichen(tagAlsLog(tg)).schlag.filter(x => ids.some(y => String(y) === String(x))) : [];
 
@@ -3988,7 +3991,7 @@ function urkundeAnweisung(we, m){
         + (schritt.length ? ' ' + liste(schritt) + (schritt.length === 1
             ? ' ist damit als Erster an diesem Tag so schnell und bekommt'
             : ' sind damit als Erste an diesem Tag so schnell und bekommen')
-          + ' dafür das Abzeichen Schrittmacher.' : ''),
+          + ' dafür das Abzeichen Zugpferd.' : ''),
       auftrag:'Schreib eine kurze Eilmeldung über dieses Tempo, dazu eine Überschrift von '
         + 'höchstens sieben Wörtern. Anerkennend und trocken.'},
     rekordnah: {was:'eine Eilmeldung', kern:'Rekordjagd',
@@ -4024,7 +4027,7 @@ function urkundeAnweisung(we, m){
         + '. Fahrer des Abends mit den wenigsten: ' + liste(m.fahrer)
         + (m.werte && m.werte.fahrer !== undefined ? ' (' + zahl(m.werte.fahrer, 1) + ')' : '')
         + '.' + ((m.schlag && m.schlag.length) ? ' Als Erster auf drei Getränke binnen einer halben '
-        + 'Stunde gekommen, dafür das Abzeichen Schrittmacher: ' + liste(m.schlag)
+        + 'Stunde gekommen, dafür das Abzeichen Zugpferd: ' + liste(m.schlag)
         + (m.werte && m.werte.schlag ? ' um ' + m.werte.schlag : '') + '.' : '')
         + ((m.zipfel && m.zipfel.length) ? ' Als Erster heimgegangen, dafür der Goldene '
         + 'Bettzipfel: ' + liste(m.zipfel) + (m.werte && m.werte.zipfel ? ' um ' + m.werte.zipfel : '')
@@ -4047,7 +4050,7 @@ function urkundeAnweisung(we, m){
             : ' Der Treuepokal ist vorerst unvergeben.') : '')
         + (m.abend ? ' Letzter Abend: Tagessieger ' + liste(m.abend.sieger) + ', Fahrer des Abends '
             + liste(m.abend.fahrer)
-            + ((m.abend.schlag || []).length ? ', Schrittmacher ' + liste(m.abend.schlag) : '')
+            + ((m.abend.schlag || []).length ? ', Zugpferd ' + liste(m.abend.schlag) : '')
             + (m.abend.zipfel.length ? ', als Erster heim ' + liste(m.abend.zipfel) : '')
             + '.' : '') + BE,
       auftrag:'Schreib den Fließtext der Siegerehrung, wie eine Laudatio: kreativ, feierlich und '
@@ -4535,7 +4538,7 @@ function fazitBlock(f, mitKnopf){
   }).join('');
   /* Je Tag die Abzeichen, darunter, was mit den Wanderpokalen passiert ist. Jede Zeile
      trägt den Wert, der sie begründet – Menge bei Sieger und Fahrer, Uhrzeit beim
-     Schrittmacher und beim Bettzipfel. */
+     Zugpferd und beim Bettzipfel. */
   const mehrereTage = f.abzeichen.length > 1;
   const orden = f.abzeichen.map(x => {
       const z = abzeichenZeilen(x.a, null);
@@ -5022,7 +5025,7 @@ function ansichtInfo(){
     + '<tr><td class="wert">Fahrer des Abends</td><td>Die wenigsten Biereinheiten des Tages. Erst ab '
     + 'drei Anwesenden, und nur, wenn nicht alle gleichauf liegen. Wer den Abend über Alkoholfreies '
     + 'trinkt, erfüllt die Bezeichnung wörtlich.</td></tr>'
-    + '<tr><td class="wert">Schrittmacher</td><td>Wer als Erster drei Getränke binnen einer halben '
+    + '<tr><td class="wert">Zugpferd</td><td>Wer als Erster drei Getränke binnen einer halben '
     + 'Stunde hat. Wer binnen zwei Minuten ebenso weit ist, hat mitbestellt und teilt. Kommen '
     + 'alle mit derselben Runde hin, hat keiner vorgelegt. Nachgetragenes zählt nicht: weder die '
     + 'Sammel-Eingabe noch ein Getränk, das erst nach der Rückfrage bestätigt oder an einer '
@@ -5055,8 +5058,8 @@ function ansichtInfo(){
     + '<p><strong>6.4 Ehrenhalle.</strong> Unter der Tabelle, und während ein Wochenende läuft '
     + 'auch im Zwischenstand. Oben die drei Wanderpokale mit ihren Haltern. Darunter die '
     + 'Ehrenliste: je Person die gehaltenen Pokale und die gesammelten Abzeichen, als Medaille '
-    + 'mit der Zahl daran — Stern für den Tagessieger, Lenkrad für den Fahrer, Stoppuhr für den '
-    + 'Schrittmacher, Zipfelmütze für den Bettzipfel. Wer keines von einer Sorte hat, bei dem '
+    + 'mit der Zahl daran — Stern für den Tagessieger, Lenkrad für den Fahrer, Stoppuhr für das '
+    + 'Zugpferd, Zipfelmütze für den Bettzipfel. Wer keines von einer Sorte hat, bei dem '
     + 'bleibt die Medaille blass. Dann die Wanderwege, auf denen jeder Pokal von Halter zu Halter '
     + 'gegangen ist, und die Chronik: Tag für Tag, wer was bekam. Ein Tipp auf einen Namen führt '
     + 'zur Person, einer auf ein Wochenende zu seinem Fazit.</p>'
@@ -5241,7 +5244,7 @@ const ERKLAERUNGEN = {
   abzeichen: {titel:'Die vier Abzeichen', para:'p6', paraName:'§ 6 Abzeichen und Wanderpokale',
     text:['<b>Tagessieger</b> — die meisten Biereinheiten des Tages.',
       '<b>Fahrer des Abends</b> — die wenigsten Biereinheiten des Tages, ab drei am Tisch.',
-      '<b>Schrittmacher</b> — wer als Erster drei Getränke binnen einer halben Stunde hat. '
+      '<b>Zugpferd</b> — wer als Erster drei Getränke binnen einer halben Stunde hat. '
       + 'Nachgetragenes zählt nicht.',
       '<b>Goldener Bettzipfel</b> — wer als Erster heimgeht. Zählt nur, wenn die Heim-Zeit '
       + 'eingetragen ist: Tipp auf den Namen, dann „Geht heim“.',
@@ -6237,7 +6240,7 @@ function ansichtUrkunde(x){
     const bilanz = m.art !== 'morgen' ? '' : '<div class="u-bilanz">' + [
         ['Tagessieger', m.sieger, m.werte && m.werte.sieger !== undefined ? zahl(m.werte.sieger, 2) + ' BE' : ''],
         ['Fahrer des Abends', m.fahrer, m.werte && m.werte.fahrer !== undefined ? zahl(m.werte.fahrer, 2) + ' BE' : ''],
-        ['Schrittmacher', m.schlag, m.werte && m.werte.schlag ? 'das dritte um ' + m.werte.schlag : ''],
+        ['Zugpferd', m.schlag, m.werte && m.werte.schlag ? 'das dritte um ' + m.werte.schlag : ''],
         ['Goldener Bettzipfel', m.zipfel, m.werte && m.werte.zipfel ? 'heim um ' + m.werte.zipfel : '']
       ].filter(z => z[1] && z[1].length).map(z => '<div><span>' + z[0] + '</span><b>'
         + esc(namenListe(z[1])) + '</b>' + (z[2] ? '<em>' + z[2] + '</em>' : '') + '</div>').join('')
@@ -6276,7 +6279,7 @@ function ansichtUrkunde(x){
     if(m.abend){
       neben.push([esc(m.abend.label || 'Letzter Abend') + ' · Tagessieger', namenListe(m.abend.sieger), '']);
       if(m.abend.fahrer.length) neben.push(['Fahrer des Abends', namenListe(m.abend.fahrer), '']);
-      if((m.abend.schlag || []).length) neben.push(['Schrittmacher', namenListe(m.abend.schlag), '']);
+      if((m.abend.schlag || []).length) neben.push(['Zugpferd', namenListe(m.abend.schlag), '']);
       if(m.abend.zipfel.length) neben.push(['Goldener Bettzipfel', namenListe(m.abend.zipfel), '']);
     }
     return ''

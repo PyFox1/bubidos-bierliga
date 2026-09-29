@@ -106,7 +106,7 @@ falschen Tag und nimmt die Leute vom falschen Tresen mit. Gilt für jedes Blatt,
 - `fazitVon(e)` — Wochenendbilanz samt Abzeichen je Tag und Pokal-Wechseln
 - `ehrungen()` / `tagAbzeichen(t)` — Abzeichen, Wanderpokale und ihr Verlauf, aus der ganzen
   Historie gerechnet; `frueherGegangen()` und `heimVon()` lesen die Heim-Zeiten,
-  `schlagVon()` die Schrittmacher-Zeiten, die `schlagFesthalten()` aus `schlagZeit()` ablegt
+  `schlagVon()` die Zeiten für das Zugpferd, die `schlagFesthalten()` aus `schlagZeit()` ablegt
 - `rangDaten()` / `rangZeilen()` — die sortierbare Tabelle, Spalten in `SPALTEN`
 - `laden()` / `sichern()` / `schreiben()` — GitHub-Anbindung
 - `zusammenfuehren()` — Drei-Wege-Abgleich bei gleichzeitiger Änderung, samt `listeVereinen()`
@@ -215,7 +215,7 @@ Am Tag hängt `tg.heim = {pid: zeitstempel}`: wer wann heimgegangen ist. Seit G6
 `tg.schlag = {pid: zeitstempel}`: wann jemand an dem Tag zum ersten Mal drei Getränke binnen
 einer halben Stunde hatte (die Zeit des dritten). Das ist alles, was die Ehrungen an eigenen
 Daten brauchen, den Rest rechnen sie aus den Strichen. Beide überleben den Abschluss des
-Wochenendes (anders als das Tagebuch), weil Bettzipfel, Schrittmacher und Treuepokal auch
+Wochenendes (anders als das Tagebuch), weil Bettzipfel, Zugpferd und Treuepokal auch
 rückwirkend daraus gerechnet werden.
 
 Am Wochenende hängt außerdem `we.marken`: die ausgestellten Blätter, je eines
@@ -249,7 +249,7 @@ die Heim-Zeiten (`tg.heim`) liegen im Bestand.
 |---|---|
 | Tagessieger | die meisten BE — dieselbe Regel wie die Spalte „Siege“, damit beide gleich zählen |
 | Fahrer des Abends | die wenigsten BE, erst ab `FAHRER_MIN` (3) am Tisch, nicht bei Gleichstand aller |
-| Schrittmacher | die früheste Schlagzahl (`tg.schlag`); wer binnen `SCHLAG_GLEICH` (2 min) nachzog, teilt; alle zugleich: keiner |
+| Zugpferd | die früheste Schlagzahl (`tg.schlag`); wer binnen `SCHLAG_GLEICH` (2 min) nachzog, teilt; alle zugleich: keiner |
 | Goldener Bettzipfel | die früheste Heim-Zeit; wer binnen `HEIM_GLEICH` (10 min) mitging, teilt |
 
 | Wanderpokal | hält ihn | wandert |
@@ -267,7 +267,7 @@ Wie die Orden vorher stehen sie an **drei Stellen**: vergeben in `tagAbzeichen()
 erklärt in `ERKLAERUNGEN.abzeichen` und `.pokale`, nachgeschlagen in **§ 6**. Wer einen
 anfasst, fasst alle drei an; `tests/orden.mjs` prüft sie gegeneinander und rechnet die Regeln
 an einer kleinen Historie nach. Jede Zeile trägt den Wert, der sie begründet — Menge bei Sieger,
-Fahrer, Krone und Rekord, die Uhrzeit bei Schrittmacher („das dritte um …“) und Bettzipfel,
+Fahrer, Krone und Rekord, die Uhrzeit bei Zugpferd („das dritte um …“) und Bettzipfel,
 die Serie beim Treuepokal.
 
 Gezeigt wird das an fünf Stellen: Symbole neben dem Namen in der Tabelle (`pokaleVon()`,
@@ -309,7 +309,8 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   und vier bleiben — dann bekämen es jeden Abend vier; die Zahl steht als Statistik in der
   Personenansicht), *Rote Laterne* (zeigt die letzte Tabellenzeile schon), Bettzipfel über
   das letzte Getränk (eine „Runde für alle“ nach dem Gehen verschöbe ihn auf den Falschen).
-- **Schrittmacher: der Erste mit drei Getränken binnen einer halben Stunde** (G61). Kam als
+- **Zugpferd: der Erste mit drei Getränken binnen einer halben Stunde** (G61; hieß bis G63
+  *Schrittmacher*, gewählt aus Zugpferd, Taktgeber, Frühzünder, Blaues Band). Kam als
   Wunsch, die Schlagzahl-Eilmeldung zum Abzeichen zu machen, und wurde vorher kritisch
   abgeklopft. Als **Schwelle** war sie untauglich — an einem flotten Abend hätten sie vier
   von fünf, dasselbe Argument wie gegen die *Sperrstunde*. Deshalb **der Erste**, ein
@@ -339,8 +340,8 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   - **Beim Abgleich** wie `tg.heim` je Person nach der Drei-Wege-Regel
     (`zeitenVereinen()`), nur dass bei zwei verschieden gesetzten Zeiten die frühere gilt.
   - Die Morgenmeldung und die Siegerehrung nennen ihn mit, und die Meldung zur Schlagzahl
-    sagt dem, der damit Schrittmacher wird, dass er es ist.
-  `tests/schrittmacher.mjs` hält das alles fest, samt Tagebuch, das ihn vergisst.
+    sagt dem, der damit das Zugpferd des Tages wird, dass er es ist.
+  `tests/zugpferd.mjs` hält das alles fest, samt Tagebuch, das ihn vergisst.
 - **Die Ehrenhalle spricht die Sprache der Abzeichen-Karten** (G62). Zwei Entwurfsrunden,
   sechs Entwürfe. Aus der ersten (Vitrine mit Pokalen im Glasschrank, Ehrentafel aus Holz
   und Messing, Ahnengalerie mit Goldrahmen) hat genau **ein** Element gefallen: die
@@ -737,7 +738,7 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   **Die Schlagzahl zählt nur, was im Moment getippt wurde** (Tagebuch: Striche und Runden
   mit `ids`, ein Minus nimmt das jüngste weg, `weg` zählt nicht). Drei Biere, am Morgen über
   die Sammel-Eingabe nachgetragen, wären sonst drei Biere in einer Minute. Seit G61 auch
-  nicht, was `nach` trägt (siehe Schrittmacher), und die Meldung hängt an `tg.schlag`,
+  nicht, was `nach` trägt (siehe Zugpferd), und die Meldung hängt an `tg.schlag`,
   nicht mehr direkt am Tagebuch.
   **Rekord und Reichweite messen gegen den besten Tag vor diesem** (`rekordVor()`): Am
   allerersten Abend gibt es nichts zu brechen, und was heute passiert, ist erst morgen die

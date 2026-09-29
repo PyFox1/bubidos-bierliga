@@ -30,10 +30,10 @@ const schritt = async (name, fn) => {
 /* Vier Wochenenden, drei abgeschlossen, eines läuft.
    W1: alle vier, Gerry geht früh.       Krone Korbi 6 · Rekord Korbi 6
        Fifu und Sperry kommen binnen einer Minute auf die Schlagzahl, Korbi eine Stunde
-       später – Fifu und Sperry teilen den Schrittmacher.
+       später – Fifu und Sperry teilen den Zugpferd.
    W2: ohne Gerry, zwei Tage.            Krone Fifu 9
        Tag 1: Sperry und Korbi gehen binnen fünf Minuten – geteilter Bettzipfel.
-       Korbi allein auf der Schlagzahl – Schrittmacher.
+       Korbi allein auf der Schlagzahl – Zugpferd.
    W3: alle vier.                        Krone Korbi 8 · Rekord Korbi 8
        Alle vier mit derselben Runde auf der Schlagzahl – keiner hat vorgelegt.
        Serien: Korbi, Fifu, Sperry je 3, Gerry 1 – Fifu blieb am öftesten bis zum Schluss.
@@ -104,7 +104,7 @@ await schritt('Bettzipfel: binnen zehn Minuten geteilt, ohne Heim-Zeit keiner', 
   return 'Sperry und Korbi fünf Minuten auseinander';
 });
 
-await schritt('Schrittmacher: der Erste, binnen zwei Minuten geteilt, alle zugleich keiner', async () => {
+await schritt('Zugpferd: der Erste, binnen zwei Minuten geteilt, alle zugleich keiner', async () => {
   if(tag(101).schlag !== 'Fifu+Sperry') throw new Error('W1: ' + tag(101).schlag);
   if(tag(201).schlag !== 'Korbi') throw new Error('W2/1: ' + tag(201).schlag);
   if(tag(202).schlag !== '') throw new Error('W2/2 ohne Zeiten: ' + tag(202).schlag);
@@ -227,8 +227,8 @@ await schritt('Das Fazit zeigt die Abzeichen mit begründendem Wert', async () =
     if(!texte.fazit.includes(s)) throw new Error('fehlt: ' + s);
   if(!texte.fazit2.includes('Goldener Bettzipfel') || !/heim um \d\d:\d\d/.test(texte.fazit2))
     throw new Error('Bettzipfel ohne Uhrzeit');
-  if(!texte.fazit2.includes('Schrittmacher') || !/das dritte um \d\d:\d\d/.test(texte.fazit2))
-    throw new Error('Schrittmacher ohne Uhrzeit');
+  if(!texte.fazit2.includes('Zugpferd') || !/das dritte um \d\d:\d\d/.test(texte.fazit2))
+    throw new Error('Zugpferd ohne Uhrzeit');
 });
 await schritt('Das Fazit zeigt, was mit den Pokalen passiert ist', async () => {
   for(const s of ['Deckelkrone', 'von Fifu', 'Treuepokal', 'Erstverleihung', 'Rekordhalter'])
@@ -260,9 +260,9 @@ await schritt('Die Ehrenhalle zeigt Halter, Verlauf, Abzeichen und Chronik', asy
   if(!t.kopf.includes('Ehrenhalle')) throw new Error('Kopf: ' + t.kopf);
   for(const s of ['Deckelkrone', 'Rekordhalter', 'Treuepokal', 'Erstes', 'Chronik', 'Goldener Bettzipfel'])
     if(!t.app.includes(s)) throw new Error('fehlt: ' + s);
-  const soll = 'Tagessieger: 2|Fahrer des Abends: 1|Schrittmacher: 1|Goldener Bettzipfel: 1';
+  const soll = 'Tagessieger: 2|Fahrer des Abends: 1|Zugpferd: 1|Goldener Bettzipfel: 1';
   if(t.korbi.join('|') !== soll) throw new Error('Korbi: ' + t.korbi.join('|'));
-  return 'Korbi: 2 Siege, 1 Fahrer, 1 Schrittmacher, 1 Zipfel';
+  return 'Korbi: 2 Siege, 1 Fahrer, 1 Zugpferd, 1 Zipfel';
 });
 await schritt('Der Zurück-Pfeil führt aus der Ehrenhalle zurück', async () => {
   await p.evaluate(() => tu.zurueckNavi());
@@ -272,7 +272,7 @@ await schritt('Der Zurück-Pfeil führt aus der Ehrenhalle zurück', async () =>
 await schritt('Die Personenansicht zählt Abzeichen und Pokale', async () => {
   await p.evaluate(() => { tu.personAuf({dataset:{id:2}}); });
   const t = await p.evaluate(() => document.getElementById('app').textContent);
-  for(const s of ['Tagessieger3×', 'Schrittmacher1×', 'Rekordhalter', 'hält ihn', 'Treuepokal',
+  for(const s of ['Tagessieger3×', 'Zugpferd1×', 'Rekordhalter', 'hält ihn', 'Treuepokal',
                    'Dabei: 4 von 4 Wochenenden'])
     if(!t.includes(s)) throw new Error('fehlt: ' + s);
   if(t.includes('Orden')) throw new Error('„Orden“ steht noch da');
