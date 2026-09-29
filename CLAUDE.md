@@ -69,7 +69,7 @@ Die Variable `ansicht` überschreibt das für Unteransichten. Werte: `null` (aut
 | `ansichtZaehlen` | Getränke zählen | Startseite bei laufendem Wochenende |
 | `ansichtZwischen` | Zwischenstand Tag für Tag, mit Knopf zur Ehrenhalle | Balkensymbol im Zählkopf |
 | `ansichtPerson` | Kacheln, Anwesenheit, Abzeichen, Pokale, Wochenenden | Tipp auf einen Namen in der Tabelle |
-| `ansichtRuhm` | Ehrenhalle: Pokale mit Verlauf, Abzeichen, Chronik | Knopf unter der Tabelle, Personenansicht, Zwischenstand |
+| `ansichtRuhm` | Ehrenhalle: Pokal-Kacheln, Ehrenliste, Wanderwege, Chronik | Knopf unter der Tabelle, Personenansicht, Zwischenstand |
 | `ansichtWeDetail` | Fazit eines Wochenendes | Tipp auf eine Wochenendzeile |
 | `ansichtEinst` | Nachschlagen, Verwaltung, Änderungen | Zahnrad |
 | `ansichtInfo` | Betriebsanleitung, §1–§11 | aus den Einstellungen oder Erklär-Blättern |
@@ -273,7 +273,10 @@ die Serie beim Treuepokal.
 Gezeigt wird das an fünf Stellen: Symbole neben dem Namen in der Tabelle (`pokaleVon()`,
 gezeichnete SVG, keine Emojis), das Fazit je Wochenende (je Tag die Abzeichen, darunter die
 Pokal-Wechsel), der Zwischenstand („Stand jetzt“ am laufenden Tag), die Personenansicht
-(gezählte Abzeichen, gehaltene Pokale, „Dabei: …“) und die Ehrenhalle (`ansichtRuhm()`).
+(gezählte Abzeichen, gehaltene Pokale, „Dabei: …“) und die Ehrenhalle (`ansichtRuhm()`,
+siehe die Entscheidung dazu). Jedes Abzeichen trägt in `ABZEICHEN` außer dem Namen eine
+`farbe` und ein Symbol (`pfad`) für die Medaille der Ehrenhalle — wer eines dazunimmt,
+gibt ihm beides mit, sonst steht dort eine leere Medaille; `ehrenhalle.mjs` prüft das.
 
 ## Entscheidungen und ihre Gründe
 
@@ -338,6 +341,41 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   - Die Morgenmeldung und die Siegerehrung nennen ihn mit, und die Meldung zur Schlagzahl
     sagt dem, der damit Schrittmacher wird, dass er es ist.
   `tests/schrittmacher.mjs` hält das alles fest, samt Tagebuch, das ihn vergisst.
+- **Die Ehrenhalle spricht die Sprache der Abzeichen-Karten** (G62). Zwei Entwurfsrunden,
+  sechs Entwürfe. Aus der ersten (Vitrine mit Pokalen im Glasschrank, Ehrentafel aus Holz
+  und Messing, Ahnengalerie mit Goldrahmen) hat genau **ein** Element gefallen: die
+  Abzeichen-Karten der Ahnengalerie — dunkle Karte, Porträt-Oval mit Monogramm, vier flache
+  farbige Medaillen mit Zähler. Holz, Messing, Glas und Samt dagegen nicht. Die zweite
+  Runde hat deshalb alles andere in *dieser* Sprache neu gedacht (Pokal-Karten,
+  Bierkastl-Podest, Ehrenliste), genommen wurde die **Ehrenliste**:
+  - **Oben die drei Wanderpokale als Kacheln**: Medaillon mit Goldrand, Halter, Wert, dazu
+    eine Zeile „*n* Wochenenden · *n* Tage · *n* Abzeichen vergeben“. Pokale sind
+    **Medaillons mit Goldrand**, Abzeichen **flache farbige Medaillen** — so unterscheidet
+    man sie auf einen Blick.
+  - **Die Ehrenliste**: je Person eine Karte (jeder, der je dabei war), wer Pokale hält mit
+    Goldschimmer um das Porträt und den Pokalen unter dem Namen. Sortiert nach Pokalen,
+    dann nach Zahl der Abzeichen, dann nach Tagessiegen. Leere Medaillen bleiben blass
+    stehen, statt zu fehlen: So steht jede Sorte an derselben Stelle. Darunter eine
+    Legende, die ins Erklär-Blatt führt — die Symbole allein erklären sich nicht jedem.
+  - **Die Wanderwege**: je Pokal die Halter als Porträts auf einer Linie, links der erste,
+    rechts der jetzige. Mehr als `WEG_MAX` (6) passen nicht nebeneinander, der Rest steht
+    als „+n“ davor; bei einem geteilten Pokal trägt das Monogramm ein „+1“.
+  - **Die Chronik als Raster**: eine Spalte je Abzeichen, eine Zeile je Tag, neueste
+    zuerst. Die Werte (BE, Uhrzeit) stehen hier bewusst nicht — die hat das Fazit.
+  - **Tipps**: Person → Personenansicht, Wochenende → Fazit (beim laufenden der
+    Zwischenstand), Kachel und Legende → Erklär-Blatt.
+  - **Monogramme** (`monogramm()`): ein Buchstabe, zwei, wenn ein anderer genauso anfängt —
+    Korbi und Kammy wären sonst beide „K“.
+  - **Beim Treuepokal steht die laufende Serie**, nicht `halter.treue.wert`: Das ist die
+    Serie vom Tag der Übergabe und nach dem nächsten Wochenende überholt. Stand bis G61
+    so in der Ehrenhalle und fiel erst beim Entwerfen auf.
+  - `pokalSymbol(k, gr, stumm)`: stumm, wo der Name daneben steht — sonst liest ein
+    Vorleseprogramm „Rekordhalter Rekordhalter“, und der Text der Kachel enthält ihn
+    doppelt.
+  Zwei Fallen, die beim Bauen zugeschnappt sind: Eine Klasse `kopf` im Entwurf erbte das
+  Aussehen des App-Kopfes (deshalb der Namensraum `eh-`, siehe Fallen), und ohne
+  `minmax(0,1fr)` wuchs die Spur der Ehrenliste auf die Mindestbreite der Karte — bei
+  320 px stand die Seite quer über. `tests/ehrenhalle.mjs` misst beide Breiten.
 - **Heimgehen wird von Hand eingetragen, mit Uhrzeit** (G56). Tipp auf den Namen, „Geht
   heim“ hält den Zeitpunkt fest. Seit G60 steht das Uhrzeitfeld **neben** dem Knopf, vorbelegt
   mit jetzt: Wer erst nach einer halben Stunde merkt, dass einer fehlt, stellt zurück und
@@ -1004,6 +1042,8 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   weggeräumt, stapelte sich bei jedem Zeichnen, und der Wisch zur nächsten Location ging
   mitten durch sie hindurch. Sie heißt jetzt `blende u-blende s1|s2|s3`, und weil die
   `u-`-Regeln hinter `.blende` im Stylesheet stehen, gewinnen sie bei gleicher Spezifität.
+  Die Ehrenhalle hat aus demselben Grund ihren Namensraum `eh-`: Im Entwurf hieß die
+  Kopfzeile der Chronik schlicht `kopf` und bekam prompt Hintergrund und Rand des App-Kopfes.
 - **Dateigrößen-Grenze.** Die GitHub-Contents-API liefert Inhalte nur bis 1 MB. Hochgerechnet
   reicht das ohne Tagebuch für Jahrzehnte. Wird es eng: alte Jahrgänge in eigene Dateien.
 - **Namensreihen mit Vorauswahl brauchen Kästchen.** `.teiln` allein sieht bei durchweg

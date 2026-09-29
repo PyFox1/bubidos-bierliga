@@ -255,12 +255,13 @@ await schritt('Die Ehrenhalle zeigt Halter, Verlauf, Abzeichen und Chronik', asy
   await p.evaluate(() => tu.geheRuhm());
   const t = await p.evaluate(() => ({kopf:document.getElementById('kopf').textContent,
     app:document.getElementById('app').textContent,
-    zeilen:[...document.querySelectorAll('.abzzeile')].map(z => z.textContent)}));
+    korbi:[...document.querySelector('.eh-person[data-id="1"]').querySelectorAll('.eh-med')]
+      .map(m => m.getAttribute('aria-label'))}));
   if(!t.kopf.includes('Ehrenhalle')) throw new Error('Kopf: ' + t.kopf);
   for(const s of ['Deckelkrone', 'Rekordhalter', 'Treuepokal', 'Erstes', 'Chronik', 'Goldener Bettzipfel'])
     if(!t.app.includes(s)) throw new Error('fehlt: ' + s);
-  const korbi = t.zeilen.find(z => z.startsWith('Korbi'));
-  if(korbi !== 'Korbi2111') throw new Error('Korbi-Zeile: ' + korbi);
+  const soll = 'Tagessieger: 2|Fahrer des Abends: 1|Schrittmacher: 1|Goldener Bettzipfel: 1';
+  if(t.korbi.join('|') !== soll) throw new Error('Korbi: ' + t.korbi.join('|'));
   return 'Korbi: 2 Siege, 1 Fahrer, 1 Schrittmacher, 1 Zipfel';
 });
 await schritt('Der Zurück-Pfeil führt aus der Ehrenhalle zurück', async () => {

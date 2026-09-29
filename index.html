@@ -378,30 +378,94 @@ table.rechnung td.schlecht{color:#E09084}
   color:var(--malz);margin-top:6px;padding-top:6px;border-top:1px dashed rgba(185,172,140,.6)}
 .orden .fztag:first-child{border-top:0;padding-top:0;margin-top:0}
 
-.pokalblock{margin-bottom:12px;padding:12px 13px;border-radius:5px;border:1px solid var(--linie)}
-.pokalkopf{display:flex;gap:12px;align-items:center}
-.pokalkopf .psym{color:var(--malz);flex:0 0 auto}
-.pokalname{font-family:var(--display);font-size:20px;text-transform:uppercase;letter-spacing:.02em}
-.pokalhalter{font-family:var(--mono);font-size:12px;color:var(--deckel);margin-top:2px}
-.rverlauf{margin-top:10px;border-top:1px solid rgba(82,91,102,.6);padding-top:6px}
-.rzeile{display:flex;gap:10px;align-items:baseline;padding:4px 0;font-size:13px}
-.rzeile .rwer{font-weight:800;flex:0 0 auto;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rzeile .rwo{flex:1;min-width:0;font-family:var(--mono);font-size:10.5px;color:#8A929C;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rzeile .rwert{font-family:var(--mono);font-size:11px;color:var(--malz);flex:0 0 auto}
-.abztab{border:1px solid var(--linie);border-radius:5px;overflow:hidden}
-/* Eine Spalte je Abzeichen, so viele es eben gibt – die erste ist der Name. */
-.abzkopf,.abzzeile{display:grid;grid-template-columns:1.3fr;grid-auto-columns:1fr;
-  grid-auto-flow:column;gap:6px;align-items:center;padding:8px 10px}
-.abzkopf{background:var(--zinn-tief);font-family:var(--mono);font-size:9px;letter-spacing:.06em;
-  text-transform:uppercase;color:#8A929C;line-height:1.3}
-.abzkopf span,.abzzeile b{text-align:center}
-.abzzeile{border-top:1px solid rgba(82,91,102,.55)}
-.abzzeile .abzname{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.abzzeile b{font-family:var(--mono);color:var(--malz);font-weight:500}
-.chrwe{margin-bottom:14px}
-.chrtitel{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--deckel);padding:6px 2px;border-bottom:1px solid var(--linie)}
+/* Ehrenhalle (G62). Eigener Namensraum eh-: `kopf`, `plus` und `sieger` sind schon
+   vergeben, und ein Klassenname, der mit dem Zählbildschirm kollidiert, erbt dessen Aussehen.
+   Pokale sind Medaillons mit Goldrand, Abzeichen flache farbige Medaillen, Leute
+   Porträt-Ovale mit Monogramm – daran erkennt man auf einen Blick, was was ist. */
+.eh-lab{font-family:var(--mono);font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;
+  color:#D59A2E;margin:26px 0 10px}
+.eh-lab.zuerst{margin-top:16px}
+.eh-karte{background:#2B3037;border:1px solid #444C56;border-radius:8px}
+.eh-leiste{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.eh-kachel{display:flex;flex-direction:column;align-items:center;text-align:center;width:100%;
+  min-width:0;padding:16px 6px 12px}
+.eh-kachel .eh-medaillon{margin-bottom:12px}
+.eh-kachel small{font-family:var(--mono);font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:#D59A2E;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.eh-kachel b{font-family:var(--display);font-size:20px;line-height:1.1;text-transform:uppercase;
+  color:var(--deckel);margin:3px 0 2px;overflow-wrap:anywhere}
+.eh-kachel em{font-style:normal;font-family:var(--mono);font-size:9.5px;color:#9AA2AC;line-height:1.35}
+.eh-stand{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:#8A929C;text-align:center;margin:10px 0 0}
+.eh-medaillon{display:grid;place-items:center;width:46px;height:46px;border-radius:50%;flex:0 0 auto;
+  background:radial-gradient(circle at 50% 32%,#3B424B 0%,#1D2126 78%);color:#F3D686;
+  box-shadow:0 0 0 2px #D59A2E,0 0 0 4px #1D2126,0 0 0 5px #8A5510,0 4px 10px rgba(0,0,0,.45)}
+.eh-port{position:relative;display:grid;place-items:center;width:34px;height:42px;border-radius:50%;
+  flex:0 0 auto;font-family:var(--display);font-size:16px;color:var(--deckel);
+  background:radial-gradient(ellipse at 50% 38%,#5A4A3A,#2A211A);box-shadow:0 0 0 2px #D59A2E}
+.eh-port.gold{box-shadow:0 0 0 2px #F3D686,0 0 0 5px rgba(213,154,46,.3)}
+.eh-port.klein{width:28px;height:34px;font-size:13px;box-shadow:0 0 0 1.5px #8A6A3A}
+.eh-port.leer{background:#23272D;color:#6C7580;box-shadow:none;border:1.5px dashed var(--linie)}
+.eh-port i{position:absolute;right:-8px;top:-5px;font-style:normal;font-family:var(--mono);font-size:8.5px;
+  line-height:12px;padding:0 3px;border-radius:6px;background:var(--deckel);color:var(--tinte)}
+/* minmax(0,…): Sonst wächst die Spur auf die Mindestbreite der Karte, und bei 320 px
+   steht die Seite quer über. */
+.eh-liste{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+.eh-person{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:10px 12px;
+  border-radius:6px;background:#2B3037;border:1px solid #444C56}
+.eh-mitte{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.eh-name{font-weight:800;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eh-chips{display:flex;flex-wrap:wrap;gap:2px 8px;min-width:0}
+.eh-chip{display:inline-flex;align-items:center;gap:4px;max-width:100%;font-family:var(--mono);font-size:9px;
+  letter-spacing:.08em;text-transform:uppercase;color:#F3D686;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis}
+.eh-chip .psym{flex:0 0 auto}
+.eh-medaillen{display:flex;gap:7px;flex:0 0 auto}
+.eh-med{position:relative;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;
+  color:#F4EEDD;flex:0 0 auto;box-shadow:inset 0 0 0 2px rgba(255,255,255,.28),0 2px 3px rgba(0,0,0,.5)}
+.eh-med b{position:absolute;right:-5px;bottom:-5px;min-width:16px;height:16px;padding:0 3px;border-radius:8px;
+  background:var(--deckel);color:var(--tinte);font-family:var(--mono);font-size:10px;font-weight:500;
+  display:grid;place-items:center}
+.eh-med.null{opacity:.16}
+.eh-legende{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;width:100%;margin-top:10px;padding:6px 2px;
+  text-align:left;font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;color:#9AA2AC}
+.eh-legende span{display:flex;align-items:center;gap:7px}
+.eh-legende .eh-med{width:20px;height:20px;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.28)}
+.eh-wege{padding:2px 12px 12px}
+.eh-weg{padding-top:10px}
+.eh-weg + .eh-weg{margin-top:6px;border-top:1px solid rgba(82,91,102,.55)}
+.eh-wegkopf{display:flex;align-items:center;gap:8px;color:#F3D686}
+.eh-wegkopf b{font-family:var(--display);font-size:16px;letter-spacing:.03em;text-transform:uppercase;color:var(--deckel)}
+.eh-wegleer{font-family:var(--mono);font-size:10.5px;color:#8A929C;margin:8px 0 2px}
+.eh-spur{display:flex;align-items:flex-start;margin-top:8px}
+.eh-halt{flex:1 1 0;min-width:0;text-align:center;position:relative}
+/* Die Linie zum Vorgänger. Die Porträts liegen darüber (z-index), sonst zieht die Linie
+   des Nächsten quer durch das Monogramm. */
+.eh-halt::before{content:'';position:absolute;top:16px;right:50%;width:100%;height:2px;background:var(--linie)}
+.eh-halt:first-child::before{display:none}
+.eh-halt .eh-port{z-index:1;margin:0 auto}
+.eh-halt small{display:block;margin-top:6px;font-family:var(--mono);font-size:8.5px;letter-spacing:.03em;
+  color:#8A929C;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px}
+.eh-halt.jetzt .eh-port{box-shadow:0 0 0 2px #F3D686,0 0 0 5px rgba(213,154,46,.28)}
+.eh-halt.jetzt .eh-port.leer{box-shadow:none}
+.eh-halt.jetzt small{color:#F3D686}
+.eh-halt.mehr .eh-port{background:#23272D;color:#8A929C;font-family:var(--mono);font-size:10px;
+  box-shadow:0 0 0 1.5px var(--linie)}
+.eh-chr{display:block;width:100%;text-align:left;background:#2B3037;border:1px solid #444C56;border-radius:8px;
+  padding:10px 12px 6px;margin-bottom:8px}
+.eh-chrtitel{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 8px;margin-bottom:6px}
+.eh-chrtitel b{font-family:var(--display);font-size:18px;letter-spacing:.03em;text-transform:uppercase;
+  overflow-wrap:anywhere}
+.eh-chrtitel small{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:#8A929C}
+.eh-chrtitel i{font-style:normal;margin-left:auto;font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--tinte);background:#D59A2E;border-radius:3px;padding:2px 6px}
+.eh-raster{display:grid;grid-template-columns:44px repeat(var(--n,4),minmax(0,1fr));gap:4px;align-items:center;
+  padding:7px 0;border-top:1px dashed rgba(82,91,102,.6)}
+.eh-raster.eh-rasterkopf{border-top:none;padding:2px 0 6px}
+.eh-raster.eh-rasterkopf .eh-med{margin:0 auto;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.28)}
+.eh-raster .tl{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;color:#8A929C;text-transform:uppercase;
+  overflow-wrap:anywhere}
+.eh-raster .c{text-align:center;font-weight:800;font-size:12.5px;line-height:1.3;overflow-wrap:anywhere}
+.eh-raster .c.leer{color:#4E5660;font-weight:400}
 .chrtag{padding:8px 2px 4px}
 .chrkopf{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
   color:var(--malz);margin-bottom:3px}
@@ -717,7 +781,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-29 15:18 · G61 (GitHub)';
+const FASSUNG = '2026-09-29 15:45 · G62 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -732,6 +796,12 @@ const FASSUNG = '2026-09-29 15:18 · G61 (GitHub)';
 const NOTIZ_START  = 1;
 const NOTIZ_ANZAHL = 3;
 const NOTIZEN = [
+  {f:'G62', d:'29.09.2026', z:'15:45', punkte:[
+    'Die Ehrenhalle ist neu: oben die drei Wanderpokale, darunter die Ehrenliste mit den Pokalen '
+    + 'und Abzeichen jeder Person auf einen Blick. Die Abzeichen sind Medaillen mit der Zahl daran.',
+    'Darunter der Weg jedes Pokals von Halter zu Halter und die Chronik, Tag für Tag. Ein Tipp auf '
+    + 'einen Namen führt zur Person, einer auf ein Wochenende zu seinem Fazit.',
+    'Beim Treuepokal steht jetzt die laufende Serie, nicht mehr die vom Tag der Übergabe.']},
   {f:'G61', d:'29.09.2026', z:'15:18', punkte:[
     'Neues Abzeichen: Schrittmacher. Es bekommt, wer an einem Tag als Erster drei Getränke '
     + 'binnen einer halben Stunde hat. Wer es binnen zwei Minuten ebenso schafft, teilt es; '
@@ -2897,11 +2967,20 @@ function fazitVon(e){
    immer genau einer (oder bei exaktem Gleichstand mehrere), bis ihn ihm jemand abnimmt.
    Gespeichert ist davon nichts außer den Heim-Zeiten: Alles andere wird wie die Punkte
    bei jedem Laden aus den Strichen gerechnet und kann der Tabelle nie widersprechen. */
+/* Farbe und Symbol stehen hier und nicht im Stylesheet: Wer ein Abzeichen dazunimmt,
+   kann sie so nicht vergessen – ohne stünde in der Ehrenhalle eine leere Medaille.
+   Gezeichnet wie die Pokal-Symbole: Stern, Lenkrad, Stoppuhr, Zipfelmütze. */
 const ABZEICHEN = [
-  {k:'sieger',  name:'Tagessieger'},
-  {k:'fahrer',  name:'Fahrer des Abends'},
-  {k:'schlag',  name:'Schrittmacher'},
-  {k:'zipfel',  name:'Goldener Bettzipfel'}
+  {k:'sieger',  name:'Tagessieger',         farbe:'#D59A2E',
+   pfad:'<path d="M12 3.2l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7z"/>'},
+  {k:'fahrer',  name:'Fahrer des Abends',   farbe:'#3D6B45',
+   pfad:'<circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="12" r="2.3"/>'
+      + '<path d="M3.6 10.6h6.2M14.2 10.6h6.2M12 14.3v8"/>'},
+  {k:'schlag',  name:'Schrittmacher',       farbe:'#9E3226',
+   pfad:'<circle cx="12" cy="13.6" r="7.6"/><path d="M12 13.6V9.4M9.8 2.6h4.4M12 2.6V6M18.2 7.2l1.6-1.6"/>'},
+  {k:'zipfel',  name:'Goldener Bettzipfel', farbe:'#1C5FA8',
+   pfad:'<path d="M3.2 17.4h13.6v3H3.2z"/><path d="M4.6 17.4C4.8 10.6 8.2 5.2 13.4 4.6c3.4-.4 6 2.2 6.3 6"/>'
+      + '<path d="M15.2 17.4c-.2-3.4.4-6 2-7.9"/><circle cx="19.8" cy="12.9" r="2.1"/>'}
 ];
 const POKALE = [
   {k:'krone',  name:'Deckelkrone'},
@@ -4394,8 +4473,10 @@ const namenListe = ids => ids.map(id => {
   return q ? q.name : '—'; }).join(', ');
 const weTitel = id => { const w = state.we.find(x => x.id === id); return w ? w.titel : '—'; };
 
-/* Kleine gezeichnete Symbole statt Emojis – Krone, Blitz, Anker. */
-function pokalSymbol(k, gr){
+/* Kleine gezeichnete Symbole statt Emojis – Krone, Blitz, Anker. `stumm`, wo der Name
+   ohnehin daneben steht: sonst liest ein Vorleseprogramm ihn doppelt, und im Text der
+   Kachel stünde er zweimal. */
+function pokalSymbol(k, gr, stumm){
   const s = gr || 14;
   const pfad = k === 'krone'
       ? '<path d="M3 18h18l-1.5-10-4.5 4-3-7-3 7-4.5-4z"/>'
@@ -4405,7 +4486,8 @@ function pokalSymbol(k, gr){
   const name = (POKALE.find(p => p.k === k) || {}).name || '';
   return '<svg class="psym psym-' + k + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" '
     + 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" '
-    + 'stroke-linejoin="round" role="img" aria-label="' + name + '"><title>' + name + '</title>'
+    + 'stroke-linejoin="round" ' + (stumm ? 'aria-hidden="true">'
+      : 'role="img" aria-label="' + name + '"><title>' + name + '</title>')
     + pfad + '</svg>';
 }
 
@@ -4597,7 +4679,7 @@ function ansichtArchiv(){
   return start
     + '<div class="abschnitt oben">Tabelle</div>' + rangZeilen()
     + '<p class="hinweis">Gewertet wird je Tag über alle Locations · K ' + state.einst.k + '</p>'
-    + '<button class="knopf leer" data-tu="geheRuhm">' + pokalSymbol('krone', 15)
+    + '<button class="knopf leer" data-tu="geheRuhm">' + pokalSymbol('krone', 15, true)
     + ' Ehrenhalle</button>'
     + '<div class="abschnitt">Wochenenden</div>' + wochenenden;
 }
@@ -4971,8 +5053,13 @@ function ansichtInfo(){
     + '„Wer geht mit?“ nicht angeboten. Das Nichteintragen einer Heim-Zeit gilt als Anwesenheit bis '
     + 'zum Schluss und ist der häufigste Grund für einen unverdienten Bettzipfel beim Nächsten.</p>'
     + '<p><strong>6.4 Ehrenhalle.</strong> Unter der Tabelle, und während ein Wochenende läuft '
-    + 'auch im Zwischenstand. Dort stehen die jetzigen Halter der '
-    + 'Pokale samt Verlauf, die gesammelten Abzeichen je Person und Tag für Tag, wer was bekam.</p>'
+    + 'auch im Zwischenstand. Oben die drei Wanderpokale mit ihren Haltern. Darunter die '
+    + 'Ehrenliste: je Person die gehaltenen Pokale und die gesammelten Abzeichen, als Medaille '
+    + 'mit der Zahl daran — Stern für den Tagessieger, Lenkrad für den Fahrer, Stoppuhr für den '
+    + 'Schrittmacher, Zipfelmütze für den Bettzipfel. Wer keines von einer Sorte hat, bei dem '
+    + 'bleibt die Medaille blass. Dann die Wanderwege, auf denen jeder Pokal von Halter zu Halter '
+    + 'gegangen ist, und die Chronik: Tag für Tag, wer was bekam. Ein Tipp auf einen Namen führt '
+    + 'zur Person, einer auf ein Wochenende zu seinem Fazit.</p>'
     + '<p><strong>Zur unterschiedlichen Anreise:</strong> Wer einen Tag verpasst, verliert dadurch '
     + 'keine Punkte — er kommt in der Wertung dieses Tages schlicht nicht vor. Abzeichen gibt es je '
     + 'Tag, wer nur Samstag kommt, hat dort dieselben Chancen. Deckelkrone und Treuepokal dagegen '
@@ -5158,7 +5245,8 @@ const ERKLAERUNGEN = {
       + 'Nachgetragenes zählt nicht.',
       '<b>Goldener Bettzipfel</b> — wer als Erster heimgeht. Zählt nur, wenn die Heim-Zeit '
       + 'eingetragen ist: Tipp auf den Namen, dann „Geht heim“.',
-      'Abzeichen gibt es je Tag, sie werden gesammelt. Alle stehen in der Ehrenhalle.']},
+      'Abzeichen gibt es je Tag, sie werden gesammelt. In der Ehrenhalle stehen sie als Medaillen: '
+      + 'Stern, Lenkrad, Stoppuhr und Zipfelmütze, die Zahl daran zählt.']},
   pokale: {titel:'Die drei Wanderpokale', para:'p6', paraName:'§ 6 Abzeichen und Wanderpokale',
     text:['<b>Deckelkrone</b> — die meisten Biereinheiten eines Wochenendes. Wandert beim Abschließen.',
       '<b>Rekordhalter</b> — der beste Tag aller Zeiten. Wer ihn übertrifft, übernimmt ihn, '
@@ -5448,7 +5536,7 @@ function ansichtZwischen(){
     + '<div class="abschnitt">Bisher zusammen</div>' + gzeilen
     + '<button class="knopf voll" data-tu="geheZaehlen">Zurück zum Zählen</button>'
     + '<button class="knopf leer" data-tu="geheArchiv">Gesamttabelle ansehen</button>'
-    + '<button class="knopf leer" data-tu="geheRuhm">' + pokalSymbol('krone', 15)
+    + '<button class="knopf leer" data-tu="geheRuhm">' + pokalSymbol('krone', 15, true)
     + ' Ehrenhalle</button>';
 }
 
@@ -5520,56 +5608,133 @@ function ansichtPerson(){
 }
 
 /* ---------- Ehrenhalle ----------
-   Alles an einem Ort: wer die Pokale gerade hält und wie sie gewandert sind, wer welche
-   Abzeichen gesammelt hat, und Tag für Tag, wer sie bekam. Neueste zuerst. */
+   Seit G62 in einer Sprache mit den Abzeichen-Karten, die als Einziges aus der ersten
+   Entwurfsrunde gefallen haben: dunkle Karten, Pokale als Medaillon mit Goldrand,
+   Abzeichen als flache farbige Medaillen mit Zähler, Leute als Porträt-Oval mit
+   Monogramm. Von oben: die drei Wanderpokale, die Ehrenliste je Person, der Weg jedes
+   Pokals von Halter zu Halter, die Chronik als Raster. */
+function abzeichenSymbol(a, gr){
+  const s = gr || 16;
+  return '<svg class="asym" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" '
+    + 'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" '
+    + 'aria-hidden="true">' + (a.pfad || '') + '</svg>';
+}
+/* Ein Monogramm: der erste Buchstabe – zwei, wenn ein anderer genauso anfängt. Korbi und
+   Kammy wären sonst beide „K“. */
+function monogramm(name){
+  const n = String(name || '').trim();
+  const a = n.charAt(0).toUpperCase();
+  const gleich = state.spieler.some(p => String(p.name).trim() !== n
+    && String(p.name).trim().charAt(0).toUpperCase() === a);
+  return gleich ? a + n.charAt(1).toLowerCase() : a;
+}
+const ehPortraet = (name, kl, plus) => '<span class="eh-port' + (kl ? ' ' + kl : '') + '" aria-hidden="true">'
+  + esc(monogramm(name)) + (plus ? '<i>+' + plus + '</i>' : '') + '</span>';
+const ehMedaillon = k => '<span class="eh-medaillon" aria-hidden="true">' + pokalSymbol(k, 21, true) + '</span>';
+/* Eine Abzeichen-Medaille. `rein`: nur das Zeichen, ohne Zähler – für Legende und Raster. */
+function ehMedaille(a, n, rein, gr){
+  return '<span class="eh-med' + (!rein && !n ? ' null' : '') + '" style="background:' + a.farbe
+    + (gr ? ';width:' + gr + 'px;height:' + gr + 'px' : '') + '" role="img" aria-label="' + a.name
+    + (rein ? '' : ': ' + (n || 0)) + '">' + abzeichenSymbol(a, gr ? Math.round(gr * .6) : 16)
+    + (!rein && n ? '<b aria-hidden="true">' + n + '</b>' : '') + '</span>';
+}
+/* Der Wanderweg eines Pokals: links der erste Halter, rechts der jetzige. Mehr als sechs
+   Stationen passen auf dem Handy nicht nebeneinander, der Rest steht als „+n“ davor. */
+const WEG_MAX = 6;
+function wanderweg(verlauf){
+  const zeig = verlauf.slice(-WEG_MAX), frueher = verlauf.length - zeig.length;
+  const name = id => { const q = state.spieler.find(x => String(x.id) === String(id)); return q ? q.name : '—'; };
+  return '<div class="eh-spur">'
+    + (frueher ? '<div class="eh-halt mehr"><span class="eh-port klein" aria-hidden="true">+' + frueher
+        + '</span><small>früher</small></div>' : '')
+    + zeig.map((w, i) => {
+        const we = state.we.find(x => x.id === w.weId) || {};
+        const wer = w.wer.map(name);
+        return '<div class="eh-halt' + (i === zeig.length - 1 ? ' jetzt' : '') + '" title="'
+          + esc(wer.join(', ') || 'unvergeben') + '">'
+          + (wer.length ? ehPortraet(wer[0], 'klein', wer.length - 1)
+                        : '<span class="eh-port klein leer" aria-hidden="true">–</span>')
+          + '<small>' + esc((we.datum || '').slice(0, 4)) + '<br>' + esc(we.titel || '') + '</small></div>';
+      }).join('') + '</div>';
+}
+
 function ansichtRuhm(){
   const eh = ehrungen();
-  const {log} = berechnen();
-  const datumVon = id => { const w = state.we.find(x => x.id === id); return w ? datumHuebsch(w.datum) : ''; };
+  const {log, weTeil} = berechnen();
+  const name = id => { const q = state.spieler.find(x => String(x.id) === String(id)); return q ? q.name : '—'; };
+  const namen = ids => ids.map(id => esc(name(id))).join(' · ');
 
-  const pokale = POKALE.map(pk => {
+  /* Die drei Pokale. Beim Treuepokal steht die laufende Serie – der Wert im Verlauf ist
+     der vom Tag der Übergabe und schon nach dem nächsten Wochenende überholt. */
+  const kacheln = POKALE.map(pk => {
     const h = eh.halter[pk.k];
-    const erkl = pk.k === 'krone' ? 'Die meisten BE an einem Wochenende. Wandert bei jedem Abschluss.'
-               : pk.k === 'rekord' ? 'Der beste Tag aller Zeiten. Wer ihn übertrifft, übernimmt ihn.'
-               : 'Die längste Serie an Wochenenden, bei denen man dabei war – ab drei.';
-    const wert = w => pk.k === 'treue' ? w.wert + ' in Folge'
-                    : zahl(w.wert, 2) + ' BE';
-    const verlauf = [...eh.verlauf[pk.k]].reverse().map(w => '<div class="rzeile">'
-        + '<span class="rwer">' + (w.wer.length ? esc(namenListe(w.wer)) : 'unvergeben') + '</span>'
-        + '<span class="rwo">' + esc(weTitel(w.weId)) + ' · ' + datumVon(w.weId) + '</span>'
-        + '<span class="rwert">' + (w.wer.length ? wert(w) : '') + '</span></div>').join('');
-    return '<div class="pokalblock">'
-      + '<div class="pokalkopf">' + pokalSymbol(pk.k, 22) + '<div><div class="pokalname">' + pk.name + '</div>'
-      + '<div class="pokalhalter">' + (h.wer.length ? esc(namenListe(h.wer)) + ' · ' + wert(h)
-          : 'noch nicht vergeben') + '</div></div></div>'
-      + '<p class="mini" style="margin:6px 0 0">' + erkl + '</p>'
-      + (verlauf ? '<div class="rverlauf">' + verlauf + '</div>' : '') + '</div>';
+    const n = pk.k === 'treue' && h.wer.length ? ((eh.serie[String(h.wer[0])] || {}).n || h.wert) : h.wert;
+    const wert = !h.wer.length
+        ? (pk.k === 'treue' && eh.verlauf.treue.length ? 'vorerst im Schrank' : 'noch nicht vergeben')
+      : pk.k === 'treue' ? n + ' in Folge'
+      : zahl(n, 1) + ' BE' + (pk.k === 'rekord' ? ' an einem Tag' : '');
+    return '<button class="eh-karte eh-kachel" data-tu="erklaerAuf" data-was="pokale">' + ehMedaillon(pk.k)
+      + '<small>' + pk.name + '</small><b>' + (h.wer.length ? namen(h.wer) : '—') + '</b>'
+      + '<em>' + wert + '</em></button>';
   }).join('');
+  const gewertet = log.filter(e => e.tagLog.length);
+  const tage = gewertet.reduce((s, e) => s + e.tagLog.length, 0);
+  const vergeben = Object.keys(eh.zahlen).reduce((s, id) =>
+    s + ABZEICHEN.reduce((x, a) => x + (eh.zahlen[id][a.k] || 0), 0), 0);
+  const stand = gewertet.length ? '<p class="eh-stand">' + gewertet.length + ' '
+    + (gewertet.length === 1 ? 'Wochenende' : 'Wochenenden') + ' · ' + tage + ' ' + (tage === 1 ? 'Tag' : 'Tage')
+    + ' · ' + vergeben + ' Abzeichen vergeben</p>' : '';
 
-  const leute = state.spieler.filter(p => eh.zahlen[String(p.id)]);
-  const tabelle = leute.length
-    ? '<div class="abztab"><div class="abzkopf"><span></span>'
-      + ABZEICHEN.map(z => '<span>' + z.name + '</span>').join('') + '</div>'
-      + leute.map(p => '<div class="abzzeile"><span class="abzname">' + esc(p.name) + '</span>'
-          + ABZEICHEN.map(z => '<b>' + ((eh.zahlen[String(p.id)] || {})[z.k] || 0) + '</b>').join('')
-          + '</div>').join('') + '</div>'
-    : '<p class="hinweis" style="margin:6px 2px">Noch kein Abzeichen vergeben.</p>';
+  /* Die Ehrenliste: jeder, der je dabei war. Wer Pokale hält, steht oben, danach nach
+     der Zahl der Abzeichen. Ein Tipp führt in die Personenansicht. */
+  const leute = state.spieler.map(p => {
+    const z = eh.zahlen[String(p.id)] || {};
+    return {p, z, summe:ABZEICHEN.reduce((s, a) => s + (z[a.k] || 0), 0), pokale:pokaleVon(p.id),
+            dabei:weTeil[p.id] || 0};
+  }).filter(l => l.dabei || l.summe || l.pokale.length)
+    .sort((a, b) => b.pokale.length - a.pokale.length || b.summe - a.summe
+      || (b.z.sieger || 0) - (a.z.sieger || 0));
+  const liste = leute.length
+    ? '<div class="eh-liste">' + leute.map(l => '<button class="eh-person" data-tu="personAuf" data-id="'
+        + esc(String(l.p.id)) + '">' + ehPortraet(l.p.name, l.pokale.length ? 'gold' : '')
+        + '<span class="eh-mitte"><span class="eh-name">' + esc(l.p.name) + '</span>'
+        + (l.pokale.length ? '<span class="eh-chips">' + l.pokale.map(k => '<span class="eh-chip">'
+            + pokalSymbol(k, 11, true) + (POKALE.find(x => x.k === k) || {}).name + '</span>').join('') + '</span>' : '')
+        + '</span><span class="eh-medaillen">' + ABZEICHEN.map(a => ehMedaille(a, l.z[a.k] || 0)).join('')
+        + '</span></button>').join('') + '</div>'
+      + '<button class="eh-legende" data-tu="erklaerAuf" data-was="abzeichen">'
+      + ABZEICHEN.map(a => '<span>' + ehMedaille(a, 0, true) + a.name + '</span>').join('') + '</button>'
+    : '<p class="hinweis" style="margin:6px 2px">Noch niemand dabei gewesen.</p>';
 
-  const chronik = log.filter(e => e.tagLog.length).reverse().map(e => {
-    const tage = e.tagLog.map(t => {
-      const c = eh.chronik.find(x => x.tagId === t.tag.id);
-      const z = c ? abzeichenZeilen(c.a, null) : '';
-      return '<div class="chrtag"><div class="chrkopf">' + esc(t.tag.label)
-        + (e.we.id === state.aktivWe && t.tag.id === state.aktivTag ? ' · läuft' : '') + '</div>'
-        + (z || '<p class="mini" style="margin:4px 0 0">Nichts vergeben.</p>') + '</div>';
-    }).join('');
-    return '<div class="chrwe"><div class="chrtitel">' + esc(e.we.titel) + ' · '
-      + datumHuebsch(e.we.datum) + '</div>' + tage + '</div>';
+  const wege = POKALE.map(pk => '<div class="eh-weg"><div class="eh-wegkopf">' + pokalSymbol(pk.k, 15, true)
+    + '<b>' + pk.name + '</b></div>' + (eh.verlauf[pk.k].length ? wanderweg(eh.verlauf[pk.k])
+      : '<p class="eh-wegleer">Noch nicht vergeben.</p>') + '</div>').join('');
+
+  /* Die Chronik, neueste zuerst: eine Spalte je Abzeichen, eine Zeile je Tag. Ein Tipp
+     führt ins Fazit des Wochenendes, beim laufenden in den Zwischenstand. */
+  const n = ABZEICHEN.length;
+  const rasterkopf = '<span class="eh-raster eh-rasterkopf" style="--n:' + n + '"><span></span>'
+    + ABZEICHEN.map(a => ehMedaille(a, 0, true, 22)).join('') + '</span>';
+  const chronik = gewertet.slice().reverse().map(e => {
+    const laeuft = !e.we.zu;
+    return '<button class="eh-chr" data-tu="' + (laeuft ? 'geheZwischen' : 'weDetail') + '" data-id="' + e.we.id + '">'
+      + '<span class="eh-chrtitel"><b>' + esc(e.we.titel) + '</b><small>' + datumHuebsch(e.we.datum) + '</small>'
+      + (laeuft ? '<i>läuft</i>' : '') + '</span>' + rasterkopf
+      + e.tagLog.map(t => {
+          const c = eh.chronik.find(x => x.tagId === t.tag.id);
+          return '<span class="eh-raster" style="--n:' + n + '"><span class="tl">' + esc(t.tag.label) + '</span>'
+            + ABZEICHEN.map(a => {
+                const wer = c ? c.a[a.k] : [];
+                return wer.length ? '<span class="c">' + wer.map(id => esc(name(id))).join('<br>') + '</span>'
+                                  : '<span class="c leer">–</span>';
+              }).join('') + '</span>';
+        }).join('') + '</button>';
   }).join('') || '<p class="hinweis" style="margin:6px 2px">Noch nichts gewertet.</p>';
 
-  return '<div class="abschnitt oben">Wanderpokale</div>' + pokale
-    + '<div class="abschnitt">Abzeichen</div>' + tabelle
-    + '<div class="abschnitt">Chronik</div>' + chronik;
+  return '<div class="eh-lab zuerst">Wanderpokale</div><div class="eh-leiste">' + kacheln + '</div>' + stand
+    + '<div class="eh-lab">Ehrenliste</div>' + liste
+    + '<div class="eh-lab">Wanderwege</div><div class="eh-karte eh-wege">' + wege + '</div>'
+    + '<div class="eh-lab">Chronik</div>' + chronik;
 }
 
 /* ---------- Sichern ---------- */

@@ -242,13 +242,15 @@ await schritt('Vom Zwischenstand führt ein Knopf in die Ehrenhalle und zurück'
   if(r.drin !== 'ruhm' || !/Ehrenhalle/.test(r.kopf)) throw new Error(r.drin + ' / ' + r.kopf);
   if(r.zurueck !== 'zwischen') throw new Error('zurück nach ' + r.zurueck);
 });
-await schritt('Die Ehrenhalle hat eine Spalte für ihn', async () => {
+await schritt('Die Ehrenhalle hat eine Medaille für ihn', async () => {
   const r = await p.evaluate(() => { tu.geheRuhm();
-    return {kopf:document.querySelector('.abzkopf').textContent,
-            sperry:[...document.querySelectorAll('.abzzeile')].map(z => z.textContent).find(z => z.startsWith('Sperry'))}; });
-  if(!/Schrittmacher/.test(r.kopf)) throw new Error(r.kopf);
+    return {legende:document.querySelector('.eh-legende').textContent,
+            sperry:[...document.querySelector('.eh-person[data-id="3"]').querySelectorAll('.eh-med')]
+              .map(m => m.getAttribute('aria-label')).join('|')}; });
+  if(!/Schrittmacher/.test(r.legende)) throw new Error(r.legende);
   /* Tagessieger ist er in dem Moment auch – niemand sonst hat etwas. */
-  if(r.sperry !== 'Sperry1010') throw new Error(r.sperry);
+  if(r.sperry !== 'Tagessieger: 1|Fahrer des Abends: 0|Schrittmacher: 1|Goldener Bettzipfel: 0')
+    throw new Error(r.sperry);
   await p.evaluate(() => tu.zurueckNavi());
 });
 await schritt('Die Meldung zur Schlagzahl sagt dem Ersten, dass er Schrittmacher ist', async () => {
