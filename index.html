@@ -370,6 +370,7 @@ table.rechnung td.schlecht{color:#E09084}
   text-transform:uppercase;color:var(--malz);margin-left:4px}
 .dabeizeile{font-family:var(--mono);font-size:11px;color:#AEB5BE;margin:12px 2px 0;line-height:1.6}
 .rname .psym{vertical-align:-2px;color:var(--malz);margin-left:1px}
+.pname .psym{vertical-align:-2px;color:var(--malz);margin-left:5px}
 .wzsieger .psym{vertical-align:-1px}
 .knopf .psym{vertical-align:-2px;margin-right:4px}
 .ordenzeile .psym{vertical-align:-2px}
@@ -783,7 +784,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-29 19:00 · G64 (GitHub)';
+const FASSUNG = '2026-09-29 19:08 · G65 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -798,6 +799,9 @@ const FASSUNG = '2026-09-29 19:00 · G64 (GitHub)';
 const NOTIZ_START  = 1;
 const NOTIZ_ANZAHL = 3;
 const NOTIZEN = [
+  {f:'G65', d:'29.09.2026', z:'19:08', punkte:[
+    'Beim Zählen steht neben dem Namen jetzt auch das Zeichen der Wanderpokale, die jemand gerade '
+    + 'hält – wie in der Tabelle. Bricht einer mitten am Abend den Rekord, wandert der Blitz gleich mit.']},
   {f:'G64', d:'29.09.2026', z:'19:00', punkte:[
     'In der Ehrenhalle sind die Kreise mit den Anfangsbuchstaben jetzt wirklich rund. Vorher '
     + 'waren sie leicht oval und wirkten neben den Medaillen verzogen.']},
@@ -3143,9 +3147,11 @@ function ehrungen(){
   ehrungenMerk = {s:schluessel, r};
   return r;
 }
-/* Welche Pokale jemand gerade hält – für die Symbole in der Tabelle. */
-function pokaleVon(pid){
-  const {halter} = ehrungen();
+/* Welche Pokale jemand gerade hält – für die Symbole in der Tabelle und am Zählbildschirm.
+   `eh` lässt sich mitgeben, wenn viele Zeilen fragen: `ehrungen()` baut für seinen
+   Merker jedes Mal den ganzen Bestand als Text zusammen. */
+function pokaleVon(pid, eh){
+  const {halter} = eh || ehrungen();
   return POKALE.filter(p => halter[p.k].wer.some(x => String(x) === String(pid))).map(p => p.k);
 }
 
@@ -3418,6 +3424,12 @@ function ansichtZaehlen(){
   const pos = kettePos(k);
   const rueck = istRueckblick();
   const hier = Object.keys(ort.getraenke);
+  /* Die Zeichen der Wanderpokale neben dem Namen, wie in der Tabelle. Der Rekordhalter kann
+     mitten am Abend wechseln – dann wandert das Zeichen gleich mit. */
+  const eh = ehrungen();
+  /* Abstand über CSS, nicht über Leerzeichen: Der Name ist unterstrichen, und die Linie
+     liefe sonst durch die Lücken zwischen den Zeichen. */
+  const pokZeichen = id => pokaleVon(id, eh).map(k => pokalSymbol(k, 14)).join('');
   /* Wer heimgegangen ist, bleibt in der Liste stehen, bekommt aber kein Bier mehr aus
      der Runde – die Zahl auf dem Knopf zählt nur, wer noch am Tisch sitzt. */
   const amTisch = hier.filter(id => heimVon(tg, id) === undefined);
@@ -3503,8 +3515,8 @@ function ansichtZaehlen(){
     const heimFrage = !rueck && nachfrage === 'heim:' + id;
     return '<div class="pzeile' + (hz !== undefined ? ' heim' : '') + '"><div class="pinfo">'
       + (rueck
-          ? '<div class="pname nurlesen">' + esc(p.name) + '</div>'
-          : '<button class="pname" data-tu="blattAuf" data-id="'+id+'">' + esc(p.name) + '</button>')
+          ? '<div class="pname nurlesen">' + esc(p.name) + pokZeichen(id) + '</div>'
+          : '<button class="pname" data-tu="blattAuf" data-id="'+id+'">' + esc(p.name) + pokZeichen(id) + '</button>')
       + '<div class="pmeta"><span class="pbe">'
       + zahl(gs.reduce((s,k) => s + beVon(k), 0),2) + ' BE</span>'
       + (heimFrage
@@ -5040,7 +5052,7 @@ function ansichtInfo(){
     + 'eingetragene Heim-Zeit (6.3). Wer binnen zehn Minuten mitgeht, teilt sich den Zipfel. Gehen '
     + 'alle gemeinsam, geht keiner zuerst.</td></tr></table>'
     + '<p><strong>6.2 Wanderpokale</strong> hat immer nur einer, bis ihn ihm jemand abnimmt. In der '
-    + 'Tabelle steht das Zeichen neben dem Namen.</p>'
+    + 'Tabelle und beim Zählen steht das Zeichen neben dem Namen.</p>'
     + '<table class="info">'
     + '<tr><td class="wert">Deckelkrone</td><td>Die meisten Biereinheiten eines Wochenendes. Wandert '
     + 'beim Abschließen, egal wann der Gewinner angereist ist. Wer später kommt, hat weniger Zeit — '
@@ -5261,7 +5273,7 @@ const ERKLAERUNGEN = {
       + 'Gleichziehen reicht nicht.',
       '<b>Treuepokal</b> — die längste Serie an Wochenenden, bei denen jemand dabei war, ab drei. '
       + 'Wer eines auslässt, fängt bei null an.',
-      'Wer einen hält, hat das Zeichen in der Tabelle neben dem Namen.']},
+      'Wer einen hält, hat das Zeichen neben dem Namen, in der Tabelle und beim Zählen.']},
   punkte: {titel:'Was die Punktzahl bedeutet', para:'p7', paraName:'§ 7 Technische Daten',
     text:['<b>Alle starten bei 1500.</b> Die Zahl misst nicht, wie viel jemand getrunken hat, '
         + 'sondern wie oft er mehr getrunken hat, <i>als von ihm erwartet war</i>.',

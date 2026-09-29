@@ -247,6 +247,18 @@ await schritt('In der Tabelle stehen die Zeichen neben den Haltern', async () =>
   if(z.find(x => x.name.startsWith('Gerry')).sym) throw new Error('Gerry hat eins');
   return 'Korbi Krone · Fifu Blitz und Anker';
 });
+await schritt('Beim Zählen stehen dieselben Zeichen neben den Namen', async () => {
+  const z = await p.evaluate(() => { ansicht = null; zeichnen();
+    const r = [...document.querySelectorAll('.pzeile .pname')].map(n => ({
+      name:n.firstChild.textContent.trim(),
+      sym:[...n.querySelectorAll('.psym')].map(s => s.getAttribute('aria-label')).join('+')}));
+    ansicht = 'archiv'; zeichnen(); return r; });
+  const k = z.find(x => x.name === 'Korbi'), f = z.find(x => x.name === 'Fifu'), s = z.find(x => x.name === 'Sperry');
+  if(!k || k.sym !== 'Deckelkrone') throw new Error('Korbi: ' + JSON.stringify(k));
+  if(!f || f.sym !== 'Rekordhalter+Treuepokal') throw new Error('Fifu: ' + JSON.stringify(f));
+  if(!s || s.sym) throw new Error('Sperry: ' + JSON.stringify(s));
+  return 'Korbi Krone · Fifu Blitz und Anker · Sperry nichts';
+});
 await schritt('Das Archiv nennt die Deckelkrone je Wochenende', async () => {
   const t = await p.evaluate(() => document.querySelector('.weZeile .wzsieger').textContent);
   if(!/Deckelkrone Korbi/.test(t)) throw new Error(t);

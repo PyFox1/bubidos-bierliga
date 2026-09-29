@@ -270,8 +270,9 @@ an einer kleinen Historie nach. Jede Zeile trägt den Wert, der sie begründet �
 Fahrer, Krone und Rekord, die Uhrzeit bei Zugpferd („das dritte um …“) und Bettzipfel,
 die Serie beim Treuepokal.
 
-Gezeigt wird das an fünf Stellen: Symbole neben dem Namen in der Tabelle (`pokaleVon()`,
-gezeichnete SVG, keine Emojis), das Fazit je Wochenende (je Tag die Abzeichen, darunter die
+Gezeigt wird das an sechs Stellen: Symbole neben dem Namen in der Tabelle (`pokaleVon()`,
+gezeichnete SVG, keine Emojis) und seit G65 genauso am Zählbildschirm — der Rekordhalter kann
+mitten am Abend wechseln, dann wandert der Blitz mit —, das Fazit je Wochenende (je Tag die Abzeichen, darunter die
 Pokal-Wechsel), der Zwischenstand („Stand jetzt“ am laufenden Tag), die Personenansicht
 (gezählte Abzeichen, gehaltene Pokale, „Dabei: …“) und die Ehrenhalle (`ansichtRuhm()`,
 siehe die Entscheidung dazu). Jedes Abzeichen trägt in `ABZEICHEN` außer dem Namen eine
