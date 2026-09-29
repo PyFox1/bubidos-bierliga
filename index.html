@@ -381,7 +381,9 @@ table.rechnung td.schlecht{color:#E09084}
 /* Ehrenhalle (G62). Eigener Namensraum eh-: `kopf`, `plus` und `sieger` sind schon
    vergeben, und ein Klassenname, der mit dem Zählbildschirm kollidiert, erbt dessen Aussehen.
    Pokale sind Medaillons mit Goldrand, Abzeichen flache farbige Medaillen, Leute
-   Porträt-Ovale mit Monogramm – daran erkennt man auf einen Blick, was was ist. */
+   runde Porträts mit Monogramm – daran erkennt man auf einen Blick, was was ist. Die
+   Porträts waren erst oval wie ein Bilderrahmen; neben den runden Medaillen sah das aus
+   wie ein verzerrter Kreis (G64). Deshalb überall Breite gleich Höhe. */
 .eh-lab{font-family:var(--mono);font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;
   color:#D59A2E;margin:26px 0 10px}
 .eh-lab.zuerst{margin-top:16px}
@@ -399,11 +401,11 @@ table.rechnung td.schlecht{color:#E09084}
 .eh-medaillon{display:grid;place-items:center;width:46px;height:46px;border-radius:50%;flex:0 0 auto;
   background:radial-gradient(circle at 50% 32%,#3B424B 0%,#1D2126 78%);color:#F3D686;
   box-shadow:0 0 0 2px #D59A2E,0 0 0 4px #1D2126,0 0 0 5px #8A5510,0 4px 10px rgba(0,0,0,.45)}
-.eh-port{position:relative;display:grid;place-items:center;width:34px;height:42px;border-radius:50%;
+.eh-port{position:relative;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;
   flex:0 0 auto;font-family:var(--display);font-size:16px;color:var(--deckel);
   background:radial-gradient(ellipse at 50% 38%,#5A4A3A,#2A211A);box-shadow:0 0 0 2px #D59A2E}
 .eh-port.gold{box-shadow:0 0 0 2px #F3D686,0 0 0 5px rgba(213,154,46,.3)}
-.eh-port.klein{width:28px;height:34px;font-size:13px;box-shadow:0 0 0 1.5px #8A6A3A}
+.eh-port.klein{width:30px;height:30px;font-size:13px;box-shadow:0 0 0 1.5px #8A6A3A}
 .eh-port.leer{background:#23272D;color:#6C7580;box-shadow:none;border:1.5px dashed var(--linie)}
 .eh-port i{position:absolute;right:-8px;top:-5px;font-style:normal;font-family:var(--mono);font-size:8.5px;
   line-height:12px;padding:0 3px;border-radius:6px;background:var(--deckel);color:var(--tinte)}
@@ -440,7 +442,7 @@ table.rechnung td.schlecht{color:#E09084}
 .eh-halt{flex:1 1 0;min-width:0;text-align:center;position:relative}
 /* Die Linie zum Vorgänger. Die Porträts liegen darüber (z-index), sonst zieht die Linie
    des Nächsten quer durch das Monogramm. */
-.eh-halt::before{content:'';position:absolute;top:16px;right:50%;width:100%;height:2px;background:var(--linie)}
+.eh-halt::before{content:'';position:absolute;top:14px;right:50%;width:100%;height:2px;background:var(--linie)}
 .eh-halt:first-child::before{display:none}
 .eh-halt .eh-port{z-index:1;margin:0 auto}
 .eh-halt small{display:block;margin-top:6px;font-family:var(--mono);font-size:8.5px;letter-spacing:.03em;
@@ -781,7 +783,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-29 16:39 · G63 (GitHub)';
+const FASSUNG = '2026-09-29 19:00 · G64 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -796,6 +798,9 @@ const FASSUNG = '2026-09-29 16:39 · G63 (GitHub)';
 const NOTIZ_START  = 1;
 const NOTIZ_ANZAHL = 3;
 const NOTIZEN = [
+  {f:'G64', d:'29.09.2026', z:'19:00', punkte:[
+    'In der Ehrenhalle sind die Kreise mit den Anfangsbuchstaben jetzt wirklich rund. Vorher '
+    + 'waren sie leicht oval und wirkten neben den Medaillen verzogen.']},
   {f:'G63', d:'29.09.2026', z:'16:39', punkte:[
     'Das Abzeichen für den Ersten mit drei Getränken binnen einer halben Stunde heißt jetzt Zugpferd '
     + '(vorher Schrittmacher).']},
@@ -5613,7 +5618,7 @@ function ansichtPerson(){
 /* ---------- Ehrenhalle ----------
    Seit G62 in einer Sprache mit den Abzeichen-Karten, die als Einziges aus der ersten
    Entwurfsrunde gefallen haben: dunkle Karten, Pokale als Medaillon mit Goldrand,
-   Abzeichen als flache farbige Medaillen mit Zähler, Leute als Porträt-Oval mit
+   Abzeichen als flache farbige Medaillen mit Zähler, Leute als rundes Porträt mit
    Monogramm. Von oben: die drei Wanderpokale, die Ehrenliste je Person, der Weg jedes
    Pokals von Halter zu Halter, die Chronik als Raster. */
 function abzeichenSymbol(a, gr){

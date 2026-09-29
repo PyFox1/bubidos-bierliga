@@ -345,7 +345,7 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
 - **Die Ehrenhalle spricht die Sprache der Abzeichen-Karten** (G62). Zwei Entwurfsrunden,
   sechs Entwürfe. Aus der ersten (Vitrine mit Pokalen im Glasschrank, Ehrentafel aus Holz
   und Messing, Ahnengalerie mit Goldrahmen) hat genau **ein** Element gefallen: die
-  Abzeichen-Karten der Ahnengalerie — dunkle Karte, Porträt-Oval mit Monogramm, vier flache
+  Abzeichen-Karten der Ahnengalerie — dunkle Karte, Porträt mit Monogramm, vier flache
   farbige Medaillen mit Zähler. Holz, Messing, Glas und Samt dagegen nicht. Die zweite
   Runde hat deshalb alles andere in *dieser* Sprache neu gedacht (Pokal-Karten,
   Bierkastl-Podest, Ehrenliste), genommen wurde die **Ehrenliste**:
@@ -365,6 +365,9 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
     zuerst. Die Werte (BE, Uhrzeit) stehen hier bewusst nicht — die hat das Fazit.
   - **Tipps**: Person → Personenansicht, Wochenende → Fazit (beim laufenden der
     Zwischenstand), Kachel und Legende → Erklär-Blatt.
+  - **Die Porträts sind kreisrund** (G64), Breite gleich Höhe. Im Entwurf waren sie oval
+    wie ein Bilderrahmen; neben den runden Medaillen sah das am Handy aus wie ein
+    verzerrter Kreis. `ehrenhalle.mjs` misst es nach.
   - **Monogramme** (`monogramm()`): ein Buchstabe, zwei, wenn ein anderer genauso anfängt —
     Korbi und Kammy wären sonst beide „K“.
   - **Beim Treuepokal steht die laufende Serie**, nicht `halter.treue.wert`: Das ist die

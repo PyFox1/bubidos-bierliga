@@ -109,6 +109,12 @@ await schritt('Monogramme: zwei Buchstaben, wo einer nicht eindeutig wäre', asy
   const r = await text('.eh-person .eh-port');
   if(r.join(',') !== 'Ko,F,S,G,Ka') throw new Error(r.join(','));
 });
+await schritt('Die Porträts sind kreisrund, in der Liste wie im Wanderweg', async () => {
+  const r = await p.evaluate(() => [...document.querySelectorAll('.eh-port')].map(e => {
+    const b = e.getBoundingClientRect(); return {b:Math.round(b.width*10)/10, h:Math.round(b.height*10)/10};
+  }).filter(x => x.b !== x.h));
+  if(r.length) throw new Error(r.length + ' nicht rund: ' + JSON.stringify(r[0]));
+});
 await schritt('Pokal-Halter haben den Goldschimmer und ihre Pokale unter dem Namen', async () => {
   const r = await p.evaluate(() => [...document.querySelectorAll('.eh-person')].map(k => ({
     id:k.dataset.id, gold:k.querySelector('.eh-port').classList.contains('gold'),
