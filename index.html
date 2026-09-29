@@ -784,7 +784,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-29 19:48 · G67 (GitHub)';
+const FASSUNG = '2026-09-29 19:55 · G68 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -799,6 +799,9 @@ const FASSUNG = '2026-09-29 19:48 · G67 (GitHub)';
 const NOTIZ_START  = 1;
 const NOTIZ_ANZAHL = 3;
 const NOTIZEN = [
+  {f:'G68', d:'29.09.2026', z:'19:55', punkte:[
+    'Der Pferdekopf beim Zugpferd ist jetzt eine richtig gezeichnete Figur statt meiner eigenen '
+    + 'Kurven, die eher nach Kinderzeichnung aussahen.']},
   {f:'G67', d:'29.09.2026', z:'19:48', punkte:[
     'Der Pferdekopf beim Zugpferd ist jetzt eine ausgefüllte Figur mit wehender Mähne statt einer '
     + 'dünnen Linie – in der kleinen Medaille war er kaum zu erkennen.']},
@@ -2994,13 +2997,16 @@ const ABZEICHEN = [
    pfad:'<circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="12" r="2.3"/>'
       + '<path d="M3.6 10.6h6.2M14.2 10.6h6.2M12 14.3v8"/>'},
   {k:'schlag',  name:'Zugpferd',            farbe:'#9E3226',
-   /* Gefüllt statt gestrichelt: Ein Pferdekopf aus Linien war in der kleinen Medaille nur ein
-      Gekritzel (G67). Auge und Nüster sind ausgeschnitten (evenodd), die Mähne weht nach hinten. */
-   pfad:'<path fill="currentColor" stroke="none" fill-rule="evenodd" d="M9.6 1.6 11.6 4.2C14.4 4.6 17.2 6.6 19 9.8L20.6 12.6'
-      + 'C21.4 14 21.1 15.8 19.9 16.7C19 17.4 17.7 17.1 17.1 16.2L16 14.8C15.2 14 14.3 14.6 14.1 15.7C13.9 17.5 14.1 19.9 14.6 22.4'
-      + 'L5.4 22.4C5.2 19.5 5.4 16.6 6.2 13.8C4.9 14.2 3.9 13.8 3.3 13C4.6 12.5 5.6 11.6 6.4 10.4C5 10.3 4 9.7 3.6 8.8'
-      + 'C5 8.6 6.3 8 7.2 6.9C6.4 6.4 5.9 5.7 5.8 4.9C7 5.2 8.1 4.9 8.9 4.1L9.6 1.6ZM13.2 7a1 1 0 1 0 0 2 1 1 0 1 0 0-2Z'
-      + 'M19.1 12.5a.65.65 0 1 0 1.3.3.65.65 0 1 0-1.3-.3Z"/>'},
+   /* Der Pferdekopf ist das Symbol „horse-head“ aus Font Awesome Free 7.3.1 (fontawesome.com,
+      Icons: CC BY 4.0, © Fonticons, Inc.) – die Nennung steht auch am Fuß der Betriebsanleitung.
+      Selbstgezeichnete Pferde (erst aus Linien, dann gefüllt) sahen nach Kinderzeichnung aus.
+      Die Vorlage ist 512 groß, hier auf 24 heruntergerechnet und ins Feld gerückt (G68). */
+   pfad:'<path transform="translate(2.2 1.75) scale(.04)" fill="currentColor" stroke="none" d="M0 464L0 316.9C0 208.5 68.3 111.8 170.5 75.6L340.2 15.5c21.4-7.6 43.8 8.3 43.8 30.9 0 11-5.5 21.2-14.6 27.3L33'
+      + '6 96c48.1 0 91.2 29.8 108.1 74.9l48.6 129.5c11.8 31.4 4.1 66.8-19.6 90.5-16 16-37.8 25.1-60.5 25.1l-3.4 0c-26.'
+      + '1 0-50.9-11.6-67.6-31.7l-32.3-38.7c-11.7 4.1-24.2 6.4-37.3 6.4l-.1 0c-6.3 0-12.5-.5-18.6-1.5-3.6-.6-7.2-1.4-10'
+      + '.7-2.3l0 0c-28.9-7.8-53.1-26.8-67.8-52.2-4.4-7.7-14.2-10.3-21.9-5.8s-10.3 14.2-5.8 21.9c24 41.5 68.3 70 119.3 '
+      + '71.9l47.2 70.8c4 6.1 6.2 13.2 6.2 20.4 0 20.3-16.5 36.8-36.8 36.8L48 512c-26.5 0-48-21.5-48-48zM328 224a24 24 '
+      + '0 1 0 0-48 24 24 0 1 0 0 48z"/>'},
   {k:'zipfel',  name:'Goldener Bettzipfel', farbe:'#1C5FA8',
    pfad:'<path d="M3.2 17.4h13.6v3H3.2z"/><path d="M4.6 17.4C4.8 10.6 8.2 5.2 13.4 4.6c3.4-.4 6 2.2 6.3 6"/>'
       + '<path d="M15.2 17.4c-.2-3.4.4-6 2-7.9"/><circle cx="19.8" cy="12.9" r="2.1"/>'}
@@ -5245,7 +5251,9 @@ function ansichtInfo(){
     + '<div class="siegel"><div class="gross">Geprüft<br>am Tisch</div>'
     + '<div class="klein">Fünf Bubidos<br>Eine Tabelle</div></div>'
     + '<p class="hinweis" style="text-align:center">Betriebsanleitung, Ausgabe 7 · Änderungen im Sinne '
-    + 'des technischen Fortschritts vorbehalten<br><b style="color:var(--malz)">Fassung '
+    + 'des technischen Fortschritts vorbehalten<br>'
+    + '<span style="font-size:11px">Das Zeichen des Zugpferds: „horse-head“ aus Font Awesome Free '
+    + '(fontawesome.com, CC BY 4.0).</span><br><b style="color:var(--malz)">Fassung '
     + FASSUNG + '</b></p>';
 }
 
