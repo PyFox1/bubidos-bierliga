@@ -278,6 +278,11 @@ Pokal-Wechsel), der Zwischenstand („Stand jetzt“ am laufenden Tag), die Pers
 siehe die Entscheidung dazu). Jedes Abzeichen trägt in `ABZEICHEN` außer dem Namen eine
 `farbe` und ein Symbol (`pfad`) für die Medaille der Ehrenhalle — wer eines dazunimmt,
 gibt ihm beides mit, sonst steht dort eine leere Medaille; `ehrenhalle.mjs` prüft das.
+Das Symbol ist cremefarben; `zeichen` gibt ihm eine eigene Farbe. Das nutzt bisher nur der
+**Goldene Bettzipfel** (G70): goldene Mütze auf Nachtblau, damit der Name stimmt. Den ganzen
+Grund golden zu machen wurde verworfen — Gold heißt „gewonnen“ und gehört dem Tagessieger;
+ebenso ein Tausch (Sieger blau) und ein Umfärben aller vier nach Bedeutung (Lorbeergrün,
+Verkehrsblau, Rossbraun, Gold).
 
 ## Entscheidungen und ihre Gründe
 

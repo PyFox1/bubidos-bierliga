@@ -97,7 +97,17 @@ await schritt('Der zweite Tipp trägt ein, und er ist wieder da', async () => {
 });
 
 console.log('\n== Berichtigen und zurücknehmen ==');
+/* Die beiden festen Uhrzeiten brauchen einen Abend, der auch wie einer liegt. Mit „jetzt
+   minus drei Stunden“ begann er morgens gegen fünf, und 01:30 lag dann zu Recht früher am
+   selben Tag – der Test schlug nur zu dieser Stunde an. Deshalb gestern um acht, und danach
+   wieder zurück: Ab „Gleich mit der richtigen Uhrzeit“ wird mit jetzt gerechnet. */
+const abendGestern = () => p.evaluate(() => {
+  const d = new Date(); d.setDate(d.getDate() - 1); d.setHours(20, 0, 0, 0);
+  state.we[0].tage[0].orte[0].log[0].t = d.getTime();
+});
+const abendJetzt = () => p.evaluate(() => { state.we[0].tage[0].orte[0].log[0].t = Date.now() - 3*3600000; });
 await schritt('Die Uhrzeit lässt sich ändern – 01:30 ist die Nacht danach', async () => {
+  await abendGestern();
   await klick('button.pname[data-id="4"]');
   await klick('.blende [data-tu="heimJetzt"]');
   await klick('button.pname[data-id="4"]');
@@ -134,6 +144,7 @@ await schritt('„Doch noch da“ nimmt es zurück', async () => {
 });
 
 console.log('\n== Gleich mit der richtigen Uhrzeit ==');
+await abendJetzt();
 await schritt('Neben „Geht heim“ steht die Uhrzeit, vorbelegt mit jetzt', async () => {
   await klick('button.pname[data-id="4"]');
   const r = await p.evaluate(() => {

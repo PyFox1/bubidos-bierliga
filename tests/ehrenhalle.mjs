@@ -143,6 +143,17 @@ await schritt('Jedes Abzeichen hat Farbe und Symbol', async () => {
     .map(a => a.k));
   if(r.length) throw new Error(r.join(', '));
 });
+await schritt('Der goldene Bettzipfel trägt eine goldene Mütze, die anderen ein cremefarbenes Symbol', async () => {
+  const r = await p.evaluate(() => [...document.querySelector('.eh-person').querySelectorAll('.eh-med')]
+    .map((m, i) => [ABZEICHEN[i].k, getComputedStyle(m.querySelector('svg')).color, getComputedStyle(m).backgroundColor]));
+  const z = r.find(x => x[0] === 'zipfel'), rest = r.filter(x => x[0] !== 'zipfel');
+  if(z[1] !== 'rgb(242, 193, 78)') throw new Error('Mütze ' + z[1]);
+  if(z[2] !== 'rgb(31, 56, 104)') throw new Error('Grund ' + z[2]);
+  if(rest.some(x => x[1] !== 'rgb(244, 238, 221)')) throw new Error(JSON.stringify(rest));
+  const falsch = await p.evaluate(() => ABZEICHEN.filter(a => a.zeichen && !/^#[0-9A-F]{6}$/i.test(a.zeichen))
+    .map(a => a.k));
+  if(falsch.length) throw new Error('zeichen: ' + falsch.join(', '));
+});
 await schritt('Ein Tipp auf eine Person führt zu ihr, zurück geht es in die Ehrenhalle', async () => {
   const r = await p.evaluate(() => {
     document.querySelector('.eh-person[data-id="4"]').click();

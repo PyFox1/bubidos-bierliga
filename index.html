@@ -784,7 +784,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-29 20:08 · G69 (GitHub)';
+const FASSUNG = '2026-09-30 08:15 · G70 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -799,6 +799,8 @@ const FASSUNG = '2026-09-29 20:08 · G69 (GitHub)';
 const NOTIZ_START  = 1;
 const NOTIZ_ANZAHL = 3;
 const NOTIZEN = [
+  {f:'G70', d:'30.09.2026', z:'08:15', punkte:[
+    'Der goldene Bettzipfel ist jetzt wirklich golden: eine goldene Mütze auf nachtblauer Medaille.']},
   {f:'G69', d:'29.09.2026', z:'20:08', punkte:[
     'Das Zugpferd trägt jetzt ein ganzes Pferd als Zeichen statt nur den Kopf.']},
   {f:'G68', d:'29.09.2026', z:'19:55', punkte:[
@@ -2991,7 +2993,8 @@ function fazitVon(e){
    bei jedem Laden aus den Strichen gerechnet und kann der Tabelle nie widersprechen. */
 /* Farbe und Symbol stehen hier und nicht im Stylesheet: Wer ein Abzeichen dazunimmt,
    kann sie so nicht vergessen – ohne stünde in der Ehrenhalle eine leere Medaille.
-   Gezeichnet wie die Pokal-Symbole: Stern, Lenkrad, Pferd, Zipfelmütze. */
+   Gezeichnet wie die Pokal-Symbole: Stern, Lenkrad, Pferd, Zipfelmütze. Das Symbol ist
+   cremefarben, außer ein Abzeichen gibt ihm mit `zeichen` eine eigene Farbe. */
 const ABZEICHEN = [
   {k:'sieger',  name:'Tagessieger',         farbe:'#D59A2E',
    pfad:'<path d="M12 3.2l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7z"/>'},
@@ -3010,7 +3013,9 @@ const ABZEICHEN = [
       + '1.46-.79 1.95c-.43.49-.9.83-1.4 1.09l-.7-.7c.19-.47.38-.89.42-1.28c.06-.37-.01-.67-.12-.94l-.53-1.13c-.21-'
       + '.51-.47-1.25-.42-2.12c.03-.85.5-1.96 1.39-2.57c.9-.61 1.87-.69 2.66-.53c.5.1 1.01.34 1.45.68c.37-.17.8-.26 '
       + '1.25-.26h5.75V7c0-2.21 1.79-4 4-4H22l-.89 1.34c.54.36.89.97.89 1.66"/>'},
-  {k:'zipfel',  name:'Goldener Bettzipfel', farbe:'#1C5FA8',
+  /* Der goldene Bettzipfel ist wirklich golden: eine goldene Mütze auf Nachtblau. Den ganzen
+     Grund golden zu machen hätte ihn neben den Tagessieger gestellt, und Gold heißt „gewonnen“ (G70). */
+  {k:'zipfel',  name:'Goldener Bettzipfel', farbe:'#1F3868', zeichen:'#F2C14E',
    pfad:'<path d="M3.2 17.4h13.6v3H3.2z"/><path d="M4.6 17.4C4.8 10.6 8.2 5.2 13.4 4.6c3.4-.4 6 2.2 6.3 6"/>'
       + '<path d="M15.2 17.4c-.2-3.4.4-6 2-7.9"/><circle cx="19.8" cy="12.9" r="2.1"/>'}
 ];
@@ -5676,7 +5681,7 @@ const ehMedaillon = k => '<span class="eh-medaillon" aria-hidden="true">' + poka
 /* Eine Abzeichen-Medaille. `rein`: nur das Zeichen, ohne Zähler – für Legende und Raster. */
 function ehMedaille(a, n, rein, gr){
   return '<span class="eh-med' + (!rein && !n ? ' null' : '') + '" style="background:' + a.farbe
-    + (gr ? ';width:' + gr + 'px;height:' + gr + 'px' : '') + '" role="img" aria-label="' + a.name
+    + (a.zeichen ? ';color:' + a.zeichen : '') + (gr ? ';width:' + gr + 'px;height:' + gr + 'px' : '') + '" role="img" aria-label="' + a.name
     + (rein ? '' : ': ' + (n || 0)) + '">' + abzeichenSymbol(a, gr ? Math.round(gr * .6) : 16)
     + (!rein && n ? '<b aria-hidden="true">' + n + '</b>' : '') + '</span>';
 }
