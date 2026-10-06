@@ -883,6 +883,28 @@ await schritt('Es trägt Datum, Uhrzeit, Tag und Location', async () => {
   return s;
 });
 
+/* Am Handy kam beim Weiterschicken nur die Textnachricht „Urkunde“ an: WhatsApp auf dem
+   iPhone nimmt bei Datei plus Titel nur den Titel. Geprüft wird deshalb, was an
+   `navigator.share` geht – genau eine PNG-Datei und sonst nichts. */
+await schritt('„Sichern“ teilt nur das Bild, ohne Titel oder Text daneben', async () => {
+  const r = await p.evaluate(async () => {
+    const geteilt = [];
+    navigator.canShare = d => !!(d && d.files && d.files.length);
+    navigator.share = async d => { geteilt.push(d); };
+    const we = state.we[0];
+    const m = we.marken.find(x => x.stufe === 25);
+    await urkundeBildTeilen(m, we, '1');
+    const d = geteilt[0];
+    return d ? {schluessel:Object.keys(d).sort(), n:d.files.length, typ:d.files[0].type,
+      name:d.files[0].name, groesse:d.files[0].size} : null;
+  });
+  if(!r) throw new Error('navigator.share wurde nicht gerufen');
+  if(r.schluessel.join() !== 'files') throw new Error('geteilt wurde ' + r.schluessel.join(', '));
+  if(r.n !== 1 || r.typ !== 'image/png') throw new Error(r.n + ' Dateien, ' + r.typ);
+  if(r.groesse < 20000) throw new Error('verdächtig klein: ' + r.groesse);
+  return r.name + ', ' + Math.round(r.groesse/1024) + ' kB';
+});
+
 /* Zum Ansehen: das Bild in die Seite hängen und abfotografieren. */
 await p.evaluate(async () => {
   const we = state.we[0];

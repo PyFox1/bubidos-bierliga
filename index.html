@@ -784,7 +784,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-09-30 08:15 · G70 (GitHub)';
+const FASSUNG = '2026-10-06 19:50 · G71 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -6212,8 +6212,11 @@ async function urkundeBildTeilen(m, we, pid){
       rekord:'rekord-'}[m.art] || 'urkunde-') + kurz
       + (m.art === 'stufe' || m.art === 'mangel' ? '-' + m.stufe + 'be' : '') + '.png';
     const datei = new File([blob], dateiname, {type:'image/png'});
+    /* Nur die Datei, kein `title` und kein `text`: Bekommt das Teilen-Blatt beides,
+       nimmt WhatsApp auf dem iPhone den Text und lässt das Bild fallen – an der Runde
+       kam dann bloß eine Nachricht „Urkunde“ an (G71). */
     if(navigator.canShare && navigator.canShare({files:[datei]})){
-      await navigator.share({files:[datei], title:'Urkunde'});
+      await navigator.share({files:[datei]});
       return;
     }
     const url = URL.createObjectURL(blob);

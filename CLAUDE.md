@@ -944,6 +944,10 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
     Ein Blatt, ein Name, groß — wer sich das aufhängt, will sich darauf wiederfinden.
     Weitergereicht wird über `navigator.share`, weil ein Download-Link auf dem iPhone im Nichts
     endet — von dort führt der Weg in die Fotos. Herunterladen ist nur der Rückfall.
+    **Geteilt wird nur die Datei** (G71), ohne `title` und ohne `text`. Bis G70 ging
+    `title:'Urkunde'` mit, und WhatsApp auf dem iPhone nahm dann den Titel und ließ das Bild
+    fallen: Beim Weiterschicken kam nur die Textnachricht „Urkunde“ an. `urkunde.mjs` prüft,
+    dass an `navigator.share` genau eine PNG-Datei und sonst nichts geht.
     **Falle:** Ein Canvas löst kein Nachladen einer Schrift aus. Ohne das ausdrückliche
     `document.fonts.load()` steht auf dem Bildschirm Anton und im gesicherten Bild die
     Systemschrift. `document.fonts.check()` taugt nicht zum Prüfen — es antwortet auch dann mit
