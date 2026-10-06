@@ -784,7 +784,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-10-06 20:00 · G72 (GitHub)';
+const FASSUNG = '2026-10-06 20:07 · G73 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -1726,6 +1726,12 @@ const SLANG = [
      + 'beantworten will — die Frage selbst wird zum Skandal erklärt.',
    bsp:['Ob das die letzte war? Was soll denn die doofe Frage?',
         'Was soll denn die doofe Frage?']},
+  /* Der erste Satz der Kaskade, noch vor der „doofen Frage“ (G73). */
+  {w:'Was fällt Ihnen ein, mir so eine Frage zu stellen?', b:'Empörung schon im ersten Satz: '
+     + 'Dass überhaupt gefragt wird, ist die Zumutung. Gilt der Frage — nach der Zahl, dem '
+     + 'Alkoholfreien, dem Heimweg —, nicht dem, der gefragt wird.',
+   bsp:['Was fällt Ihnen ein, mir so eine Frage zu stellen?',
+        'Schon heim? Was fällt Ihnen ein, mir so eine Frage zu stellen?']},
   {w:'Sind Sie in Ihrem Kopf net normal oder was?', b:'Empörte Rückfrage auf einen Vorschlag, '
      + 'der einem absurd erscheint. Gilt dem Vorschlag.',
    bsp:['Alkoholfrei? Sind Sie in Ihrem Kopf net normal oder was?',
@@ -1745,7 +1751,8 @@ const SLANG = [
    bsp:['Weg!', 'Das Alkoholfreie? Weg!']},
   {w:'Schicken Sie mir den Chefredakteur', b:'Eskalation zur höheren Instanz wegen einer '
      + 'Kleinigkeit. In der Runde ist das der Wirt, die Brauerei, die Tabelle.',
-   bsp:['Schicken Sie mir den Chefredakteur', 'Die Halbe war lau — schicken Sie mir den Wirt']},
+   bsp:['Schicken Sie mir den Chefredakteur', 'Schicken Sie mir den Chefredakteur, Sie Dreckschwein!',
+        'Die Halbe war lau — schicken Sie mir den Wirt']},
   {w:'wie können Sie mich auf so etwas ansprechen?', b:'Empörung darüber, überhaupt gefragt '
      + 'worden zu sein. Gilt der Frage.',
    bsp:['Wie können Sie mich auf so etwas ansprechen?',
@@ -1771,7 +1778,18 @@ const SLANG = [
      + 'Neues oder Extravagantes, man bleibt bei dem, was sich bewährt hat. Gilt der '
      + 'Bestellung, der Kneipe, dem gewohnten Ablauf — nie einem Menschen.',
    bsp:['Neue Sorte? Nö, ich bleib beim Arschloch',
-        'Andere Kneipe? Ich bleib beim Arschloch']}
+        'Andere Kneipe? Ich bleib beim Arschloch']},
+
+  /* ---- Oliver Kahn, ran, November 2002 (G73) ----
+     Nach dem 0:2 in Bremen, beide Gegentore mit seinem Anteil, fragt der Reporter nach
+     seiner Unsicherheit. Die Antwort ist die Gegenfrage – und dass sie gegen den
+     offensichtlichen Befund steht, ist der ganze Witz. */
+  {w:'Wo war ich unsicher?', b:'Trotzige Gegenfrage auf einen Vorwurf, der offensichtlich '
+     + 'stimmt. Wer sie stellt, bestreitet den Befund mit vollem Ernst. Gilt dem Zweifel an der '
+     + 'Leistung — gesagt vom Betroffenen selbst oder ihm in den Mund gelegt, nie als Urteil '
+     + 'von außen.',
+   bsp:['Wo war ich unsicher?', 'Sechs von zehn? Wo war ich unsicher?',
+        'Zwei Halbe stehen lassen, eine verschüttet — wo war ich unsicher?']}
 ];
 
 /* Ohne Netz, ohne Schlüssel oder wenn die API zickt, steht einer davon da. Sie müssen
@@ -2529,7 +2547,7 @@ function wendungErkennbar(text, w){
 function wendungWaehlen(){
   const raus = wendungenVergeben();
   const frei = SLANG.filter(s => !raus.has(s.w));
-  /* Sind alle 38 durch, fängt es von vorn an: eine Wiederholung ist besser als eine
+  /* Sind alle durch, fängt es von vorn an: eine Wiederholung ist besser als eine
      Urkunde ohne den Ton der Runde. */
   const topf = frei.length ? frei : SLANG;
   const kern = topf.filter(s => s.kern);

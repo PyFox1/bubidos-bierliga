@@ -1011,7 +1011,7 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   den `urkundeVorrat`-Eintrag, der Text kommt später dazu. `wendungenVergeben()` liest beide
   Quellen — Marken und Vorrat.
   Zuerst sind die `kern`-Wendungen dran, dann der Fundus; innerhalb der Gruppe gewürfelt,
-  damit ein Wochenende nicht immer gleich anfängt. Sind alle 38 durch, fängt es von vorn an —
+  damit ein Wochenende nicht immer gleich anfängt. Sind alle durch, fängt es von vorn an —
   eine Wiederholung ist besser als eine Urkunde ohne den Ton der Runde.
   Nebeneffekt, und kein kleiner: Die Anweisung trägt statt 38 Einträgen nur noch einen. Das
   ist genau der Block, der in G48 den Nachrichtenteil erdrückt hat.
@@ -1045,6 +1045,12 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   **„Ich bleib beim Arschloch"** (G47) ist außerhalb der drei Quellen dazugekommen und steht für
   eine eigene Figur: die Ablehnung von allem Neuen, das Festhalten an der gewohnten Bestellung,
   der gewohnten Kneipe, dem gewohnten Ablauf. Zielt auf eine Gewohnheit, nie auf einen Menschen.
+  **Oliver Kahn** (G73) ist die vierte Quelle: „Wo war ich unsicher?“ aus dem *ran*-Interview
+  nach dem 0:2 in Bremen im November 2002 — die trotzige Gegenfrage gegen einen Befund, der
+  offensichtlich stimmt. Gesagt vom Betroffenen selbst, nie als Urteil von außen. Mit G73 kamen
+  von Willi Konrad außerdem der erste Satz der Kaskade („Was fällt Ihnen ein, mir so eine Frage
+  zu stellen?“) und beim Chefredakteur das vollständige „…, Sie Dreckschwein!“ als Beispiel dazu.
+  Eine Notiz gibt es dafür nicht: Der Wortschatz gehört zu den Marken.
   **Was nicht aus einer belegten Quelle stammt, kommt nicht rein.** Die Einträge landen
   wörtlich im Prompt; ein dazuerfundenes Beispiel erzeugt Urkunden, die nach einer Runde
   klingen, die es nicht gibt — schlechter als gar kein Eintrag. Im Zweifel nachfragen statt
