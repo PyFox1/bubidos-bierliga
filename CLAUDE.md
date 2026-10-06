@@ -1178,6 +1178,12 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
   nachschlägt, nicht nur dem, der die Notizen liest. Ein Erklär-Blatt zeigt hier folglich
   auf nichts; die Marke steht nur im Quelltext (`we.marken`) und in der Anwendung selbst.
   Das ist die einzige Stelle, an der beides absichtlich schweigt.
+  **Der Wortschatz steht nirgends im Wortlaut, wo man nachliest, was neu ist** — weder in
+  `NOTIZEN` noch in Commit-Nachrichten noch in der Antwort an die Runde. Ausdrücklich so
+  verlangt, nachdem der Commit zu G73 die neuen Sprüche zitiert hatte: Wer die Historie auf
+  GitHub durchsieht, hätte die Pointe vorher gelesen. Eine Erweiterung heißt im Commit schlicht
+  „Wortschatz erweitert“, ohne Wendungen, Quellen oder Namen. Wortlaut und Herkunft stehen nur
+  in `SLANG` selbst und, als Begründung, hier in der CLAUDE.md.
   Geschrieben wird sonst **für den, der die App bedient**: was er jetzt anders vorfindet oder neu
   kann. Keine Funktions- und Klassennamen, kein `sha`/`ETag`/`Timer`, und vor allem keine
   Floskeln — „diverse Verbesserungen", „Stabilität erhöht" sagen niemandem etwas. Statt
