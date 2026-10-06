@@ -883,6 +883,34 @@ await schritt('Es trägt Datum, Uhrzeit, Tag und Location', async () => {
   return s;
 });
 
+/* Die Siegerehrung bringt den längsten Text mit. Auf dem ersten echten Blatt lief er durch
+   den Stempel, die Goldlinie und das Datum, weil die Höhe feststand und nur bis zu einer
+   Zeilenzahl verkleinert wurde. Jetzt muss er über Stempel und Linie enden – notfalls auf
+   einem längeren Blatt –, und ein kurzer Text lässt das Format, wie es ist. */
+await schritt('Ein langer Text läuft nicht in Stempel und Datum, ein kurzer behält das Format', async () => {
+  const r = await p.evaluate(async () => {
+    const satz = 'Die Deckelkrone wird erstmals vergeben, und sie findet gleich einen Halter, der im '
+      + 'selben Durchgang den Tagesrekord mitnimmt, beides an einem Wochenende voller Zahlen. ';
+    const we = state.we[0];
+    const m = {id:'probe', art:'ehrung', stufe:0, pid:'1', t:Date.now(), zahl:'5,4',
+      einheit:'Biereinheiten · Deckelkrone', tag:'1. Tag', text:satz.repeat(5)};
+    const lang = (await urkundeBild(m, we, '1'));
+    const kurz = (await urkundeBild(Object.assign({}, m, {text:satz}), we, '1'));
+    const stufe = (await urkundeBild(Object.assign({}, m, {art:'stufe', stufe:18, text:satz.repeat(5)}), we, '1'));
+    return {lang:{h:lang.height, b:lang.width, ...lang.lage}, kurz:{h:kurz.height, ...kurz.lage},
+            stufe:{h:stufe.height, ...stufe.lage}};
+  });
+  const {lang, kurz, stufe} = r;
+  if(lang.b !== 1080) throw new Error('Breite ' + lang.b);
+  if(!(lang.textUnten < lang.siegelOben)) throw new Error('Text reicht in den Stempel: ' + JSON.stringify(lang));
+  if(!(lang.siegelOben + 156 < lang.linie)) throw new Error('Stempel auf der Linie: ' + JSON.stringify(lang));
+  if(!(stufe.textUnten < stufe.linie - 40)) throw new Error('Text auf der Linie: ' + JSON.stringify(stufe));
+  if(lang.schrift < 28) throw new Error('Schrift zu klein: ' + lang.schrift);
+  if(!(lang.h > 1440)) throw new Error('langer Text, aber Blatt nicht länger: ' + lang.h);
+  if(kurz.h !== 1440 || !(kurz.textUnten < kurz.siegelOben)) throw new Error('kurz: ' + JSON.stringify(kurz));
+  return 'lang ' + lang.zeilen + ' Zeilen, ' + lang.schrift + ' px, ' + lang.h + ' hoch; kurz bleibt 1440';
+});
+
 /* Am Handy kam beim Weiterschicken nur die Textnachricht „Urkunde“ an: WhatsApp auf dem
    iPhone nimmt bei Datei plus Titel nur den Titel. Geprüft wird deshalb, was an
    `navigator.share` geht – genau eine PNG-Datei und sonst nichts. */

@@ -944,6 +944,16 @@ Diese Punkte wurden ausführlich diskutiert. Bitte nicht ohne Rückfrage umdrehe
     Ein Blatt, ein Name, groß — wer sich das aufhängt, will sich darauf wiederfinden.
     Weitergereicht wird über `navigator.share`, weil ein Download-Link auf dem iPhone im Nichts
     endet — von dort führt der Weg in die Fotos. Herunterladen ist nur der Rückfall.
+    **Erst messen, dann zeichnen** (G72). Die Höhe stand fest, und der Text wurde nur bis zu
+    einer Zeilenzahl verkleinert, ohne zu prüfen, ob er dann passt. Die Siegerehrung bringt
+    den längsten Text mit, und auf dem ersten echten Blatt lief er durch Stempel, Goldlinie
+    und Datum. Jetzt wird die Schrift verkleinert, bis der Text über dem Fuß endet — bei
+    Ehrenurkunden über dem Stempel, der rechts über der Goldlinie sitzt —, nicht unter
+    `28px`; reicht auch das nicht, wird das Blatt länger (`BILD_H` ist die Mindesthöhe).
+    `c.lage` meldet Schriftgröße, Textende, Stempel und Linie, damit `urkunde.mjs` das
+    nachmessen kann. Bei der Siegerehrung steht unter der Zahl „Biereinheiten am Wochenende“
+    wie auf dem Schirm; die gespeicherte `einheit` trug „· Deckelkrone“, und das stand dann
+    zweimal auf dem Blatt.
     **Geteilt wird nur die Datei** (G71), ohne `title` und ohne `text`. Bis G70 ging
     `title:'Urkunde'` mit, und WhatsApp auf dem iPhone nahm dann den Titel und ließ das Bild
     fallen: Beim Weiterschicken kam nur die Textnachricht „Urkunde“ an. `urkunde.mjs` prüft,

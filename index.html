@@ -784,7 +784,7 @@ table.rechnung td.schlecht{color:#E09084}
 <input type="file" accept="image/*" id="kamera" hidden>
 
 <script>
-const FASSUNG = '2026-10-06 19:50 · G71 (GitHub)';
+const FASSUNG = '2026-10-06 20:00 · G72 (GitHub)';
 
 /* Was sich je Fassung geändert hat, neueste zuerst. Geschrieben wird, was am Tisch
    auffällt – nicht, was im Quelltext passiert ist: keine Funktions- oder Klassennamen,
@@ -6084,15 +6084,40 @@ async function urkundeBild(m, we, pid){
   const gold = tadel ? rot : gold0;
   const mitte = BILD_B/2, rand = 120, maxB = BILD_B - 2*rand;
 
+  /* Erst messen, dann zeichnen. Die Höhe stand fest, und der Text wurde nur bis zu einer
+     Zeilenzahl verkleinert – ob er dann in den Platz passte, prüfte niemand. Die
+     Siegerehrung bringt den längsten Text mit, und der lief in den Stempel, durch die
+     Goldlinie und in das Datum (G72). Jetzt: Schrift kleiner, bis der Text über dem Fuß
+     Platz hat; reicht auch die kleinste nicht, wird das Blatt länger. Lesbar schlägt
+     Format – am Handy scrollt man ein langes Bild einfach. */
+  const FUSS = 232;                    // von unten bis zur Goldlinie über dem Datum
+  const SIEGEL_R = 78;
+  /* Der Stempel sitzt rechts über der Goldlinie, und Textzeilen reichen bis dorthin –
+     also muss der Text über ihm enden, nicht neben ihm. */
+  const luft = ehre ? 98 + SIEGEL_R + 16 : 60;
+  const yText = 208 + (ehre ? 210 : 195) + 62 + 108 + 46 + 64 + 74;
+  const mess = document.createElement('canvas').getContext('2d');
+  let gr = 37, zeilen, lh, textUnten;
+  for(;;){
+    mess.font = 'italic ' + gr + 'px Karla, system-ui, sans-serif';
+    zeilen = bildZeilen(mess, m.text || '', maxB);
+    lh = Math.round(gr*1.45);
+    textUnten = yText + (zeilen.length - 1)*lh + Math.round(gr*.3);
+    if(textUnten + luft + FUSS <= BILD_H || gr <= 28) break;
+    gr -= 1;
+  }
+  const H = Math.max(BILD_H, textUnten + luft + FUSS);
+  const linieY = H - FUSS;
+
   const c = document.createElement('canvas');
-  c.width = BILD_B; c.height = BILD_H;
+  c.width = BILD_B; c.height = H;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = '#E9E1CD'; ctx.fillRect(0, 0, BILD_B, BILD_H);
-  bildRaute(ctx, 0, 34); bildRaute(ctx, BILD_H - 34, 34);
+  ctx.fillStyle = '#E9E1CD'; ctx.fillRect(0, 0, BILD_B, H);
+  bildRaute(ctx, 0, 34); bildRaute(ctx, H - 34, 34);
   if(ehre){
     ctx.strokeStyle = gold;
-    ctx.lineWidth = 6; ctx.strokeRect(52, 80, BILD_B-104, BILD_H-160);
-    ctx.lineWidth = 2; ctx.strokeRect(68, 96, BILD_B-136, BILD_H-192);
+    ctx.lineWidth = 6; ctx.strokeRect(52, 80, BILD_B-104, H-160);
+    ctx.lineWidth = 2; ctx.strokeRect(68, 96, BILD_B-136, H-192);
   }
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
@@ -6119,7 +6144,11 @@ async function urkundeBild(m, we, pid){
   sperr('6px');
   ctx.fillStyle = weich;
   ctx.font = '500 23px "DM Mono", ui-monospace, monospace';
-  ctx.fillText(String(m.einheit || 'Biereinheiten am Wochenende').toUpperCase(), mitte, y);
+  /* Bei der Siegerehrung steht „Deckelkrone“ schon in der Kopfzeile – darunter noch
+     einmal wäre doppelt. Wie auf dem Schirm: Biereinheiten am Wochenende. */
+  const einheit = m.art === 'ehrung' ? 'Biereinheiten am Wochenende'
+    : (m.einheit || 'Biereinheiten am Wochenende');
+  ctx.fillText(einheit.toUpperCase(), mitte, y);
 
   sperr('1px');
   y += 108;
@@ -6145,23 +6174,16 @@ async function urkundeBild(m, we, pid){
   ctx.fillText(urkundeFormel(m).toUpperCase(), mitte, y);
   sperr('0px');
 
-  /* Der Text ist mal zwei, mal fünf Zeilen lang. Lieber die Schrift kleiner als das
-     Blatt sprengen – der Fuß steht fest unten. Mittig und kursiv wie auf dem Schirm:
-     linksbündig sah er neben der mittigen Zahl und dem mittigen Namen aus wie
+  /* Schriftgröße und Zeilen sind oben schon ausgemessen. Mittig und kursiv wie auf dem
+     Schirm: linksbündig sah er neben der mittigen Zahl und dem mittigen Namen aus wie
      hineinkopiert. */
   y += 74;
   ctx.fillStyle = tinte;
-  let gr = 37, zeilen;
-  do {
-    ctx.font = 'italic ' + gr + 'px Karla, system-ui, sans-serif';
-    zeilen = bildZeilen(ctx, m.text || '', maxB);
-    if(zeilen.length <= 6) break;
-    gr -= 3;
-  } while(gr >= 26);
-  zeilen.forEach(z => { ctx.fillText(z, mitte, y); y += Math.round(gr*1.45); });
+  ctx.font = 'italic ' + gr + 'px Karla, system-ui, sans-serif';
+  zeilen.forEach(z => { ctx.fillText(z, mitte, y); y += lh; });
 
+  const sx = BILD_B - 218, sy = linieY - 98;
   if(ehre){
-    const sx = BILD_B - 218, sy = BILD_H - 330;
     ctx.save();
     ctx.translate(sx, sy); ctx.rotate(-13*Math.PI/180);
     ctx.fillStyle = rot;
@@ -6183,20 +6205,23 @@ async function urkundeBild(m, we, pid){
               m.ortNr ? m.ortNr + '. Location: ' + m.ort : m.ort].filter(Boolean).join(' · ');
   ctx.textAlign = 'center';
   ctx.fillStyle = gold;
-  ctx.fillRect(mitte - 200, BILD_H - 232, 400, 2);
+  ctx.fillRect(mitte - 200, linieY, 400, 2);
   sperr('4px');
   ctx.fillStyle = tinte;
   ctx.font = '500 27px "DM Mono", ui-monospace, monospace';
   ctx.fillText(zwei(d.getDate()) + '.' + zwei(d.getMonth()+1) + '.' + d.getFullYear()
-    + ' · ' + zwei(d.getHours()) + ':' + zwei(d.getMinutes()), mitte, BILD_H - 178);
+    + ' · ' + zwei(d.getHours()) + ':' + zwei(d.getMinutes()), mitte, linieY + 54);
   ctx.fillStyle = weich;
   ctx.font = '500 22px "DM Mono", ui-monospace, monospace';
   let woGr = 22;
   while(ctx.measureText(wo).width > maxB && woGr > 14){
     woGr -= 2; ctx.font = '500 ' + woGr + 'px "DM Mono", ui-monospace, monospace';
   }
-  ctx.fillText(wo, mitte, BILD_H - 136);
+  ctx.fillText(wo, mitte, linieY + 96);
   sperr('0px');
+  /* Für die Prüfung: wo was steht, damit sich Überlappungen nachmessen lassen. */
+  c.lage = {schrift:gr, zeilen:zeilen.length, textUnten, linie:linieY,
+            siegelOben:ehre ? sy - SIEGEL_R : null};
   return c;
 }
 async function urkundeBildTeilen(m, we, pid){
